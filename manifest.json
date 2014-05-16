@@ -10,7 +10,7 @@
     },
 
     "background": {
-        "persistent": false, // event-based 
+        "persistent": true,
         "scripts": ["main.js"]
     },
 
