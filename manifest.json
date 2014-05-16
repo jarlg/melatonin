@@ -10,14 +10,14 @@
     },
 
     "background": {
-        "persistent": false,
+        "persistent": false, // event-based 
         "scripts": ["main.js"]
     },
 
     "permissions": [
         "http://*/",
         "https://*/",
-        "geolocation",
+        //"geolocation",
         "alarms",
         "tabs"
     ]
