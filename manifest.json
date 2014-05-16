@@ -1,0 +1,24 @@
+{
+    "manifest_version": 2,
+    "name": "Melatonin",
+    "version": "0.1",
+
+    "description": "F.lux for Chrome",
+
+    "browser_action": {
+        "default_popup": "index.html"
+    },
+
+    "background": {
+        "persistent": false,
+        "scripts": ["main.js"]
+    },
+
+    "permissions": [
+        "http://*/",
+        "https://*/",
+        "geolocation",
+        "alarms",
+        "tabs"
+    ]
+}
