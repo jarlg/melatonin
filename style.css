@@ -1,0 +1,30 @@
+body {
+    text-align: center;
+    padding-top: 5em;
+}
+
+.subtitle {
+    font-style: italic;
+    font-size: 10pt;
+}
+
+a {
+    color: rgb(251, 191, 149);
+}
+
+h1 {
+    margin: 0 0 8pt;
+    color: rgb(251, 191, 149);
+}
+
+header {
+    padding: 1em;
+    border-bottom: 1px solid rgb(251, 191, 149);
+}
+
+a.download-button {
+    margin: 1em 0 1em;
+    padding: 1em;
+    background-color: rgb(251, 191, 149);
+}
+
