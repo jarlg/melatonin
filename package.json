@@ -1,0 +1,10 @@
+{
+    "name" : "Melatonin-ext",
+    "description" : "F.lux for Chrome",
+    "author" : "jarl.flaten@gmail.com",
+    "version" : "0.0.0",
+    "scripts" : {
+        "postinstall" : "gulp --require coffee-script/register",
+        "watch" : "gulp watch --require cofeescript/register"
+    }
+}
