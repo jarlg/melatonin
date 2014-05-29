@@ -104,11 +104,12 @@ altitude_to_temperature = function(altitude) {
 };
 
 overlay = function(color, tabid) {
-  var rgba;
+  var inject, rgba;
   rgba = Math.floor(color.r) + ", " + Math.floor(color.g) + ", " + Math.floor(color.b) + ", " + app.opacity;
   if (app.css) {
+    inject = css_code(rgba);
     return chrome.tabs.insertCSS(tabid, {
-      code: css_code(rbga)
+      code: inject
     });
   }
 };

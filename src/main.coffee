@@ -25,7 +25,8 @@ altitude_to_temperature = (altitude) ->
 overlay = (color, tabid) ->
     rgba = Math.floor(color.r) + ", " + Math.floor(color.g) + ", " + Math.floor(color.b) + ", " + app.opacity;
     if app.css
-        chrome.tabs.insertCSS tabid, code: css_code(rbga)
+        inject = css_code rgba
+        chrome.tabs.insertCSS tabid, code: inject
 
 update_tabs = ->
     chrome.tabs.query {}, (tabs) ->
