@@ -26,9 +26,15 @@ update_color = function(rgba_string) {
 };
 
 chrome.runtime.sendMessage({
-  type: 'get_current_color'
-}, function(r) {
-  return update_color(r.rgba_string);
+  type: 'get_css_opt'
+}, function(response) {
+  if (!response.css) {
+    return chrome.runtime.sendMessage({
+      type: 'get_current_color'
+    }, function(response) {
+      return update_color(response.rgba_string);
+    });
+  }
 });
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {

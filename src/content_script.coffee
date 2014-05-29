@@ -15,9 +15,13 @@ update_color = (rgba_string) ->
     document.getElementById 'melatonin-overlay'
         .style.backgroundColor = "rgba(" + rgba_string + ")"
 
-chrome.runtime.sendMessage 
-    type: 'get_current_color',
-    (r) -> update_color r.rgba_string
+chrome.runtime.sendMessage
+    type: 'get_css_opt',
+    (response) ->
+        if not response.css
+            chrome.runtime.sendMessage 
+                type: 'get_current_color',
+                (response) -> update_color response.rgba_string
 
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     if request.type == 'update_color'
