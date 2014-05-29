@@ -30,7 +30,7 @@ overlay = (color, tabid) ->
 
 update_tabs = ->
     chrome.tabs.query {}, (tabs) ->
-        overlay(T.get_color app.temperature, tab.id) for tab in tabs
+        overlay(T.get_color(app.temperature), tab.id) for tab in tabs
 
 update_app = (location) ->
     update_temperature location

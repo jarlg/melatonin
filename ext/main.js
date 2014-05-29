@@ -120,7 +120,7 @@ update_tabs = function() {
     _results = [];
     for (_i = 0, _len = tabs.length; _i < _len; _i++) {
       tab = tabs[_i];
-      _results.push(overlay(T.get_color(app.temperature, tab.id)));
+      _results.push(overlay(T.get_color(app.temperature), tab.id));
     }
     return _results;
   });
