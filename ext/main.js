@@ -179,13 +179,13 @@ obj = {
     dist_to_sun = 1.00014 - 0.01671 * H.angle_cos(g) - 0.00014 * H.angle_cos(2 * g);
     axial_tilt = 23.4;
     right_ascension = H.angle_atan(H.angle_cos(axial_tilt) * H.angle_tan(ecliptic_long));
-    while (H.angleToQuadrant(ecliptic_long !== H.angleToQuadrant(right_ascension))) {
+    while (H.angleToQuadrant(ecliptic_long) !== H.angleToQuadrant(right_ascension)) {
       right_ascension += 90;
       if (right_ascension > 360) {
         right_ascension -= 360;
       }
     }
-    hour_angle = H.between(0, 360, greenwich_sidereal_time(jd) - longitude - right_ascension);
+    hour_angle = H.between(0, 360, this.greenwich_sidereal_time(jd) - longitude - right_ascension);
     declination = H.angle_asin(H.angle_sin(axial_tilt) * H.angle_cos(ecliptic_long));
     return H.angle_asin(H.angle_sin(longitude) * H.angle_sin(declination) + H.angle_cos(longitude) * H.angle_cos(declination) * H.angle_cos(hour_angle));
   },

@@ -25,11 +25,11 @@ obj =
         right_ascension = H.angle_atan(H.angle_cos(axial_tilt) * H.angle_tan(ecliptic_long))
 
         ## make sure right_ascension is in same quadrant as ecliptic_long
-        while H.angleToQuadrant ecliptic_long != H.angleToQuadrant right_ascension
+        while H.angleToQuadrant(ecliptic_long) != H.angleToQuadrant(right_ascension)
             right_ascension += 90
             right_ascension -= 360 if right_ascension > 360
 
-        hour_angle = H.between 0, 360, greenwich_sidereal_time(jd) - longitude - right_ascension
+        hour_angle = H.between 0, 360, @greenwich_sidereal_time(jd) - longitude - right_ascension
 
         declination = H.angle_asin(H.angle_sin(axial_tilt) * H.angle_cos(ecliptic_long))
 
