@@ -105,12 +105,15 @@ altitude_to_temperature = function(altitude) {
 };
 
 overlay = function(tab) {
-  var rgba;
+  var rgba, tabid;
   rgba = Math.floor(app.color.r) + ", ";
   rgba += Math.floor(app.color.g) + ", ";
   rgba += Math.floor(app.color.b) + ", " + app.opacity;
+  if (tab != null) {
+    tabid = tab.id;
+  }
   if (app.css) {
-    return chrome.tabs.insertCSS(tab.id, {
+    return chrome.tabs.insertCSS(tabid, {
       code: css_code(rgba)
     }, function() {});
   }
@@ -163,7 +166,7 @@ chrome.tabs.onUpdated.addListener(overlay);
 
 chrome.runtime.onConnect.addListener(function(port) {
   console.assert(port.name === 'app');
-  return port.onDisconnect.addListener(updateTabs);
+  return port.onDisconnect.addListener(update_tabs);
 });
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
@@ -173,7 +176,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     });
   } else if (request.type === 'update_current_opacity') {
     app.opacity = request.opacity;
-    return overlay(T.get_color(app.temperature), sender.tab);
+    return overlay(sender.tab);
   }
 });
 

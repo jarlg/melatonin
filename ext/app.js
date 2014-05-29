@@ -11,7 +11,7 @@ chrome.runtime.sendMessage({
 
 opacity_input.addEventListener('input', function(event) {
   return chrome.runtime.sendMessage({
-    type: 'update_current_opactiy',
+    type: 'update_current_opacity',
     opacity: opacity_input.value
   });
 });

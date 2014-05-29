@@ -27,8 +27,9 @@ overlay = (tab) ->
     rgba  = Math.floor(app.color.r) + ", "
     rgba += Math.floor(app.color.g) + ", "
     rgba += Math.floor(app.color.b) + ", " + app.opacity
+    tabid = tab.id if tab?
     if app.css
-        chrome.tabs.insertCSS tab.id, code: css_code(rgba), ->
+        chrome.tabs.insertCSS tabid, code: css_code(rgba), ->
 
 update_tabs = ->
     chrome.tabs.query {}, (tabs) ->
@@ -70,7 +71,7 @@ chrome.runtime.onConnect.addListener (port) ->
     console.assert (port.name == 'app')
 
     # on closing the popup, apply final result to all tabs
-    port.onDisconnect.addListener updateTabs
+    port.onDisconnect.addListener update_tabs
 
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     if request.type == 'get_current_opacity'
@@ -78,4 +79,4 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     else if request.type == 'update_current_opacity'
         app.opacity = request.opacity
         # only applied to current tab, for realtime updates
-        overlay T.get_color(app.temperature), sender.tab
+        overlay sender.tab
