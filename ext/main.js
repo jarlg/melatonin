@@ -1,10 +1,8 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var Helpers;
+var helpers;
 
-Helpers = (function() {
-  function Helpers() {}
-
-  Helpers.prototype.between = function(min, max, ref) {
+helpers = {
+  between: function(min, max, ref) {
     while (ref < min) {
       ref += 360;
     }
@@ -12,9 +10,8 @@ Helpers = (function() {
       ref -= 360;
     }
     return ref;
-  };
-
-  Helpers.prototype.angleToQuadrant = function(angle) {
+  },
+  angleToQuadrant: function(angle) {
     if (0 < angle && angle < 90) {
       return 1;
     } else if (angle < 180) {
@@ -24,41 +21,31 @@ Helpers = (function() {
     } else if (angle < 360) {
       return 4;
     }
-  };
-
-  Helpers.prototype.to_radians = function(angle) {
+  },
+  to_radians: function(angle) {
     return angle * Math.PI / 180;
-  };
-
-  Helpers.prototype.to_angle = function(rad) {
+  },
+  to_angle: function(rad) {
     return rad * 180 / Math.PI;
-  };
-
-  Helpers.prototype.angle_sin = function(x) {
+  },
+  angle_sin: function(x) {
     return Math.sin(this.to_radians(x));
-  };
-
-  Helpers.prototype.angle_cos = function(x) {
+  },
+  angle_cos: function(x) {
     return Math.cos(this.to_radians(x));
-  };
-
-  Helpers.prototype.angle_tan = function(x) {
+  },
+  angle_tan: function(x) {
     return Math.tan(this.to_radians(x));
-  };
-
-  Helpers.prototype.angle_atan = function(x) {
+  },
+  angle_atan: function(x) {
     return this.to_angle(Math.atan(x));
-  };
-
-  Helpers.prototype.angle_asin = function(x) {
+  },
+  angle_asin: function(x) {
     return this.to_angle(Math.asin(x));
-  };
+  }
+};
 
-  return Helpers;
-
-})();
-
-module.exports = new Helpers();
+module.exports = helpers;
 
 
 },{}],2:[function(require,module,exports){
@@ -200,7 +187,7 @@ obj = {
     d = jd - 2451545.0;
     d0 = last_jd_midnight - 2451545.0;
     gmst = 6.697374558 + 0.06570982441908 * d0 + 1.00273790935 * ut_hours;
-    gmst = between(0, 24, gmst);
+    gmst = H.between(0, 24, gmst);
     omega = 125.04 - 0.052954 * d;
     l = 280.47 + 0.98565 * d;
     eqeq = H.angle_cos(23.4393 - 0.0000004 * d) * (-0.000319 * H.angle_sin(omega)) - 0.000024 * H.angle_sin(2 * l);

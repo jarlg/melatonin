@@ -56,7 +56,7 @@ obj =
 
         # in hours!
         gmst = 6.697374558 + 0.06570982441908*d0 + 1.00273790935*ut_hours #+ 0.000026*T*T
-        gmst = between 0, 24, gmst
+        gmst = H.between 0, 24, gmst
 
         omega = 125.04 - 0.052954*d
         l = 280.47 + 0.98565*d
