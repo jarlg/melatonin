@@ -79,8 +79,10 @@ update()
 chrome.alarms.create 'update', periodInMinutes: 20
 chrome.alarms.onAlarm.addListener update
 
-# alternative would be content_script run for every new tab
-chrome.tabs.onCreated.addListener overlay
+# alternative to content_script
+#chrome.tabs.onCreated.addListener overlay
+
+# alternatively, content_script to update own tab on focus?
 chrome.tabs.onUpdated.addListener (tabid, changeInfo, tab) -> overlay tab
 
 chrome.runtime.onConnect.addListener (port) ->
@@ -94,7 +96,12 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
         sendResponse opacity: app.opacity
     else if request.type == 'get_current_color'
         sendResponse rgba_string: get_current_rgba()
+    else if request.type == 'get_css_opt'
+        sendResponse css: app.css
     else if request.type == 'update_current_opacity'
         app.opacity = request.opacity
         # only applied to current tab, for realtime updates
         overlay sender.tab
+    else if request.type == 'update_css_opt'
+        app.css = request.css
+        # perhaps propagate the change; force tab update etc..

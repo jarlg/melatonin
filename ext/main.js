@@ -180,8 +180,6 @@ chrome.alarms.create('update', {
 
 chrome.alarms.onAlarm.addListener(update);
 
-chrome.tabs.onCreated.addListener(overlay);
-
 chrome.tabs.onUpdated.addListener(function(tabid, changeInfo, tab) {
   return overlay(tab);
 });
@@ -200,10 +198,15 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     return sendResponse({
       rgba_string: get_current_rgba()
     });
+  } else if (request.type === 'get_css_opt') {
+    return sendResponse({
+      css: app.css
+    });
   } else if (request.type === 'update_current_opacity') {
     app.opacity = request.opacity;
-    console.log(sender.tab);
     return overlay(sender.tab);
+  } else if (request.type === 'update_css_opt') {
+    return app.css = request.css;
   }
 });
 
