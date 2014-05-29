@@ -104,23 +104,24 @@ altitude_to_temperature = function(altitude) {
 };
 
 overlay = function(color, tabid) {
-  var inject, rgba;
+  var rgba;
   rgba = Math.floor(color.r) + ", " + Math.floor(color.g) + ", " + Math.floor(color.b) + ", " + app.opacity;
   if (app.css) {
-    inject = css_code(rgba);
     return chrome.tabs.insertCSS(tabid, {
-      code: inject
-    });
+      code: css_code(rgba)
+    }, function() {});
   }
 };
 
 update_tabs = function() {
+  var color;
+  color = T.get_color(app.temperature);
   return chrome.tabs.query({}, function(tabs) {
     var tab, _i, _len, _results;
     _results = [];
     for (_i = 0, _len = tabs.length; _i < _len; _i++) {
       tab = tabs[_i];
-      _results.push(overlay(T.get_color(app.temperature), tab.id));
+      _results.push(overlay(color, tab.id));
     }
     return _results;
   });
@@ -147,6 +148,32 @@ update = function(alarm) {
 };
 
 update();
+
+chrome.alarms.create('update', {
+  periodInMinutes: 20
+});
+
+chrome.alarms.onAlarm.addListener(update);
+
+chrome.tabs.onCreated.addListener(overlay);
+
+chrome.tabs.onUpdated.addListener(overlay);
+
+chrome.runtime.onConnect.addListener(function(port) {
+  console.assert(port.name === 'app');
+  return port.onDisconnect.addListener(updateTabs);
+});
+
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.type === 'get_current_opacity') {
+    return sendResponse({
+      opacity: app.opacity
+    });
+  } else if (request.type === 'update_current_opacity') {
+    app.opacity = request.opacity;
+    return overlay(T.get_color(app.temperature), sender.tab);
+  }
+});
 
 
 },{"./sun_altitude.coffee":4,"./temperature_to_color.coffee":5}],4:[function(require,module,exports){

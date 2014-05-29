@@ -25,12 +25,12 @@ altitude_to_temperature = (altitude) ->
 overlay = (color, tabid) ->
     rgba = Math.floor(color.r) + ", " + Math.floor(color.g) + ", " + Math.floor(color.b) + ", " + app.opacity;
     if app.css
-        inject = css_code rgba
-        chrome.tabs.insertCSS tabid, code: inject
+        chrome.tabs.insertCSS tabid, code: css_code(rgba), ->
 
 update_tabs = ->
+    color = T.get_color app.temperature
     chrome.tabs.query {}, (tabs) ->
-        overlay(T.get_color(app.temperature), tab.id) for tab in tabs
+        overlay(color, tab.id) for tab in tabs
 
 update_app = (location) ->
     update_temperature location
@@ -56,3 +56,23 @@ update = (alarm) ->
         console.log "No geolocation. Can't update color temperature."
 
 update()
+
+chrome.alarms.create 'update', periodInMinutes: 20
+chrome.alarms.onAlarm.addListener update
+
+chrome.tabs.onCreated.addListener overlay
+chrome.tabs.onUpdated.addListener overlay
+
+chrome.runtime.onConnect.addListener (port) ->
+    console.assert (port.name == 'app')
+
+    # on closing the popup, apply final result to all tabs
+    port.onDisconnect.addListener updateTabs
+
+chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
+    if request.type == 'get_current_opacity'
+        sendResponse opacity: app.opacity
+    else if request.type == 'update_current_opacity'
+        app.opacity = request.opacity
+        # only applied to current tab, for realtime updates
+        overlay T.get_color(app.temperature), sender.tab
