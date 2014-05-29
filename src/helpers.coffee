@@ -1,4 +1,4 @@
-helpers = 
+class Helpers
     between: (min, max, ref) ->
         while ref < min
             ref += 360
@@ -21,4 +21,4 @@ helpers =
     angle_atan: (x) -> @to_angle Math.atan x
     angle_asin: (x) -> @to_angle Math.asin x
 
-module.exports = helpers
+module.exports = new Helpers()

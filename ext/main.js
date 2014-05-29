@@ -1,8 +1,10 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var helpers;
+var Helpers;
 
-helpers = {
-  between: function(min, max, ref) {
+Helpers = (function() {
+  function Helpers() {}
+
+  Helpers.prototype.between = function(min, max, ref) {
     while (ref < min) {
       ref += 360;
     }
@@ -10,8 +12,9 @@ helpers = {
       ref -= 360;
     }
     return ref;
-  },
-  angleToQuadrant: function(angle) {
+  };
+
+  Helpers.prototype.angleToQuadrant = function(angle) {
     if (0 < angle && angle < 90) {
       return 1;
     } else if (angle < 180) {
@@ -21,31 +24,41 @@ helpers = {
     } else if (angle < 360) {
       return 4;
     }
-  },
-  to_radians: function(angle) {
-    return angle * Math.PI / 180;
-  },
-  to_angle: function(rad) {
-    return rad * 180 / Math.PI;
-  },
-  angle_sin: function(x) {
-    return Math.sin(this.to_radians(x));
-  },
-  angle_cos: function(x) {
-    return Math.cos(this.to_radians(x));
-  },
-  angle_tan: function(x) {
-    return Math.tan(this.to_radians(x));
-  },
-  angle_atan: function(x) {
-    return this.to_angle(Math.atan(x));
-  },
-  angle_asin: function(x) {
-    return this.to_angle(Math.asin(x));
-  }
-};
+  };
 
-module.exports = helpers;
+  Helpers.prototype.to_radians = function(angle) {
+    return angle * Math.PI / 180;
+  };
+
+  Helpers.prototype.to_angle = function(rad) {
+    return rad * 180 / Math.PI;
+  };
+
+  Helpers.prototype.angle_sin = function(x) {
+    return Math.sin(this.to_radians(x));
+  };
+
+  Helpers.prototype.angle_cos = function(x) {
+    return Math.cos(this.to_radians(x));
+  };
+
+  Helpers.prototype.angle_tan = function(x) {
+    return Math.tan(this.to_radians(x));
+  };
+
+  Helpers.prototype.angle_atan = function(x) {
+    return this.to_angle(Math.atan(x));
+  };
+
+  Helpers.prototype.angle_asin = function(x) {
+    return this.to_angle(Math.asin(x));
+  };
+
+  return Helpers;
+
+})();
+
+module.exports = new Helpers();
 
 
 },{}],2:[function(require,module,exports){
