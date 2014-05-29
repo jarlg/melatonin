@@ -29,19 +29,19 @@ helpers = {
     return rad * 180 / Math.PI;
   },
   angle_sin: function(x) {
-    return Math.sin(to_radians(x));
+    return Math.sin(this.to_radians(x));
   },
   angle_cos: function(x) {
-    return Math.cos(to_radians(x));
+    return Math.cos(this.to_radians(x));
   },
   angle_tan: function(x) {
-    return Math.tan(to_radians(x));
+    return Math.tan(this.to_radians(x));
   },
   angle_atan: function(x) {
-    return to_angle(Math.atan(x));
+    return this.to_angle(Math.atan(x));
   },
   angle_asin: function(x) {
-    return to_angle(Math.asin(x));
+    return this.to_angle(Math.asin(x));
   }
 };
 

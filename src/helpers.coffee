@@ -15,10 +15,10 @@ helpers =
     to_radians: (angle) -> angle * Math.PI / 180
     to_angle: (rad) -> rad * 180 / Math.PI
 
-    angle_sin: (x) -> Math.sin to_radians x
-    angle_cos: (x) -> Math.cos to_radians x
-    angle_tan: (x) -> Math.tan to_radians x
-    angle_atan: (x) -> to_angle Math.atan x
-    angle_asin: (x) -> to_angle Math.asin x
+    angle_sin: (x) -> Math.sin @to_radians x
+    angle_cos: (x) -> Math.cos @to_radians x
+    angle_tan: (x) -> Math.tan @to_radians x
+    angle_atan: (x) -> @to_angle Math.atan x
+    angle_asin: (x) -> @to_angle Math.asin x
 
 module.exports = helpers
