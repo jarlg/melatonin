@@ -66,7 +66,7 @@ module.exports = jd;
 
 
 },{}],3:[function(require,module,exports){
-var S, T, altitude_to_temperature, app, css_code, get_current_rgba, insert_css, js_update_overlay, overlay, update, update_app, update_tabs, update_temperature;
+var S, T, altitude_to_temperature, app, css_code, get_current_rgba, insert_css, js_update_overlay, overlay, toggle_css, update, update_app, update_tabs, update_temperature;
 
 T = require('./temperature_to_color.coffee');
 
@@ -112,9 +112,10 @@ altitude_to_temperature = function(altitude) {
 };
 
 insert_css = function(tabid) {
+  console.log(tabid);
   return chrome.tabs.insertCSS(tabid, {
-    code: css_code(rgba)
-  }, function() {});
+    code: css_code(get_current_rgba(), function() {})
+  });
 };
 
 js_update_overlay = function(tabid) {
@@ -206,9 +207,36 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     app.opacity = request.opacity;
     return overlay(sender.tab);
   } else if (request.type === 'update_css_opt') {
-    return app.css = request.css;
+    if (app.css !== request.css) {
+      app.css = request.css;
+      toggle_css();
+      return overlay(sender.tab);
+    }
   }
 });
+
+toggle_css = function() {
+  return chrome.tabs.query({}, function(tabs) {
+    var tab, _i, _len, _results;
+    _results = [];
+    for (_i = 0, _len = tabs.length; _i < _len; _i++) {
+      tab = tabs[_i];
+      _results.push((function(tab) {
+        if (app.css) {
+          return chrome.tabs.sendMessage(tab.id, {
+            type: 'update_color',
+            rgba_string: '0,0,0,0'
+          });
+        } else {
+          return chrome.tabs.insertCSS(tab.id, {
+            code: css_code('0,0,0,0')
+          });
+        }
+      })(tab));
+    }
+    return _results;
+  });
+};
 
 
 },{"./sun_altitude.coffee":4,"./temperature_to_color.coffee":5}],4:[function(require,module,exports){

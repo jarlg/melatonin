@@ -29,7 +29,8 @@ altitude_to_temperature = (altitude) ->
     else app.colors.noon
 
 insert_css = (tabid) ->
-    chrome.tabs.insertCSS tabid, code: css_code(rgba), ->
+    console.log tabid
+    chrome.tabs.insertCSS tabid, code: css_code get_current_rgba(), ->
 
 js_update_overlay = (tabid) ->
     chrome.tabs.sendMessage tabid, 
@@ -103,5 +104,21 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
         # only applied to current tab, for realtime updates
         overlay sender.tab
     else if request.type == 'update_css_opt'
-        app.css = request.css
-        # perhaps propagate the change; force tab update etc..
+        if app.css != request.css
+            app.css = request.css
+            toggle_css()
+            overlay sender.tab
+
+# when we change the functionality of the overlay, disable the other
+# functionality by making it completely transparent!
+toggle_css = () ->
+    chrome.tabs.query {}, (tabs) ->
+        for tab in tabs
+            do (tab) ->
+                if app.css
+                    chrome.tabs.sendMessage tab.id,
+                            type: 'update_color',
+                            rgba_string: '0,0,0,0'
+                else
+                    chrome.tabs.insertCSS tab.id,
+                            code: css_code '0,0,0,0'
