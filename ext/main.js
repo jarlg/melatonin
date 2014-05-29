@@ -133,7 +133,7 @@ update_app = function(location) {
 update_temperature = function(location) {
   var altitude, date;
   date = new Date();
-  altitude = T.get_sun_altitude(date, location.coords.longitude, location.coords.latitude);
+  altitude = S.get_sun_altitude(date, location.coords.longitude, location.coords.latitude);
   return app.temperature = altitude_to_temperature(altitude);
 };
 

@@ -17,7 +17,7 @@
     "permissions": [
         "http://*/",
         "https://*/",
-        //"geolocation",
+        "geolocation",
         "alarms",
         "tabs"
     ]

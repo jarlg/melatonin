@@ -37,7 +37,7 @@ update_app = (location) ->
 
 update_temperature = (location) ->
     date = new Date()
-    altitude = T.get_sun_altitude(
+    altitude = S.get_sun_altitude(
         date,
         location.coords.longitude,
         location.coords.latitude
