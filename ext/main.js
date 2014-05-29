@@ -66,7 +66,7 @@ module.exports = jd;
 
 
 },{}],3:[function(require,module,exports){
-var S, T, altitude_to_temperature, app, css_code, overlay, update, update_app, update_tabs, update_temperature;
+var S, T, altitude_to_temperature, app, css_code, get_current_rgba, overlay, update, update_app, update_tabs, update_temperature;
 
 T = require('./temperature_to_color.coffee');
 
@@ -76,7 +76,7 @@ app = {
   opacity: 0.5,
   temperature: 3600,
   color: {},
-  css: true,
+  css: false,
   colors: {
     tungsten: 2700,
     halogen: 3600,
@@ -88,6 +88,13 @@ app = {
 
 css_code = function(rgba) {
   return "body:after { content: ''; height: 100vh; width: 100vw; z-index: 999999; position: fixed; background: rgba(" + rgba + "); top: 0; left: 0; pointer-events: none; }";
+};
+
+get_current_rgba = function() {
+  var rgba;
+  rgba = Math.floor(app.color.r) + ", ";
+  rgba += Math.floor(app.color.g) + ", ";
+  return rgba += Math.floor(app.color.b) + ", " + app.opacity;
 };
 
 altitude_to_temperature = function(altitude) {
@@ -105,10 +112,7 @@ altitude_to_temperature = function(altitude) {
 };
 
 overlay = function(tab) {
-  var rgba, tabid;
-  rgba = Math.floor(app.color.r) + ", ";
-  rgba += Math.floor(app.color.g) + ", ";
-  rgba += Math.floor(app.color.b) + ", " + app.opacity;
+  var tabid;
   if (tab != null) {
     tabid = tab.id;
   }
@@ -177,6 +181,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   } else if (request.type === 'update_current_opacity') {
     app.opacity = request.opacity;
     return overlay(sender.tab);
+  } else if (request.type === 'get_current_color') {
+    return sendResponse({
+      color: get_current_rgba()
+    });
   }
 });
 

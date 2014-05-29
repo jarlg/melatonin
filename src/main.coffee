@@ -5,7 +5,7 @@ app =
     opacity: 0.5,
     temperature: 3600,
     color: {},
-    css: true, # if not, jsInject
+    css: false, # if not, jsInject
     colors:
         tungsten: 2700,     # altitude < 0 deg
         halogen: 3600,      # altitude < 15 deg
@@ -16,6 +16,11 @@ app =
 css_code = (rgba) ->
     "body:after { content: ''; height: 100vh; width: 100vw; z-index: 999999; position: fixed; background: rgba(" + rgba + "); top: 0; left: 0; pointer-events: none; }"
 
+get_current_rgba = ->
+    rgba  = Math.floor(app.color.r) + ", "
+    rgba += Math.floor(app.color.g) + ", "
+    rgba += Math.floor(app.color.b) + ", " + app.opacity
+
 altitude_to_temperature = (altitude) ->
     if      altitude < 0  then app.colors.tungsten
     else if altitude < 15 then app.colors.halogen
@@ -24,12 +29,10 @@ altitude_to_temperature = (altitude) ->
     else app.colors.noon
 
 overlay = (tab) ->
-    rgba  = Math.floor(app.color.r) + ", "
-    rgba += Math.floor(app.color.g) + ", "
-    rgba += Math.floor(app.color.b) + ", " + app.opacity
     tabid = tab.id if tab?
     if app.css
         chrome.tabs.insertCSS tabid, code: css_code(rgba), ->
+            #else js action
 
 update_tabs = ->
     chrome.tabs.query {}, (tabs) ->
@@ -64,6 +67,7 @@ update()
 chrome.alarms.create 'update', periodInMinutes: 20
 chrome.alarms.onAlarm.addListener update
 
+# alternative would be content_script run for every new tab
 chrome.tabs.onCreated.addListener overlay
 chrome.tabs.onUpdated.addListener overlay
 
@@ -80,3 +84,5 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
         app.opacity = request.opacity
         # only applied to current tab, for realtime updates
         overlay sender.tab
+    else if request.type == 'get_current_color'
+        sendResponse color: get_current_rgba()

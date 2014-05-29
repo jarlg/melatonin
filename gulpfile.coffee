@@ -8,20 +8,22 @@ static_files = [
     './src/style.css'
 ]
 
-gulp.task 'main', ->
-    bundle = browserify './src/main.coffee'
-        .bundle()
-        .pipe source 'main.js'
-        .pipe gulp.dest './ext/'
+coffee_source_files = [
+    'main',
+    'app',
+    'content_script'
+]
 
-gulp.task 'app', ->
-    bundle = browserify './src/app.coffee'
-        .bundle()
-        .pipe source 'app.js'
-        .pipe gulp.dest './ext/'
+gulp.task 'main', ->
+    for file in coffee_source_files
+        do (file) ->
+        browserify './src/' + file + '.coffee'
+            .bundle()
+            .pipe source file + '.js'
+            .pipe gulp.dest './ext/'
 
 gulp.task 'static', ->
     gulp.src static_files
         .pipe gulp.dest './ext/'
 
-gulp.task 'default', [ 'app', 'main', 'static' ]
+gulp.task 'default', [ 'main', 'static' ]
