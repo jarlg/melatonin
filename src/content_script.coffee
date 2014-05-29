@@ -11,6 +11,14 @@ overlay.style["z-index"] = 99999
 overlay.style["pointer-events"] = "none"
 document.body.appendChild overlay
 
+update_color = (rgba_string) ->
+    document.getElementById 'melatonin-overlay'
+        .style.backgroundColor = "rgba(" + rgba_string + ")"
+
 chrome.runtime.sendMessage 
     type: 'get_current_color',
-    (r) -> document.getElementById('melatonin-overlay').style.backgroundColor = "rgba(" + r.color + ")"; console.log r.color
+    (r) -> update_color r.rgba_string
+
+chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
+    if request.type == 'update_color'
+        update_color request.rgba_string

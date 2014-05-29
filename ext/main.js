@@ -66,7 +66,7 @@ module.exports = jd;
 
 
 },{}],3:[function(require,module,exports){
-var S, T, altitude_to_temperature, app, css_code, get_current_rgba, overlay, update, update_app, update_tabs, update_temperature;
+var S, T, altitude_to_temperature, app, css_code, get_current_rgba, insert_css, js_update_overlay, overlay, update, update_app, update_tabs, update_temperature;
 
 T = require('./temperature_to_color.coffee');
 
@@ -111,15 +111,31 @@ altitude_to_temperature = function(altitude) {
   }
 };
 
+insert_css = function(tabid) {
+  return chrome.tabs.insertCSS(tabid, {
+    code: css_code(rgba)
+  }, function() {});
+};
+
+js_update_overlay = function(tabid) {
+  return chrome.tabs.sendMessage(tabid, {
+    type: 'update_color',
+    rgba_string: get_current_rgba()
+  }, function() {});
+};
+
 overlay = function(tab) {
-  var tabid;
-  if (tab != null) {
-    tabid = tab.id;
-  }
   if (app.css) {
-    return chrome.tabs.insertCSS(tabid, {
-      code: css_code(rgba)
-    }, function() {});
+    return insert_css((tab != null ? tab.id : null));
+  } else if (tab != null) {
+    return js_update_overlay(tab.id);
+  } else {
+    return chrome.tabs.query({
+      active: true,
+      currentWindow: true
+    }, function(tabs) {
+      return js_update_overlay(tabs[0].id);
+    });
   }
 };
 
@@ -166,7 +182,9 @@ chrome.alarms.onAlarm.addListener(update);
 
 chrome.tabs.onCreated.addListener(overlay);
 
-chrome.tabs.onUpdated.addListener(overlay);
+chrome.tabs.onUpdated.addListener(function(tabid, changeInfo, tab) {
+  return overlay(tab);
+});
 
 chrome.runtime.onConnect.addListener(function(port) {
   console.assert(port.name === 'app');
@@ -178,13 +196,14 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     return sendResponse({
       opacity: app.opacity
     });
-  } else if (request.type === 'update_current_opacity') {
-    app.opacity = request.opacity;
-    return overlay(sender.tab);
   } else if (request.type === 'get_current_color') {
     return sendResponse({
-      color: get_current_rgba()
+      rgba_string: get_current_rgba()
     });
+  } else if (request.type === 'update_current_opacity') {
+    app.opacity = request.opacity;
+    console.log(sender.tab);
+    return overlay(sender.tab);
   }
 });
 

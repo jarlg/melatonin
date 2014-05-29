@@ -28,15 +28,27 @@ altitude_to_temperature = (altitude) ->
     else if altitude < 75 then app.colors.daylight
     else app.colors.noon
 
+insert_css = (tabid) ->
+    chrome.tabs.insertCSS tabid, code: css_code(rgba), ->
+
+js_update_overlay = (tabid) ->
+    chrome.tabs.sendMessage tabid, 
+        type: 'update_color',
+        rgba_string: get_current_rgba()
+        , ->
+
 overlay = (tab) ->
-    tabid = tab.id if tab?
     if app.css
-        chrome.tabs.insertCSS tabid, code: css_code(rgba), ->
-            #else js action
+        insert_css (if tab? then tab.id else null)
+    else if tab?
+        js_update_overlay tab.id
+    else
+        chrome.tabs.query active: true, currentWindow: true,
+            (tabs) -> js_update_overlay tabs[0].id
 
 update_tabs = ->
-    chrome.tabs.query {}, (tabs) ->
-        overlay(tab) for tab in tabs
+    chrome.tabs.query {},
+        (tabs) -> overlay tab for tab in tabs
 
 update_app = (location) ->
     update_temperature location
@@ -69,7 +81,7 @@ chrome.alarms.onAlarm.addListener update
 
 # alternative would be content_script run for every new tab
 chrome.tabs.onCreated.addListener overlay
-chrome.tabs.onUpdated.addListener overlay
+chrome.tabs.onUpdated.addListener (tabid, changeInfo, tab) -> overlay tab
 
 chrome.runtime.onConnect.addListener (port) ->
     console.assert (port.name == 'app')
@@ -80,9 +92,9 @@ chrome.runtime.onConnect.addListener (port) ->
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     if request.type == 'get_current_opacity'
         sendResponse opacity: app.opacity
+    else if request.type == 'get_current_color'
+        sendResponse rgba_string: get_current_rgba()
     else if request.type == 'update_current_opacity'
         app.opacity = request.opacity
         # only applied to current tab, for realtime updates
         overlay sender.tab
-    else if request.type == 'get_current_color'
-        sendResponse color: get_current_rgba()
