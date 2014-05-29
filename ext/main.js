@@ -75,6 +75,7 @@ S = require('./sun_altitude.coffee');
 app = {
   opacity: 0.5,
   temperature: 3600,
+  color: {},
   css: true,
   colors: {
     tungsten: 2700,
@@ -103,25 +104,25 @@ altitude_to_temperature = function(altitude) {
   }
 };
 
-overlay = function(color, tabid) {
+overlay = function(tab) {
   var rgba;
-  rgba = Math.floor(color.r) + ", " + Math.floor(color.g) + ", " + Math.floor(color.b) + ", " + app.opacity;
+  rgba = Math.floor(app.color.r) + ", ";
+  rgba += Math.floor(app.color.g) + ", ";
+  rgba += Math.floor(app.color.b) + ", " + app.opacity;
   if (app.css) {
-    return chrome.tabs.insertCSS(tabid, {
+    return chrome.tabs.insertCSS(tab.id, {
       code: css_code(rgba)
     }, function() {});
   }
 };
 
 update_tabs = function() {
-  var color;
-  color = T.get_color(app.temperature);
   return chrome.tabs.query({}, function(tabs) {
     var tab, _i, _len, _results;
     _results = [];
     for (_i = 0, _len = tabs.length; _i < _len; _i++) {
       tab = tabs[_i];
-      _results.push(overlay(color, tab.id));
+      _results.push(overlay(tab));
     }
     return _results;
   });
@@ -136,7 +137,8 @@ update_temperature = function(location) {
   var altitude, date;
   date = new Date();
   altitude = S.get_sun_altitude(date, location.coords.longitude, location.coords.latitude);
-  return app.temperature = altitude_to_temperature(altitude);
+  app.temperature = altitude_to_temperature(altitude);
+  return app.color = T.get_color(app.temperature);
 };
 
 update = function(alarm) {

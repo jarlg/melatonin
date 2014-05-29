@@ -4,6 +4,7 @@ S = require './sun_altitude.coffee'
 app =
     opacity: 0.5,
     temperature: 3600,
+    color: {},
     css: true, # if not, jsInject
     colors:
         tungsten: 2700,     # altitude < 0 deg
@@ -22,15 +23,16 @@ altitude_to_temperature = (altitude) ->
     else if altitude < 75 then app.colors.daylight
     else app.colors.noon
 
-overlay = (color, tabid) ->
-    rgba = Math.floor(color.r) + ", " + Math.floor(color.g) + ", " + Math.floor(color.b) + ", " + app.opacity;
+overlay = (tab) ->
+    rgba  = Math.floor(app.color.r) + ", "
+    rgba += Math.floor(app.color.g) + ", "
+    rgba += Math.floor(app.color.b) + ", " + app.opacity
     if app.css
-        chrome.tabs.insertCSS tabid, code: css_code(rgba), ->
+        chrome.tabs.insertCSS tab.id, code: css_code(rgba), ->
 
 update_tabs = ->
-    color = T.get_color app.temperature
     chrome.tabs.query {}, (tabs) ->
-        overlay(color, tab.id) for tab in tabs
+        overlay(tab) for tab in tabs
 
 update_app = (location) ->
     update_temperature location
@@ -44,6 +46,7 @@ update_temperature = (location) ->
         location.coords.latitude
     )
     app.temperature = altitude_to_temperature altitude
+    app.color = T.get_color app.temperature
 
 update = (alarm) ->
     if navigator.geolocation
