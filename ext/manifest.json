@@ -26,7 +26,6 @@
     "content_scripts": [{
         "matches": ["<all_urls>"],
         "js": ["content_script.js"],
-        "css": ["overlay.css"],
         "match_about_blank": true, // no effect
         "run_at": "document_end"
     }],

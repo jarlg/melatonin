@@ -163,12 +163,8 @@ module.exports = jd;
 
 
 },{}],4:[function(require,module,exports){
-var B, S, T, init, initial_config,
+var B, init, initial_config,
   __hasProp = {}.hasOwnProperty;
-
-S = require('./sun_altitude.coffee');
-
-T = require('./temperature_to_color.coffee');
 
 B = require('./background_helpers.coffee');
 
@@ -237,12 +233,8 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
   }
 });
 
-chrome.runtime.onConnect.addListener(function(port) {
-  return console.assert(port.name === 'app');
-});
 
-
-},{"./background_helpers.coffee":1,"./sun_altitude.coffee":5,"./temperature_to_color.coffee":6}],5:[function(require,module,exports){
+},{"./background_helpers.coffee":1}],5:[function(require,module,exports){
 var H, J, obj;
 
 J = require('./julian_date.coffee');

@@ -1,5 +1,3 @@
-S = require './sun_altitude.coffee'
-T = require './temperature_to_color.coffee'
 B = require './background_helpers.coffee'
 
 initial_config = 
@@ -41,11 +39,3 @@ chrome.runtime.onMessage.addListener (request, sender, sendMessage) ->
         console.log request.value
     else if request.type is 'update'
         B.update_position()
-
-chrome.runtime.onConnect.addListener (port) ->
-    console.assert (port.name == 'app')
-
-    # on closing the popup, apply final result to all tabs
-    # but since we're now applying all updates instantly
-    # across all tabs, it's redudant
-    #port.onDisconnect.addListener B.overlay_all()

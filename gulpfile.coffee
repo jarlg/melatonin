@@ -5,8 +5,7 @@ source = require 'vinyl-source-stream'
 
 static_files = [
     './src/index.html',
-    './src/style.css',
-    './src/overlay.css'
+    './src/style.css'
 ]
 
 coffee_source_files = [

@@ -12,6 +12,3 @@ sun_altitude.addEventListener 'click', (event) ->
     chrome.runtime.sendMessage type: 'update', ->
         chrome.storage.local.get 'altitude', (item) ->
             sun_altitude.innerHTML = item['altitude']
-
-#hack to let main.js know when extension window closes
-port = chrome.runtime.connect name: 'app'
