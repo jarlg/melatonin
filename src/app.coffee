@@ -2,13 +2,16 @@ opacity_input = document.getElementById 'opacity'
 sun_altitude = document.getElementById 'altitude'
 
 chrome.storage.local.get ['opacity', 'altitude'], (items) ->
-    console.log 'opacity: %s, altitude: %s', items['opacity'], items['altitude']
     opacity_input.value = items['opacity']
-    sun_altitude.innerHTML = items['altitude']
+    sun_altitude.innerHTML = items['altitude'].toFixed(0)
 
 opacity_input.addEventListener 'input', (event) ->
-    console.log 'updating opacity'
     chrome.storage.local.set 'opacity': opacity_input.value, -> 
+
+sun_altitude.addEventListener 'click', (event) ->
+    chrome.runtime.sendMessage type: 'update', ->
+        chrome.storage.local.get 'altitude', (item) ->
+            sun_altitude.innerHTML = item['altitude']
 
 #hack to let main.js know when extension window closes
 port = chrome.runtime.connect name: 'app'

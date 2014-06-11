@@ -1,33 +1,20 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var S, obj,
+var S, T, obj,
   __hasProp = {}.hasOwnProperty;
 
 S = require('./sun_altitude.coffee');
 
+T = require('./temperature_to_color.coffee');
+
 obj = {
-  bind_storage_events: function() {
-    return chrome.storage.onChanged.addListener(function(changes, namespace) {
-      var key, val, _results;
-      _results = [];
-      for (key in changes) {
-        if (!__hasProp.call(changes, key)) continue;
-        val = changes[key];
-        _results.push((function(key, val, namespace) {
-          console.log('storage key %s in namespace %s changed' + ' from %s to %s', key, namespace, val.oldValue, val.newValue);
-          if (key === 'latitude' || key === 'longitude' && (val.newValue != null)) {
-            return chrome.storage.local.set({
-              'altitude': S.get_sun_altitude(new Date(), changes['longitude'].newValue, changes['latitude'].newValue)
-            }, function() {});
-          }
-        })(key, val, namespace));
-      }
-      return _results;
-    });
-  },
   overlay: function(tab) {
-    return chrome.tabs.sendMessage(tab.id, {
-      type: 'update_color'
-    });
+    if (tab != null) {
+      return chrome.tabs.sendMessage(tab.id, {
+        type: 'update_color'
+      });
+    } else {
+      return this.overlay_all();
+    }
   },
   overlay_all: function() {
     return chrome.tabs.query({}, (function(_this) {
@@ -42,6 +29,52 @@ obj = {
       };
     })(this));
   },
+  bind_storage_events: function() {
+    return chrome.storage.onChanged.addListener((function(_this) {
+      return function(changes, namespace) {
+        var key, val, _results;
+        _results = [];
+        for (key in changes) {
+          if (!__hasProp.call(changes, key)) continue;
+          val = changes[key];
+          _results.push((function(key, val, namespace) {
+            var c;
+            console.log('updated %s from %s to %s', key, val.oldValue, val.newValue);
+            if (key === 'last_update') {
+              return chrome.storage.local.get(['longitude', 'latitude'], function(items) {
+                return chrome.storage.local.set({
+                  'altitude': S.get_sun_altitude(new Date(), items['longitude'], items['latitude'])
+                }, function() {});
+              });
+            } else if (key === 'altitude') {
+              return chrome.storage.local.get('temperature_map', function(item) {
+                return chrome.storage.local.set({
+                  'temperature': _this.alt_to_temp(val.newValue, item['temperature_map'])
+                }, function() {});
+              });
+            } else if (key === 'temperature') {
+              c = T.get_color(val.newValue);
+              return chrome.storage.local.set({
+                'rgb': c.r + ", " + c.g + ", " + c.b
+              }, function() {});
+            } else if (key === 'rgb') {
+              return _this.overlay_all();
+            } else if (key === 'opacity') {
+              return _this.overlay();
+            }
+          })(key, val, namespace));
+        }
+        return _results;
+      };
+    })(this));
+  },
+  alt_to_temp: function(alt, map) {
+    if (alt < 0) {
+      return map.night;
+    } else {
+      return ((90 - alt) * map.night + alt * map.day) / 90;
+    }
+  },
   update_position: function() {
     if (navigator.geolocation != null) {
       return navigator.geolocation.getCurrentPosition((function(loc) {
@@ -49,9 +82,7 @@ obj = {
           'latitude': loc.coords.latitude,
           'longitude': loc.coords.longitude,
           'last_update': Date.now()
-        }, function() {
-          return console.log("updated location");
-        });
+        }, function() {});
       }), function(error) {
         return console.log(error, function() {});
       });
@@ -64,7 +95,7 @@ obj = {
 module.exports = obj;
 
 
-},{"./sun_altitude.coffee":5}],2:[function(require,module,exports){
+},{"./sun_altitude.coffee":5,"./temperature_to_color.coffee":6}],2:[function(require,module,exports){
 var helpers;
 
 helpers = {
@@ -157,6 +188,7 @@ initial_config = {
 
 init = function() {
   var key, _;
+  console.log('init melatonin ext');
   B.bind_storage_events();
   return chrome.storage.local.get((function() {
     var _results;
@@ -168,6 +200,13 @@ init = function() {
     }
     return _results;
   })(), function(items) {
+    var val;
+    console.log('in storage: ');
+    for (key in items) {
+      if (!__hasProp.call(items, key)) continue;
+      val = items[key];
+      console.log('%s : %s', key, val);
+    }
     if (chrome.runtime.lastError) {
       return console.log("error when accessing storage!");
     } else if (items['last_update'] == null) {
@@ -178,7 +217,7 @@ init = function() {
   });
 };
 
-chrome.storage.local.clear(init);
+init();
 
 chrome.alarms.create('update_position', {
   periodInMinutes: 15
@@ -190,9 +229,16 @@ chrome.tabs.onUpdated.addListener(function(tabid, changeInfo, tab) {
   return B.overlay(tab);
 });
 
+chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
+  if (request.type === 'display') {
+    return console.log(request.value);
+  } else if (request.type === 'update') {
+    return B.update_position();
+  }
+});
+
 chrome.runtime.onConnect.addListener(function(port) {
-  console.assert(port.name === 'app');
-  return port.onDisconnect.addListener(B.overlay_all());
+  return console.assert(port.name === 'app');
 });
 
 
@@ -272,9 +318,9 @@ obj = {
       blue = 255;
     }
     return {
-      r: red < 0 ? 0 : red > 255 ? 255 : red,
-      g: green < 0 ? 0 : green > 255 ? 255 : green,
-      b: blue < 0 ? 0 : blue > 255 ? 255 : blue
+      r: red < 0 ? 0 : red > 255 ? 255 : red.toFixed(0),
+      g: green < 0 ? 0 : green > 255 ? 255 : green.toFixed(0),
+      b: blue < 0 ? 0 : blue > 255 ? 255 : blue.toFixed(0)
     };
   }
 };

@@ -6,16 +6,24 @@ opacity_input = document.getElementById('opacity');
 sun_altitude = document.getElementById('altitude');
 
 chrome.storage.local.get(['opacity', 'altitude'], function(items) {
-  console.log('opacity: %s, altitude: %s', items['opacity'], items['altitude']);
   opacity_input.value = items['opacity'];
-  return sun_altitude.innerHTML = items['altitude'];
+  return sun_altitude.innerHTML = items['altitude'].toFixed(0);
 });
 
 opacity_input.addEventListener('input', function(event) {
-  console.log('updating opacity');
   return chrome.storage.local.set({
     'opacity': opacity_input.value
   }, function() {});
+});
+
+sun_altitude.addEventListener('click', function(event) {
+  return chrome.runtime.sendMessage({
+    type: 'update'
+  }, function() {
+    return chrome.storage.local.get('altitude', function(item) {
+      return sun_altitude.innerHTML = item['altitude'];
+    });
+  });
 });
 
 port = chrome.runtime.connect({

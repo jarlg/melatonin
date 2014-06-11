@@ -19,9 +19,9 @@ obj =
             green = 288.1221695283 * Math.pow(green, -0.0755148492)
             blue = 255
     
-        r : if red   < 0 then 0 else if red   > 255 then 255 else red,
-        g : if green < 0 then 0 else if green > 255 then 255 else green,
-        b : if blue  < 0 then 0 else if blue  > 255 then 255 else blue
+        r : if red   < 0 then 0 else if red   > 255 then 255 else red.toFixed(0),
+        g : if green < 0 then 0 else if green > 255 then 255 else green.toFixed(0),
+        b : if blue  < 0 then 0 else if blue  > 255 then 255 else blue.toFixed(0)
 
 
 module.exports = obj

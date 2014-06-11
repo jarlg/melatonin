@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Melatonin",
-    "version": "0.1",
+    "version": "0.2",
 
     "description": "Melatonin for Chrome - keep your browser in tune with the sun!",
 
@@ -15,19 +15,19 @@
         "default_icon": "./thin32.png"
     },
 
-    "permissions": [
+    "permissions": [ // "idle" for power state monitoring
         "<all_urls>",
         "geolocation",
         "alarms",
         "tabs",
-        "storage",
-        "idle"
+        "storage"
     ],
 
     "content_scripts": [{
         "matches": ["<all_urls>"],
         "js": ["content_script.js"],
-        "match_about_blank": true,
+        "css": ["overlay.css"],
+        "match_about_blank": true, // no effect
         "run_at": "document_end"
     }],
 
