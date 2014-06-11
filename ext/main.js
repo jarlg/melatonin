@@ -1,4 +1,70 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var S, obj,
+  __hasProp = {}.hasOwnProperty;
+
+S = require('./sun_altitude.coffee');
+
+obj = {
+  bind_storage_events: function() {
+    return chrome.storage.onChanged.addListener(function(changes, namespace) {
+      var key, val, _results;
+      _results = [];
+      for (key in changes) {
+        if (!__hasProp.call(changes, key)) continue;
+        val = changes[key];
+        _results.push((function(key, val, namespace) {
+          console.log('storage key %s in namespace %s changed' + ' from %s to %s', key, namespace, val.oldValue, val.newValue);
+          if (key === 'latitude' || key === 'longitude' && (val.newValue != null)) {
+            return chrome.storage.local.set({
+              'altitude': S.get_sun_altitude(new Date(), changes['longitude'].newValue, changes['latitude'].newValue)
+            }, function() {});
+          }
+        })(key, val, namespace));
+      }
+      return _results;
+    });
+  },
+  overlay: function(tab) {
+    return chrome.tabs.sendMessage(tab.id, {
+      type: 'update_color'
+    });
+  },
+  overlay_all: function() {
+    return chrome.tabs.query({}, (function(_this) {
+      return function(tabs) {
+        var tab, _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = tabs.length; _i < _len; _i++) {
+          tab = tabs[_i];
+          _results.push(_this.overlay(tab));
+        }
+        return _results;
+      };
+    })(this));
+  },
+  update_position: function() {
+    if (navigator.geolocation != null) {
+      return navigator.geolocation.getCurrentPosition((function(loc) {
+        return chrome.storage.local.set({
+          'latitude': loc.coords.latitude,
+          'longitude': loc.coords.longitude,
+          'last_update': Date.now()
+        }, function() {
+          return console.log("updated location");
+        });
+      }), function(error) {
+        return console.log(error, function() {});
+      });
+    } else {
+      return console.log('geolocation unavailable');
+    }
+  }
+};
+
+module.exports = obj;
+
+
+},{"./sun_altitude.coffee":5}],2:[function(require,module,exports){
 var helpers;
 
 helpers = {
@@ -48,7 +114,7 @@ helpers = {
 module.exports = helpers;
 
 
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 var jd;
 
 jd = {
@@ -65,181 +131,72 @@ jd = {
 module.exports = jd;
 
 
-},{}],3:[function(require,module,exports){
-var S, T, altitude_to_temperature, app, css_code, get_current_rgba, insert_css, js_update_overlay, overlay, toggle_css, update, update_app, update_tabs, update_temperature;
-
-T = require('./temperature_to_color.coffee');
+},{}],4:[function(require,module,exports){
+var B, S, T, init, initial_config,
+  __hasProp = {}.hasOwnProperty;
 
 S = require('./sun_altitude.coffee');
 
-app = {
+T = require('./temperature_to_color.coffee');
+
+B = require('./background_helpers.coffee');
+
+initial_config = {
+  last_update: 0,
   opacity: 0.5,
-  temperature: 3600,
-  color: {},
-  css: false,
-  colors: {
-    tungsten: 2700,
-    halogen: 3600,
-    fluorescent: 4500,
-    daylight: 5400,
-    noon: 6300
+  temperature: 2700,
+  altitude: 0,
+  rgb: null,
+  latitude: null,
+  longitude: null,
+  temperature_map: {
+    night: 2700,
+    day: 6300
   }
 };
 
-css_code = function(rgba) {
-  return "body:after { content: ''; height: 100vh; width: 100vw; z-index: 999999; position: fixed; background: rgba(" + rgba + "); top: 0; left: 0; pointer-events: none; }";
-};
-
-get_current_rgba = function() {
-  var rgba;
-  rgba = Math.floor(app.color.r) + ", ";
-  rgba += Math.floor(app.color.g) + ", ";
-  return rgba += Math.floor(app.color.b) + ", " + app.opacity;
-};
-
-altitude_to_temperature = function(altitude) {
-  if (altitude < 0) {
-    return app.colors.tungsten;
-  } else if (altitude < 15) {
-    return app.colors.halogen;
-  } else if (altitude < 35) {
-    return app.colors.fluorescent;
-  } else if (altitude < 75) {
-    return app.colors.daylight;
-  } else {
-    return app.colors.noon;
-  }
-};
-
-insert_css = function(tabid) {
-  console.log(tabid);
-  return chrome.tabs.insertCSS(tabid, {
-    code: css_code(get_current_rgba(), function() {})
-  });
-};
-
-js_update_overlay = function(tabid) {
-  return chrome.tabs.sendMessage(tabid, {
-    type: 'update_color',
-    rgba_string: get_current_rgba()
-  }, function() {});
-};
-
-overlay = function(tab) {
-  if (app.css) {
-    return insert_css((tab != null ? tab.id : null));
-  } else if (tab != null) {
-    return js_update_overlay(tab.id);
-  } else {
-    return chrome.tabs.query({
-      active: true,
-      currentWindow: true
-    }, function(tabs) {
-      return js_update_overlay(tabs[0].id);
-    });
-  }
-};
-
-update_tabs = function() {
-  return chrome.tabs.query({}, function(tabs) {
-    var tab, _i, _len, _results;
+init = function() {
+  var key, _;
+  B.bind_storage_events();
+  return chrome.storage.local.get((function() {
+    var _results;
     _results = [];
-    for (_i = 0, _len = tabs.length; _i < _len; _i++) {
-      tab = tabs[_i];
-      _results.push(overlay(tab));
+    for (key in initial_config) {
+      if (!__hasProp.call(initial_config, key)) continue;
+      _ = initial_config[key];
+      _results.push(key);
     }
     return _results;
+  })(), function(items) {
+    if (chrome.runtime.lastError) {
+      return console.log("error when accessing storage!");
+    } else if (items['last_update'] == null) {
+      return chrome.storage.local.set(initial_config, init);
+    } else if (Date.now() - items['last_update'] > 1000000) {
+      return B.update_position();
+    }
   });
 };
 
-update_app = function(location) {
-  update_temperature(location);
-  return update_tabs();
-};
+chrome.storage.local.clear(init);
 
-update_temperature = function(location) {
-  var altitude, date;
-  date = new Date();
-  altitude = S.get_sun_altitude(date, location.coords.longitude, location.coords.latitude);
-  app.temperature = altitude_to_temperature(altitude);
-  return app.color = T.get_color(app.temperature);
-};
-
-update = function(alarm) {
-  if (navigator.geolocation) {
-    return navigator.geolocation.getCurrentPosition(update_app, console.log, {});
-  } else {
-    return console.log("No geolocation. Can't update color temperature.");
-  }
-};
-
-update();
-
-chrome.alarms.create('update', {
-  periodInMinutes: 20
+chrome.alarms.create('update_position', {
+  periodInMinutes: 15
 });
 
-chrome.alarms.onAlarm.addListener(update);
+chrome.alarms.onAlarm.addListener(B.update_position);
 
 chrome.tabs.onUpdated.addListener(function(tabid, changeInfo, tab) {
-  return overlay(tab);
+  return B.overlay(tab);
 });
 
 chrome.runtime.onConnect.addListener(function(port) {
   console.assert(port.name === 'app');
-  return port.onDisconnect.addListener(update_tabs);
+  return port.onDisconnect.addListener(B.overlay_all());
 });
 
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.type === 'get_current_opacity') {
-    return sendResponse({
-      opacity: app.opacity
-    });
-  } else if (request.type === 'get_current_color') {
-    return sendResponse({
-      rgba_string: get_current_rgba()
-    });
-  } else if (request.type === 'get_css_opt') {
-    return sendResponse({
-      css: app.css
-    });
-  } else if (request.type === 'update_current_opacity') {
-    app.opacity = request.opacity;
-    return overlay(sender.tab);
-  } else if (request.type === 'update_css_opt') {
-    if (app.css !== request.css) {
-      app.css = request.css;
-      toggle_css();
-      return overlay(sender.tab);
-    }
-  }
-});
 
-toggle_css = function() {
-  return chrome.tabs.query({}, function(tabs) {
-    var tab, _i, _len, _results;
-    _results = [];
-    for (_i = 0, _len = tabs.length; _i < _len; _i++) {
-      tab = tabs[_i];
-      _results.push((function(tab) {
-        if (app.css) {
-          return chrome.tabs.sendMessage(tab.id, {
-            type: 'update_color',
-            rgba_string: '0,0,0,0'
-          });
-        } else {
-          return chrome.tabs.insertCSS(tab.id, {
-            code: css_code('0,0,0,0')
-          });
-        }
-      })(tab));
-    }
-    return _results;
-  });
-};
-
-
-},{"./sun_altitude.coffee":4,"./temperature_to_color.coffee":5}],4:[function(require,module,exports){
+},{"./background_helpers.coffee":1,"./sun_altitude.coffee":5,"./temperature_to_color.coffee":6}],5:[function(require,module,exports){
 var H, J, obj;
 
 J = require('./julian_date.coffee');
@@ -290,7 +247,7 @@ obj = {
 module.exports = obj;
 
 
-},{"./helpers.coffee":1,"./julian_date.coffee":2}],5:[function(require,module,exports){
+},{"./helpers.coffee":2,"./julian_date.coffee":3}],6:[function(require,module,exports){
 var obj;
 
 obj = {
@@ -325,4 +282,4 @@ obj = {
 module.exports = obj;
 
 
-},{}]},{},[3])
+},{}]},{},[4])

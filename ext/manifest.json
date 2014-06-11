@@ -3,18 +3,25 @@
     "name": "Melatonin",
     "version": "0.1",
 
-    "description": "F.lux for Chrome",
+    "description": "Melatonin for Chrome - keep your browser in tune with the sun!",
+
+    "icons": {
+        "48": "./thin48.png",
+        "128": "./thin128.png"
+    },
 
     "browser_action": {
-        "default_popup": "index.html"
+        "default_popup": "index.html",
+        "default_icon": "./thin32.png"
     },
 
     "permissions": [
-        "http://*/",
-        "https://*/",
+        "<all_urls>",
         "geolocation",
         "alarms",
-        "tabs"
+        "tabs",
+        "storage",
+        "idle"
     ],
 
     "content_scripts": [{
@@ -25,7 +32,9 @@
     }],
 
     "background": {
-        "persistent": true,
+        "persistent": false,
         "scripts": ["main.js"]
-    }
+    },
+
+    "offline_enabled": true
 }

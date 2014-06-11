@@ -5,6 +5,8 @@ overlay = document.createElement('div');
 
 overlay.id = 'melatonin-overlay';
 
+update_color(overlay);
+
 overlay.style.width = "100vw";
 
 overlay.style.height = "100vh";
@@ -21,25 +23,20 @@ overlay.style["pointer-events"] = "none";
 
 document.body.appendChild(overlay);
 
-update_color = function(rgba_string) {
-  return document.getElementById('melatonin-overlay').style.backgroundColor = "rgba(" + rgba_string + ")";
-};
-
-chrome.runtime.sendMessage({
-  type: 'get_css_opt'
-}, function(response) {
-  if (!response.css) {
-    return chrome.runtime.sendMessage({
-      type: 'get_current_color'
-    }, function(response) {
-      return update_color(response.rgba_string);
-    });
+update_color = function(element) {
+  if (element == null) {
+    element = document.getElementById('melatonin-overlay');
   }
-});
+  return chrome.storage.local.get(['rgb', 'opacity'], (function(items) {
+    var rgba_string;
+    rgba_string = items['rgb'] + ", " + items['opacity'];
+    return element.style.backgroundColor = "rgba(" + rgba_string + ")";
+  }));
+};
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.type === 'update_color') {
-    return update_color(request.rgba_string);
+    return update_color();
   }
 });
 

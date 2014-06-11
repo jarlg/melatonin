@@ -1,7 +1,6 @@
-# to be injected by content_script or executeScript
-
 overlay = document.createElement 'div'
 overlay.id = 'melatonin-overlay'
+update_color overlay
 overlay.style.width = "100vw"
 overlay.style.height = "100vh"
 overlay.style.position = "fixed"
@@ -11,18 +10,17 @@ overlay.style["z-index"] = 99999
 overlay.style["pointer-events"] = "none"
 document.body.appendChild overlay
 
-update_color = (rgba_string) ->
-    document.getElementById 'melatonin-overlay'
-        .style.backgroundColor = "rgba(" + rgba_string + ")"
-
-chrome.runtime.sendMessage
-    type: 'get_css_opt',
-    (response) ->
-        if not response.css
-            chrome.runtime.sendMessage 
-                type: 'get_current_color',
-                (response) -> update_color response.rgba_string
+update_color = (element) ->
+    if not element?
+        element = document.getElementById 'melatonin-overlay' 
+    chrome.storage.local.get(
+        ['rgb', 'opacity'],
+        ((items) -> 
+            rgba_string = items['rgb'] + ", " + items['opacity']
+            element.style.backgroundColor = "rgba(" + rgba_string + ")"
+        )
+    )
 
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     if request.type == 'update_color'
-        update_color request.rgba_string
+        update_color()
