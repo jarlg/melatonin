@@ -1,9 +1,10 @@
 helpers = 
+    # suppose max - min is the size of interval
     between: (min, max, ref) ->
         while ref < min
-            ref += 360
+            ref += max - min
         while max < ref
-            ref -= 360
+            ref -= max - min
         ref
 
     angleToQuadrant: (angle) ->

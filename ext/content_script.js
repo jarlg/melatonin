@@ -4,7 +4,8 @@ var init_overlay, update_color;
 init_overlay = function() {
   var overlay;
   overlay = document.createElement('div');
-  update_color(overlay, false);
+  overlay.style["transition"] = "background-color 0.2s";
+  update_color(overlay);
   overlay.id = 'melatonin-overlay';
   overlay.style.width = "100vw";
   overlay.style.height = "100vh";
@@ -16,19 +17,14 @@ init_overlay = function() {
   return document.body.appendChild(overlay);
 };
 
-update_color = function(element, transition) {
+update_color = function(element) {
+  if (element == null) {
+    element = document.getElementById('melatonin-overlay');
+  }
   return chrome.storage.local.get(['rgb', 'opacity'], function(items) {
     var rgba_string;
-    if (element == null) {
-      element = document.getElementById('melatonin-overlay');
-    }
-    if (transition) {
-      element.style["transition"] = "background-color 2s";
-    } else {
-      element.style["transition"] = "background-color 0s";
-    }
     rgba_string = items['rgb'] + ", " + items['opacity'];
-    return element.style.backgroundColor = "rgba(" + rgba_string + ")";
+    return element.style['background-color'] = "rgba(" + rgba_string + ")";
   });
 };
 
@@ -36,7 +32,7 @@ init_overlay();
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.type === 'update_color') {
-    return update_color(null, true);
+    return update_color();
   }
 });
 

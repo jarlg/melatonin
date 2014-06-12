@@ -59,10 +59,11 @@ obj =
                         @overlay()
 
     alt_to_temp: (alt, map) ->
-        if alt < 0
+        if alt < -15
             map.night
         else # linear
-            ((90 - alt) * map.night + alt * map.day) / 90
+            t_alt = alt + 15 # TODO proper workaround
+            ((105 - alt) * map.night + alt * map.day) / 105
 
     update_position: ->
         if navigator.geolocation?

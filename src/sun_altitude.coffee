@@ -29,7 +29,8 @@ obj =
             right_ascension += 90
             right_ascension -= 360 if right_ascension > 360
 
-        hour_angle = H.between 0, 360, @greenwich_sidereal_time(jd) - longitude - right_ascension
+        # +latitude; positive east
+        hour_angle = H.between 0, 360, @greenwich_sidereal_time(jd) + longitude - right_ascension
 
         declination = H.angle_asin(H.angle_sin(axial_tilt) * H.angle_cos(ecliptic_long))
 
@@ -69,6 +70,7 @@ obj =
         # in hours (degrees / 15). If local position is east of greenwich, then
         # add, else subtract.
 
+        # in degrees!
         gast * 15
 
 

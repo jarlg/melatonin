@@ -69,10 +69,12 @@ obj = {
     })(this));
   },
   alt_to_temp: function(alt, map) {
-    if (alt < 0) {
+    var t_alt;
+    if (alt < -15) {
       return map.night;
     } else {
-      return ((90 - alt) * map.night + alt * map.day) / 90;
+      t_alt = alt + 15;
+      return ((105 - alt) * map.night + alt * map.day) / 105;
     }
   },
   update_position: function() {
@@ -101,10 +103,10 @@ var helpers;
 helpers = {
   between: function(min, max, ref) {
     while (ref < min) {
-      ref += 360;
+      ref += max - min;
     }
     while (max < ref) {
-      ref -= 360;
+      ref -= max - min;
     }
     return ref;
   },
@@ -258,7 +260,7 @@ obj = {
         right_ascension -= 360;
       }
     }
-    hour_angle = H.between(0, 360, this.greenwich_sidereal_time(jd) - longitude - right_ascension);
+    hour_angle = H.between(0, 360, this.greenwich_sidereal_time(jd) + longitude - right_ascension);
     declination = H.angle_asin(H.angle_sin(axial_tilt) * H.angle_cos(ecliptic_long));
     return H.angle_asin(H.angle_sin(longitude) * H.angle_sin(declination) + H.angle_cos(longitude) * H.angle_cos(declination) * H.angle_cos(hour_angle));
   },

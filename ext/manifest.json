@@ -4,10 +4,12 @@
     "version": "0.2",
 
     "description": "Melatonin for Chrome - keep your browser in tune with the sun!",
-
     "icons": {
+        "16": "./mid16.png",
         "48": "./thin48.png",
-        "128": "./thin128.png"
+        "128": "./thin128.png",
+        "256": "./thin256.png",
+        "512": "./thin512.png"
     },
 
     "browser_action": {
@@ -15,7 +17,7 @@
         "default_icon": "./thin32.png"
     },
 
-    "permissions": [ // "idle" for power state monitoring
+    "permissions": [
         "<all_urls>",
         "geolocation",
         "alarms",
@@ -26,14 +28,12 @@
     "content_scripts": [{
         "matches": ["<all_urls>"],
         "js": ["content_script.js"],
-        "match_about_blank": true, // no effect
+        "match_about_blank": true,
         "run_at": "document_end"
     }],
 
     "background": {
         "persistent": false,
         "scripts": ["main.js"]
-    },
-
-    "offline_enabled": true
+    }
 }
