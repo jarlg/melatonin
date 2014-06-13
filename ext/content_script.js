@@ -12,7 +12,7 @@ init_overlay = function() {
   overlay.style.position = "fixed";
   overlay.style.top = 0;
   overlay.style.left = 0;
-  overlay.style["z-index"] = 99999;
+  overlay.style["z-index"] = 9999999999;
   overlay.style["pointer-events"] = "none";
   return document.body.appendChild(overlay);
 };
