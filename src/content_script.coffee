@@ -16,9 +16,12 @@ update_color = (element) ->
     if not element?
         element = document.getElementById 'melatonin-overlay' 
     chrome.storage.local.get(
-        ['rgb', 'opacity'],
+        ['on', 'rgb', 'opacity'],
         (items) -> 
-            rgba_string = items['rgb'] + ", " + items['opacity']
+            if items['on']
+                rgba_string = items['rgb'] + ", " + items['opacity']
+            else
+                rgba_string = items['rgb'] + ", " + '0'
             element.style['background-color'] = "rgba(" + rgba_string + ")"
     )
 

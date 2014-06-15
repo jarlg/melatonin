@@ -21,9 +21,13 @@ update_color = function(element) {
   if (element == null) {
     element = document.getElementById('melatonin-overlay');
   }
-  return chrome.storage.local.get(['rgb', 'opacity'], function(items) {
+  return chrome.storage.local.get(['on', 'rgb', 'opacity'], function(items) {
     var rgba_string;
-    rgba_string = items['rgb'] + ", " + items['opacity'];
+    if (items['on']) {
+      rgba_string = items['rgb'] + ", " + items['opacity'];
+    } else {
+      rgba_string = items['rgb'] + ", " + '0';
+    }
     return element.style['background-color'] = "rgba(" + rgba_string + ")";
   });
 };

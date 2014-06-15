@@ -61,6 +61,8 @@ obj = {
               return _this.overlay_all();
             } else if (key === 'opacity') {
               return _this.overlay();
+            } else if (key === 'on') {
+              return _this.overlay_all();
             }
           })(key, val, namespace));
         }
@@ -171,6 +173,7 @@ var B, init, initial_config,
 B = require('./background_helpers.coffee');
 
 initial_config = {
+  on: true,
   last_update: 0,
   opacity: 0.5,
   temperature: 2700,
@@ -198,7 +201,7 @@ init = function() {
     }
     return _results;
   })(), function(items) {
-    var val;
+    var val, _fn;
     console.log('in storage: ');
     for (key in items) {
       if (!__hasProp.call(items, key)) continue;
@@ -206,10 +209,23 @@ init = function() {
       console.log('%s : %s', key, val);
     }
     if (chrome.runtime.lastError) {
-      return console.log("error when accessing storage!");
-    } else if (items['last_update'] == null) {
-      return chrome.storage.local.set(initial_config, init);
-    } else if (Date.now() - items['last_update'] > 1000000) {
+      console.log("error when accessing storage!");
+      return;
+    }
+    _fn = function(key, val, items) {
+      var obj;
+      if (items[key] == null) {
+        obj = {};
+        obj[key] = val;
+        return chrome.storage.local.set(obj);
+      }
+    };
+    for (key in initial_config) {
+      if (!__hasProp.call(initial_config, key)) continue;
+      val = initial_config[key];
+      _fn(key, val, items);
+    }
+    if (Date.now() - items['last_update'] > 1000000) {
       return B.update_position();
     }
   });

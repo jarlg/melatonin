@@ -57,6 +57,8 @@ obj =
                         @overlay_all()
                     else if key is 'opacity'
                         @overlay()
+                    else if key is 'on'
+                        @overlay_all()
 
     alt_to_temp: (alt, map) ->
         if alt < -15

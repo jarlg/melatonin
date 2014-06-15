@@ -1,6 +1,7 @@
 B = require './background_helpers.coffee'
 
 initial_config = 
+    on: true,
     last_update: 0,
     opacity: 0.5,
     temperature: 2700,
@@ -22,9 +23,15 @@ init = ->
                 console.log '%s : %s', key, val
             if chrome.runtime.lastError 
                 console.log "error when accessing storage!"
-            else if not items['last_update']?
-                chrome.storage.local.set initial_config, init
-            else if Date.now() - items['last_update'] > 1000000 # ~ 15min
+                return
+            # check if any keys are not set, and initialize them
+            for own key, val of initial_config
+                do (key, val, items) ->
+                    if not items[key]?
+                        obj = {}
+                        obj[key] = val
+                        chrome.storage.local.set obj
+            if Date.now() - items['last_update'] > 1000000 # ~ 15min
                 B.update_position()
 
 init()
