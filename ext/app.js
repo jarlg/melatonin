@@ -8,11 +8,9 @@ on_off_toggle = document.getElementById('on-off-toggle');
 chrome.storage.local.get(['on', 'opacity'], function(items) {
   opacity_input.value = items['opacity'];
   if (items['on']) {
-    on_off_toggle.innerHTML = 'off';
-    return on_off_toggle.style['background-color'] = "red";
+    return on_off_toggle.checked = true;
   } else {
-    on_off_toggle.innerHTML = 'on';
-    return on_off_toggle.style['background-color'] = "green";
+    return on_off_toggle.checked = false;
   }
 });
 
@@ -23,19 +21,9 @@ opacity_input.addEventListener('input', function(event) {
 });
 
 on_off_toggle.addEventListener('click', function(event) {
-  if (on_off_toggle.innerHTML === 'on') {
-    on_off_toggle.innerHTML = 'off';
-    on_off_toggle.style['background-color'] = "green";
-    return chrome.storage.local.set({
-      'on': true
-    }, function() {});
-  } else {
-    on_off_toggle.innerHTML = 'on';
-    on_off_toggle.style['background-color'] = "green";
-    return chrome.storage.local.set({
-      'on': false
-    }, function() {});
-  }
+  return chrome.storage.local.set({
+    'on': on_off_toggle.checked
+  }, function() {});
 });
 
 
