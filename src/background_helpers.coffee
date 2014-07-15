@@ -31,8 +31,8 @@ obj =
                                 chrome.storage.local.set(
                                     'altitude': S.get_sun_altitude(
                                         new Date(),
-                                        items['longitude'],
-                                        items['latitude']
+                                        items['latitude'],
+                                        items['longitude']
                                     ), ->
                                 )
                         )
@@ -61,10 +61,10 @@ obj =
                         @overlay_all()
 
     alt_to_temp: (alt, map) ->
-        if alt < -15
+        if alt < 0
             map.night
         else # linear
-            t_alt = alt + 15 # TODO proper workaround
+            t_alt = alt 
             ((105 - alt) * map.night + alt * map.day) / 105
 
     update_position: ->
@@ -76,9 +76,11 @@ obj =
                         'last_update': Date.now(),
                         ->
                     )
-            ), (error) -> console.log error,
-                ->
+            ), ((err) -> 
+                console.log "Geolocation unavailable. Using previous values"
+                chrome.storage.local.set 'last_update': Date.now(), ->
+            ), ->
         else
-            console.log 'geolocation unavailable'
+            console.log 'Geolocation unavailable'
 
 module.exports = obj

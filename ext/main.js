@@ -43,7 +43,7 @@ obj = {
             if (key === 'last_update') {
               return chrome.storage.local.get(['longitude', 'latitude'], function(items) {
                 return chrome.storage.local.set({
-                  'altitude': S.get_sun_altitude(new Date(), items['longitude'], items['latitude'])
+                  'altitude': S.get_sun_altitude(new Date(), items['latitude'], items['longitude'])
                 }, function() {});
               });
             } else if (key === 'altitude') {
@@ -72,10 +72,10 @@ obj = {
   },
   alt_to_temp: function(alt, map) {
     var t_alt;
-    if (alt < -15) {
+    if (alt < 0) {
       return map.night;
     } else {
-      t_alt = alt + 15;
+      t_alt = alt;
       return ((105 - alt) * map.night + alt * map.day) / 105;
     }
   },
@@ -87,11 +87,14 @@ obj = {
           'longitude': loc.coords.longitude,
           'last_update': Date.now()
         }, function() {});
-      }), function(error) {
-        return console.log(error, function() {});
-      });
+      }), (function(err) {
+        console.log("Geolocation unavailable. Using previous values");
+        return chrome.storage.local.set({
+          'last_update': Date.now()
+        }, function() {});
+      }), function() {});
     } else {
-      return console.log('geolocation unavailable');
+      return console.log('Geolocation unavailable');
     }
   }
 };
@@ -103,17 +106,18 @@ module.exports = obj;
 var helpers;
 
 helpers = {
-  between: function(min, max, ref) {
-    while (ref < min) {
-      ref += max - min;
+  between: function(min, max, val) {
+    while (val < min) {
+      val += max - min;
     }
-    while (max < ref) {
-      ref -= max - min;
+    while (max <= val) {
+      val -= max - min;
     }
-    return ref;
+    return val;
   },
   angleToQuadrant: function(angle) {
-    if (0 < angle && angle < 90) {
+    angle = this.between(0, 360, angle);
+    if (angle < 90) {
       return 1;
     } else if (angle < 180) {
       return 2;
@@ -153,13 +157,18 @@ module.exports = helpers;
 var jd;
 
 jd = {
-  get_julian: function(date) {
-    var a, jdn, m, y;
-    a = date.getMonth() < 2 ? 1 : 0;
-    y = date.getFullYear() + 4800 - a;
-    m = (date.getMonth() + 1) + 12 * a - 3;
-    jdn = date.getDate() + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
-    return jdn + (date.getHours() - 12) / 24 + date.getMinutes() / 1440 + date.getSeconds() / 86400;
+  get_julian_day: function(date) {
+    var a, m, y;
+    a = date.getUTCMonth() < 2 ? 1 : 0;
+    y = date.getUTCFullYear() + 4800 - a;
+    m = (date.getUTCMonth() + 1) + 12 * a - 3;
+    return date.getUTCDate() + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+  },
+  get_julian_date: function(date) {
+    return this.get_julian_day(date) + (date.getUTCHours() - 12) / 24 + date.getUTCMinutes() / 1440 + date.getUTCSeconds() / 86400;
+  },
+  get_jdn: function(jd) {
+    return jd - 2451545.0;
   }
 };
 
@@ -225,7 +234,7 @@ init = function() {
       val = initial_config[key];
       _fn(key, val, items);
     }
-    if (Date.now() - items['last_update'] > 1000000) {
+    if (Date.now() - items['last_update'] > 15 * 60 * 1000) {
       return B.update_position();
     }
   });
@@ -260,43 +269,53 @@ J = require('./julian_date.coffee');
 H = require('./helpers.coffee');
 
 obj = {
-  get_sun_altitude: function(date, longitude, latitude) {
-    var axial_tilt, declination, dist_to_sun, ecliptic_long, g, hour_angle, jd, jdn, l, right_ascension;
-    jd = J.get_julian(date);
-    jdn = jd - 2451545.0;
+  axial_tilt: 23.439,
+  get_ecliptic_long: function(l, g) {
+    return l + 1.915 * H.angle_sin(g) + 0.02 * H.angle_sin(2 * g);
+  },
+  get_right_ascension: function(ecliptic_long) {
+    return H.angle_atan(H.angle_cos(this.axial_tilt) * H.angle_tan(ecliptic_long));
+  },
+  get_hour_angle: function(jd, longitude, right_ascension) {
+    return H.between(0, 360, this.get_gst(jd) + longitude - right_ascension);
+  },
+  get_declination: function(ecliptic_long) {
+    return H.angle_asin(H.angle_sin(this.axial_tilt) * H.angle_sin(ecliptic_long));
+  },
+  get_sun_altitude: function(date, latitude, longitude) {
+    var dec, ec_long, g, ha, jd, jdn, l, r_asc;
+    jd = J.get_julian_date(date);
+    jdn = J.get_jdn(jd);
     l = H.between(0, 360, 280.460 + 0.9856474 * jdn);
     g = H.between(0, 360, 357.528 + 0.9856003 * jdn);
-    ecliptic_long = l + 1.915 * H.angle_sin(g) + 0.02 * H.angle_sin(2 * g);
-    dist_to_sun = 1.00014 - 0.01671 * H.angle_cos(g) - 0.00014 * H.angle_cos(2 * g);
-    axial_tilt = 23.4;
-    right_ascension = H.angle_atan(H.angle_cos(axial_tilt) * H.angle_tan(ecliptic_long));
-    while (H.angleToQuadrant(ecliptic_long) !== H.angleToQuadrant(right_ascension)) {
-      right_ascension += 90;
-      if (right_ascension > 360) {
-        right_ascension -= 360;
-      }
+    ec_long = this.get_ecliptic_long(l, g);
+    r_asc = this.get_right_ascension(ec_long);
+    while (H.angleToQuadrant(ec_long) !== H.angleToQuadrant(r_asc)) {
+      r_asc += r_asc < ec_long ? 90 : -90;
     }
-    hour_angle = H.between(0, 360, this.greenwich_sidereal_time(jd) + longitude - right_ascension);
-    declination = H.angle_asin(H.angle_sin(axial_tilt) * H.angle_cos(ecliptic_long));
-    return H.angle_asin(H.angle_sin(longitude) * H.angle_sin(declination) + H.angle_cos(longitude) * H.angle_cos(declination) * H.angle_cos(hour_angle));
+    dec = this.get_declination(ec_long);
+    ha = this.get_hour_angle(jd, longitude, r_asc);
+    return H.angle_asin(H.angle_sin(latitude) * H.angle_sin(dec) + H.angle_cos(latitude) * H.angle_cos(dec) * H.angle_cos(ha));
   },
-  greenwich_sidereal_time: function(jd) {
-    var d, d0, eqeq, gast, gmst, l, last_jd_midnight, omega, ut_hours;
+  get_last_jd_midnight: function(jd) {
     if (jd >= Math.floor(jd + 0.5)) {
-      last_jd_midnight = Math.floor(jd - 1) + 0.5;
+      return Math.floor(jd - 1) + 0.5;
     } else {
-      last_jd_midnight = Math.floor(jd) + 0.5;
+      return Math.floor(jd) + 0.5;
     }
-    ut_hours = 24 * (jd - last_jd_midnight);
-    d = jd - 2451545.0;
-    d0 = last_jd_midnight - 2451545.0;
-    gmst = 6.697374558 + 0.06570982441908 * d0 + 1.00273790935 * ut_hours;
-    gmst = H.between(0, 24, gmst);
-    omega = 125.04 - 0.052954 * d;
-    l = 280.47 + 0.98565 * d;
-    eqeq = H.angle_cos(23.4393 - 0.0000004 * d) * (-0.000319 * H.angle_sin(omega)) - 0.000024 * H.angle_sin(2 * l);
-    gast = gmst - eqeq;
-    return gast * 15;
+  },
+  get_ut_hours: function(jd, last_jd_midnight) {
+    return 24 * (jd - last_jd_midnight);
+  },
+  get_gst_hours: function(jdn_midnight, ut_hours) {
+    var gmst;
+    gmst = 6.697374558 + 0.06570982441908 * jdn_midnight + 1.00273790935 * ut_hours;
+    return H.between(0, 24, gmst);
+  },
+  get_gst: function(jd) {
+    var jdm;
+    jdm = this.get_last_jd_midnight(jd);
+    return 15 * this.get_gst_hours(J.get_jdn(jdm), this.get_ut_hours(jd, jdm));
   }
 };
 

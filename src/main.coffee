@@ -31,7 +31,7 @@ init = ->
                         obj = {}
                         obj[key] = val
                         chrome.storage.local.set obj
-            if Date.now() - items['last_update'] > 1000000 # ~ 15min
+            if Date.now() - items['last_update'] > 15 * 60 * 1000
                 B.update_position()
 
 init()

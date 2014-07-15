@@ -1,14 +1,15 @@
 helpers = 
-    # suppose max - min is the size of interval
-    between: (min, max, ref) ->
-        while ref < min
-            ref += max - min
-        while max < ref
-            ref -= max - min
-        ref
+    # suppose max - min is the size of interval (one cycle)
+    between: (min, max, val) ->
+        while val < min
+            val += max - min
+        while max <= val
+            val -= max - min
+        val
 
     angleToQuadrant: (angle) ->
-        if 0 < angle and angle < 90 then 1
+        angle = @between 0, 360, angle
+        if angle < 90 then 1
         else if angle < 180 then 2
         else if angle < 270 then 3
         else if angle < 360 then 4
