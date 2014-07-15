@@ -65,7 +65,7 @@ obj =
             map.night
         else # linear
             t_alt = alt 
-            ((105 - alt) * map.night + alt * map.day) / 105
+            ((90 - alt) * map.night + alt * map.day) / 90
 
     update_position: ->
         if navigator.geolocation?

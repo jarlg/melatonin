@@ -76,7 +76,7 @@ obj = {
       return map.night;
     } else {
       t_alt = alt;
-      return ((105 - alt) * map.night + alt * map.day) / 105;
+      return ((90 - alt) * map.night + alt * map.day) / 90;
     }
   },
   update_position: function() {
