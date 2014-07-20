@@ -22,8 +22,21 @@ h1 {
     color: rgb(251, 191, 149);
 }
 
+h1 a:hover {
+    text-decoration: none;
+}
+
+h3 {
+    margin: 16pt 0 8pt;
+    color: rgb(251, 191, 149);
+}
+
 p {
     color: rgb(68, 68, 68);
+}
+
+.blog-entry p {
+    text-align: left;
 }
 
 header {
