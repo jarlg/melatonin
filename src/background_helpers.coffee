@@ -77,7 +77,9 @@ obj =
                         ->
                     )
             ), ((err) -> 
-                console.log "Geolocation unavailable. Using previous values"
+                console.log "Geolocation Error:"
+                console.log err
+                console.log "Using previous values."
                 chrome.storage.local.set 'last_update': Date.now(), ->
             ), ->
         else

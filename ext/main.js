@@ -88,7 +88,9 @@ obj = {
           'last_update': Date.now()
         }, function() {});
       }), (function(err) {
-        console.log("Geolocation unavailable. Using previous values");
+        console.log("Geolocation Error:");
+        console.log(err);
+        console.log("Using previous values.");
         return chrome.storage.local.set({
           'last_update': Date.now()
         }, function() {});
