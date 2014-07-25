@@ -35,13 +35,17 @@ h3 {
 p,
 li {
     color: rgb(68, 68, 68);
-    text-align: left;
 }
 
 .blog-entry p,
+.blog-entry li,
 .blog-entry pre,
 .changelog-entry {
     text-align: left;
+}
+
+.blog-entry pre {
+    white-space: pre-line;
 }
 
 header {
