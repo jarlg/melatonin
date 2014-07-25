@@ -12,6 +12,34 @@
             <span class='subtitle'>chrome extension <a href='https://github.com/giraj/melatonin/releases'>(v0.2.5)</a> available on <a href='https://github.com/giraj/melatonin'>github</a> or <a href='https://chrome.google.com/webstore/detail/melatonin/ijificlhclhfomkcamagbdpaodfjeokl'>chrome webstore</a></span>
         </header>
         <section class='blog-entry'>
+            <h3>Technical difficulties on ChromeOS</h3>
+            <span class='subtitle'>published 2014.07.27</span>
+
+            <p>
+                Ideally, <a href='justgetflux.com'>F.lux</a> would work for ChromeOS. It's a really well-done solution to the same problem I'm trying to solve with Melatonin. As I see it, the biggest defects of Melatonin are the following:
+            </p>
+            
+            <ul>
+                <li>Delay before overlaying a new page</li>
+                <li>The Chrome interface is not overlayed</li>
+                <li>Darks aren't preserved (overlay)</li>
+                <li>ChromeOS applications are mostly unaffected</li>
+                <li>Some, Chrome-specific pages are not overlayed</li>
+            </ul>
+            
+            <p>
+                I've almost found a solution for all of these except preservation of blacks. See, a Chrome app window created with 
+                <pre>
+                    state: 'normal',
+                    transparentBackground: true,
+                    alwaysOnTop: true,
+                    focused: false
+                </pre>
+                containing a single full-width, full-height div #overlay with desired color and opacity, with permissions <em>fullscreen, alwaysOnTop</em> and <em>experimental</em> only lacks click-passthrough to be usable.
+            </p>
+            
+        </section>
+        <section class='blog-entry'>
             <h3>Melatonin released!</h3>
             <span class='subtitle'>published 2014.07.20</span>
 
@@ -23,9 +51,9 @@
             The idea was to have something that "just works" in the sense that the defaults are good enough for everyone. That is, a precise and correct algorithm and a carefully considered map from altitude to color temperature. As of v0.2.4 such an algorithm is found in Melatonin (see sun-altitude.js), however such a map is difficult to construct or likely non-existent.
             </p>
 
-<p>
-While simple, the interface leaves more customizability to be desired. I hope to construct a better compromise between power and intuitiveness for the user in future updates. 
-</p>
+            <p>
+            While simple, the interface leaves more customizability to be desired. I hope to construct a better compromise between power and intuitiveness for the user in future updates. 
+            </p>
         </section>
     </section>
     </body>
