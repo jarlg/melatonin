@@ -37,6 +37,10 @@ li {
     color: rgb(68, 68, 68);
 }
 
+.blog-entry {
+    margin: 2em 0;
+}
+
 .blog-entry p,
 .blog-entry li,
 .blog-entry pre,
