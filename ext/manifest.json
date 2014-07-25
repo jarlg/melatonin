@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Melatonin",
-    "version": "0.2.4",
+    "version": "0.2.5",
 
     "description": "Melatonin for Chrome - your melatonin levels follow the sun, so should you browser!",
     "icons": {

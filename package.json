@@ -2,7 +2,7 @@
     "name": "Melatonin-ext",
     "description": "Your melatonin levels follow the sun, so should you browser!",
     "author": "jarl.flaten@gmail.com",
-    "version": "0.2.4",
+    "version": "0.2.5",
     "scripts": {
         "postinstall": "gulp --require coffee-script/register",
         "watch": "gulp watch --require coffee-script/register",

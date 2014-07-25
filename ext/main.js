@@ -62,6 +62,9 @@ obj = {
             } else if (key === 'opacity') {
               return _this.overlay();
             } else if (key === 'on') {
+              if (val.newValue === true) {
+                _this.update_position();
+              }
               return _this.overlay_all();
             }
           })(key, val, namespace));

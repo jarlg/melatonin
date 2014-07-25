@@ -58,6 +58,8 @@ obj =
                     else if key is 'opacity'
                         @overlay()
                     else if key is 'on'
+                        if val.newValue is true
+                            @update_position()
                         @overlay_all()
 
     alt_to_temp: (alt, map) ->
