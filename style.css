@@ -1,6 +1,7 @@
 body {
     text-align: center;
-    padding-top: 10em; }
+    padding: 10em 0;
+}
 
 .subtitle {
     font-style: italic;
@@ -34,9 +35,11 @@ h3 {
 p,
 li {
     color: rgb(68, 68, 68);
+    text-align: left;
 }
 
 .blog-entry p,
+.blog-entry pre,
 .changelog-entry {
     text-align: left;
 }
