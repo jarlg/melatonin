@@ -2,6 +2,7 @@ B = require './background_helpers.coffee'
 
 initial_config = 
     on: true,
+    idle_state: 'active',
     last_update: 0,
     opacity: 0.5,
     temperature: 2700,
@@ -40,6 +41,10 @@ chrome.alarms.create 'update_position', periodInMinutes: 15
 chrome.alarms.onAlarm.addListener B.update_position
 
 chrome.tabs.onUpdated.addListener (tabid, changeInfo, tab) -> B.overlay tab
+
+chrome.idle.onStateChanged.addListener (newstate) ->
+    console.log 'idle state change to ' + newstate
+    chrome.storage.local.set 'idle_state': newstate, ->
 
 chrome.runtime.onMessage.addListener (request, sender, sendMessage) ->
     if request.type is 'display'

@@ -22,7 +22,8 @@
         "geolocation",
         "alarms",
         "tabs",
-        "storage"
+        "storage",
+        "idle"
     ],
 
     "content_scripts": [{

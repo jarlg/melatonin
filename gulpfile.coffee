@@ -4,17 +4,21 @@ browserify = require 'browserify'
 source = require 'vinyl-source-stream'
 
 static_files = [
-    './src/index.html',
+    './src/index.html'
     './src/style.css'
 ]
 
 coffee_source_files = [
-    'main',
-    'app',
+    'main'
+    'app'
     'content_script'
 ]
 
-gulp.task 'main', ->
+errorHandler = (err) ->
+    console.log err.stack or err
+    @end()
+
+gulp.task 'coffee', ->
     for file in coffee_source_files
         do (file) ->
         browserify './src/' + file + '.coffee'
@@ -26,4 +30,12 @@ gulp.task 'static', ->
     gulp.src static_files
         .pipe gulp.dest './ext/'
 
-gulp.task 'default', [ 'main', 'static' ]
+gulp.task 'watch', ['default'], ->
+    gulp
+        .watch './src/*.coffee', ['coffee']
+        .on 'error', errorHandler
+    gulp
+        .watch static_files, ['static']
+        .on 'error', errorHandler
+
+gulp.task 'default', [ 'coffee', 'static' ]

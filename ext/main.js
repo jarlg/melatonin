@@ -7,6 +7,9 @@ S = require('./sun_altitude.coffee');
 T = require('./temperature_to_color.coffee');
 
 obj = {
+  errHandler: function(err) {
+    return console.log(err.stack || err);
+  },
   overlay: function(tab) {
     if (tab != null) {
       return chrome.tabs.sendMessage(tab.id, {
@@ -39,7 +42,11 @@ obj = {
           val = changes[key];
           _results.push((function(key, val, namespace) {
             var c;
-            console.log('updated %s from %s to %s', key, val.oldValue, val.newValue);
+            if (key === 'last_update') {
+              console.log('updated %s from %s to %s (%smin)', key, val.oldValue, val.newValue, ((val.newValue - val.oldValue) / (1000 * 60)).toFixed(0));
+            } else {
+              console.log('updated %s from %s to %s', key, val.oldValue, val.newValue);
+            }
             if (key === 'last_update') {
               return chrome.storage.local.get(['longitude', 'latitude'], function(items) {
                 return chrome.storage.local.set({
@@ -63,9 +70,13 @@ obj = {
               return _this.overlay();
             } else if (key === 'on') {
               if (val.newValue === true) {
-                _this.update_position();
+                return _this.update_position();
               }
-              return _this.overlay_all();
+            } else if (key === 'idle_state') {
+              if (val.newValue === 'active') {
+                console.log('went from idle to active. updating.');
+                return _this.update_position();
+              }
             }
           })(key, val, namespace));
         }
@@ -92,8 +103,7 @@ obj = {
         }, function() {});
       }), (function(err) {
         console.log("Geolocation Error:");
-        console.log(err);
-        console.log("Using previous values.");
+        this.errHandler(err);
         return chrome.storage.local.set({
           'last_update': Date.now()
         }, function() {});
@@ -188,6 +198,7 @@ B = require('./background_helpers.coffee');
 
 initial_config = {
   on: true,
+  idle_state: 'active',
   last_update: 0,
   opacity: 0.5,
   temperature: 2700,
@@ -255,6 +266,13 @@ chrome.alarms.onAlarm.addListener(B.update_position);
 
 chrome.tabs.onUpdated.addListener(function(tabid, changeInfo, tab) {
   return B.overlay(tab);
+});
+
+chrome.idle.onStateChanged.addListener(function(newstate) {
+  console.log('idle state change to ' + newstate);
+  return chrome.storage.local.set({
+    'idle_state': newstate
+  }, function() {});
 });
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
