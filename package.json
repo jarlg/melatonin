@@ -1,24 +1,30 @@
 {
-    "name": "Melatonin-ext",
-    "description": "Your melatonin levels follow the sun, so should you browser!",
-    "author": "jarl.flaten@gmail.com",
-    "version": "0.2.5",
-    "scripts": {
-        "postinstall": "gulp --require coffee-script/register",
-        "watch": "gulp watch --require coffee-script/register",
-        "build": "gulp --require coffee-script/register"
-    },
-    "browserify": {
-        "transform": [
-            "coffeeify"
-        ]
-    },
-    "dependencies": {},
-    "devDependencies": {
-        "browserify": "^4.1.5",
-        "coffee-script": "^1.7.1",
-        "coffeeify": "^0.6.0",
-        "gulp": "^3.6.2",
-        "vinyl-source-stream": "^0.1.1"
-    }
+  "name": "Melatonin-ext",
+  "description": "Your melatonin levels follow the sun, so should you browser!",
+  "author": "jarl.flaten@gmail.com",
+  "version": "0.2.5",
+
+  "repository": {
+      "type": "git",
+      "url": "git@github.com:giraj/melatonin.git"
+  },
+
+  "scripts": {
+    "postinstall": "gulp --require coffee-script/register",
+    "watch": "gulp watch --require coffee-script/register",
+    "build": "gulp --require coffee-script/register"
+  },
+  "browserify": {
+    "transform": [
+      "coffeeify"
+    ]
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "browserify": "^4.1.5",
+    "coffee-script": "^1.7.1",
+    "coffeeify": "^0.6.0",
+    "gulp": "^3.6.2",
+    "vinyl-source-stream": "^0.1.1"
+  }
 }
