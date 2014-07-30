@@ -5,15 +5,20 @@ body {
 }
 
 #opacity {
-    width: 20px;
+    width: 41px;
     -webkit-appearance: slider-vertical;
 }
 
-button {
-    background: transparent;
-    border: 1px solid black;
+#colorpicker {
+    width: 20px;
+    height: 24px;
+    padding: 0;
 }
 
-button:hover {
-    background: silver;
+.checkbox {
+    margin-top: 3px;
+}
+
+form {
+    margin-top: 10px;
 }
