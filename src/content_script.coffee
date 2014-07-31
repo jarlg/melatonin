@@ -12,17 +12,25 @@ init_overlay = ->
     overlay.style["pointer-events"] = "none"
     document.body.appendChild overlay
 
+set_bgcolor = (element, color, opacity) ->
+    if color?
+        element.style['background-color'] = "rgba(" + color + ", " + opacity + ")"
+    else
+        element.style['background-color'] = 'transparent'
+
 update_color = (element) ->
     if not element?
         element = document.getElementById 'melatonin-overlay' 
     chrome.storage.local.get(
-        ['on', 'rgb', 'opacity'],
+        ['on', 'rgb', 'opacity', 'custom', 'custom_color'],
         (items) -> 
-            if items['on']
-                rgba_string = items['rgb'] + ", " + items['opacity']
+            if items.on
+                if not items.custom
+                    set_bgcolor element, items.rgb, items.opacity
+                else
+                    set_bgcolor element, items.custom_color, items.opacity
             else
-                rgba_string = items['rgb'] + ", " + '0'
-            element.style['background-color'] = "rgba(" + rgba_string + ")"
+                set_bgcolor element
     )
 
 init_overlay()

@@ -50,13 +50,13 @@ obj = {
             if (key === 'last_update') {
               return chrome.storage.local.get(['longitude', 'latitude'], function(items) {
                 return chrome.storage.local.set({
-                  'altitude': S.get_sun_altitude(new Date(), items['latitude'], items['longitude'])
+                  'altitude': S.get_sun_altitude(new Date(), items.latitude, items.longitude)
                 }, function() {});
               });
             } else if (key === 'altitude') {
               return chrome.storage.local.get('temperature_map', function(item) {
                 return chrome.storage.local.set({
-                  'temperature': _this.alt_to_temp(val.newValue, item['temperature_map'])
+                  'temperature': _this.alt_to_temp(val.newValue, item.temperature_map)
                 }, function() {});
               });
             } else if (key === 'temperature') {
@@ -198,12 +198,14 @@ B = require('./background_helpers.coffee');
 
 initial_config = {
   on: true,
+  custom: false,
   idle_state: 'active',
   last_update: 0,
   opacity: 0.5,
   temperature: 2700,
   altitude: 0,
   rgb: null,
+  custom_color: null,
   latitude: null,
   longitude: null,
   temperature_map: {
@@ -250,7 +252,7 @@ init = function() {
       val = initial_config[key];
       _fn(key, val, items);
     }
-    if (Date.now() - items['last_update'] > 15 * 60 * 1000) {
+    if (Date.now() - items.last_update > 15 * 60 * 1000) {
       return B.update_position();
     }
   });
