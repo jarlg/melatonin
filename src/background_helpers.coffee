@@ -68,6 +68,7 @@ obj =
                     else if key is 'on'
                         if val.newValue is true
                             @update_position()
+                        @overlay_all()
                     else if key is 'idle_state'
                         if val.newValue is 'active'
                             console.log 'went from idle to active. updating.'

@@ -16,7 +16,7 @@ set_bgcolor = (element, color, opacity) ->
     if color?
         element.style['background-color'] = "rgba(" + color + ", " + opacity + ")"
     else
-        element.style['background-color'] = 'transparent'
+        element.style['background-color'] = "transparent"
 
 update_color = (element) ->
     if not element?
@@ -26,6 +26,7 @@ update_color = (element) ->
         (items) -> 
             if items.on
                 if not items.custom
+                    console.log "setting color " + items.rgb
                     set_bgcolor element, items.rgb, items.opacity
                 else
                     set_bgcolor element, items.custom_color, items.opacity
