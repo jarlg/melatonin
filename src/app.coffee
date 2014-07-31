@@ -1,13 +1,13 @@
 opacity_input = document.getElementById 'opacity'
 on_off_toggle = document.getElementById 'on-off-toggle'
-custom_toggle = document.getElementById 'custom_toggle'
+custom_toggle = document.getElementById 'custom-toggle'
 colorpicker = document.getElementById 'colorpicker'
 
-chrome.storage.local.get ['on', 'opacity', 'custom', 'custom-color'], (items) ->
-    opacity_input.value = items['opacity']
-    on_off_toggle.checked = items['on']
-    custom_toggle.checked = items['custom']
-    colorpicker = items['custom-color']
+chrome.storage.local.get ['on', 'opacity', 'custom', 'custom_color'], (items) ->
+    opacity_input.value = items.opacity
+    on_off_toggle.checked = items.on
+    custom_toggle.checked = items.custom
+    colorpicker = items.custom_color
 
 opacity_input.addEventListener 'input', (event) ->
     chrome.storage.local.set 'opacity': opacity_input.value, -> 

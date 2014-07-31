@@ -4,13 +4,16 @@
     <link rel='stylesheet' href='style.css'>
     </head>
     <body>
-    <form>
-        <!--<label for='opacity'>Opacity: <span id='opacity-value'></span></label> --!>
-            <input name='opacity' id='opacity' type='range' min=0 max=0.8 step=0.05>
-            active:
-            <input type='checkbox' checked=true id='on-off-toggle'>
-    </form>
-    <div id="altitude"></div>
-    <script src="app.js" type="text/javascript"></script>
+        <input id='opacity' type='range' min=0 max=0.8 step=0.05>
+        <form>
+            active?
+            <input class='checkbox' type='checkbox' checked id='on-off-toggle'>
+        </form>
+        <form>
+            custom?
+            <input class='checkbox' type='checkbox' id='custom-toggle'>
+            <input type='color' id='colorpicker'>
+        </form>
+        <script src="app.js" type="text/javascript"></script>
     </body>
 </html>

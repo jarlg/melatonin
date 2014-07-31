@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var init_overlay, update_color;
+var init_overlay, set_bgcolor, update_color;
 
 init_overlay = function() {
   var overlay;
@@ -17,18 +17,28 @@ init_overlay = function() {
   return document.body.appendChild(overlay);
 };
 
+set_bgcolor = function(element, color, opacity) {
+  if (color != null) {
+    return element.style['background-color'] = "rgba(" + color + ", " + opacity + ")";
+  } else {
+    return element.style['background-color'] = 'transparent';
+  }
+};
+
 update_color = function(element) {
   if (element == null) {
     element = document.getElementById('melatonin-overlay');
   }
-  return chrome.storage.local.get(['on', 'rgb', 'opacity'], function(items) {
-    var rgba_string;
-    if (items['on']) {
-      rgba_string = items['rgb'] + ", " + items['opacity'];
+  return chrome.storage.local.get(['on', 'rgb', 'opacity', 'custom', 'custom_color'], function(items) {
+    if (items.on) {
+      if (!items.custom) {
+        return set_bgcolor(element, items.rgb, items.opacity);
+      } else {
+        return set_bgcolor(element, items.custom_color, items.opacity);
+      }
     } else {
-      rgba_string = items['rgb'] + ", " + '0';
+      return set_bgcolor(element);
     }
-    return element.style['background-color'] = "rgba(" + rgba_string + ")";
   });
 };
 

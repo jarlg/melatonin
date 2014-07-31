@@ -2,12 +2,14 @@ B = require './background_helpers.coffee'
 
 initial_config = 
     on: true,
+    custom: false,
     idle_state: 'active',
     last_update: 0,
     opacity: 0.5,
     temperature: 2700,
     altitude: 0,
     rgb: null,
+    custom_color: null,
     latitude: null,
     longitude: null,
     temperature_map:
@@ -32,7 +34,7 @@ init = ->
                         obj = {}
                         obj[key] = val
                         chrome.storage.local.set obj
-            if Date.now() - items['last_update'] > 15 * 60 * 1000
+            if Date.now() - items.last_update > 15 * 60 * 1000
                 B.update_position()
 
 init()

@@ -39,8 +39,8 @@ obj =
                                 chrome.storage.local.set(
                                     'altitude': S.get_sun_altitude(
                                         new Date(),
-                                        items['latitude'],
-                                        items['longitude']
+                                        items.latitude,
+                                        items.longitude
                                     ), ->
                                 )
                         )
@@ -51,7 +51,7 @@ obj =
                                 chrome.storage.local.set(
                                     'temperature': @alt_to_temp(
                                                     val.newValue,
-                                                    item['temperature_map']
+                                                    item.temperature_map
                                     ), ->
                                 )
                         )
