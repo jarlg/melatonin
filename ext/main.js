@@ -1,10 +1,12 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var S, T, obj,
+var H, S, T, obj,
   __hasProp = {}.hasOwnProperty;
 
 S = require('./sun_altitude.coffee');
 
 T = require('./temperature_to_color.coffee');
+
+H = require('./color_helpers.coffee');
 
 obj = {
   errHandler: function(err) {
@@ -62,7 +64,7 @@ obj = {
             } else if (key === 'temperature') {
               c = T.get_color(val.newValue);
               return chrome.storage.local.set({
-                'rgb': c.r + ", " + c.g + ", " + c.b
+                'rgb': H.rgb_to_string(c)
               }, function() {});
             } else if (key === 'rgb') {
               return _this.overlay_all();
@@ -70,8 +72,13 @@ obj = {
               return _this.overlay();
             } else if (key === 'on') {
               if (val.newValue === true) {
-                return _this.update_position();
+                _this.update_position();
               }
+              return _this.overlay_all();
+            } else if (key === 'custom') {
+              return _this.overlay_all();
+            } else if (key === 'custom_color') {
+              return _this.overlay_all();
             } else if (key === 'idle_state') {
               if (val.newValue === 'active') {
                 console.log('went from idle to active. updating.');
@@ -117,7 +124,39 @@ obj = {
 module.exports = obj;
 
 
-},{"./sun_altitude.coffee":5,"./temperature_to_color.coffee":6}],2:[function(require,module,exports){
+},{"./color_helpers.coffee":2,"./sun_altitude.coffee":6,"./temperature_to_color.coffee":7}],2:[function(require,module,exports){
+var obj;
+
+obj = {
+  rgb_to_hex: function(rgb) {
+    return "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+  },
+  hex_to_rgb: function(hex) {
+    var result, shorthandRegex;
+    shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+      return r + r + g + g + b + b;
+    });
+    result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) {
+      return {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      };
+    } else {
+      return null;
+    }
+  },
+  rgb_to_string: function(rgb) {
+    return rgb.r + ", " + rgb.g + ", " + rgb.b;
+  }
+};
+
+module.exports = obj;
+
+
+},{}],3:[function(require,module,exports){
 var helpers;
 
 helpers = {
@@ -168,7 +207,7 @@ helpers = {
 module.exports = helpers;
 
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var jd;
 
 jd = {
@@ -190,7 +229,7 @@ jd = {
 module.exports = jd;
 
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var B, init, initial_config,
   __hasProp = {}.hasOwnProperty;
 
@@ -286,7 +325,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
 });
 
 
-},{"./background_helpers.coffee":1}],5:[function(require,module,exports){
+},{"./background_helpers.coffee":1}],6:[function(require,module,exports){
 var H, J, obj;
 
 J = require('./julian_date.coffee');
@@ -347,7 +386,7 @@ obj = {
 module.exports = obj;
 
 
-},{"./helpers.coffee":2,"./julian_date.coffee":3}],6:[function(require,module,exports){
+},{"./helpers.coffee":3,"./julian_date.coffee":4}],7:[function(require,module,exports){
 var obj;
 
 obj = {
@@ -382,4 +421,4 @@ obj = {
 module.exports = obj;
 
 
-},{}]},{},[4])
+},{}]},{},[5])
