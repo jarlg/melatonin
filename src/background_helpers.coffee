@@ -1,5 +1,6 @@
 S = require './sun_altitude.coffee'
 T = require './temperature_to_color.coffee'
+H = require './color_helpers.coffee'
 
 obj =
     errHandler: (err) ->
@@ -58,7 +59,7 @@ obj =
                     else if key is 'temperature'
                         c = T.get_color val.newValue
                         chrome.storage.local.set(
-                            'rgb': c.r + ", " + c.g + ", " + c.b,
+                            'rgb': H.rgb_to_string c
                             ->
                         )
                     else if key is 'rgb'
@@ -68,6 +69,10 @@ obj =
                     else if key is 'on'
                         if val.newValue is true
                             @update_position()
+                        @overlay_all()
+                    else if key is 'custom'
+                        @overlay_all()
+                    else if key is 'custom_color'
                         @overlay_all()
                     else if key is 'idle_state'
                         if val.newValue is 'active'
