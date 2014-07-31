@@ -1,3 +1,5 @@
+H = require './color_helpers.coffee'
+
 init_overlay = ->
     overlay = document.createElement 'div'
     overlay.style["transition"] = "background-color 0.2s" # reduce the flashing
@@ -26,10 +28,9 @@ update_color = (element) ->
         (items) -> 
             if items.on
                 if not items.custom
-                    console.log "setting color " + items.rgb
                     set_bgcolor element, items.rgb, items.opacity
                 else
-                    set_bgcolor element, items.custom_color, items.opacity
+                    set_bgcolor element, H.rgb_to_string(H.hex_to_rgb(items.custom_color)), items.opacity
             else
                 set_bgcolor element
     )
