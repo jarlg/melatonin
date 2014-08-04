@@ -1,0 +1,23 @@
+
+//
+// VARIABLES
+//
+
+// Colors
+$orange: rgb(255, 173, 102);
+
+// Grays
+$black: rgb(68, 68, 68);
+$white: #fff;
+
+// Font stacks
+$helvetica: Helvetica, Arial, sans-serif;
+$helveticaNeue: "Helvetica Neue", Helvetica, Arial, sans-serif;
+$georgia: Georgia, serif;
+
+// Mobile breakpoints
+@mixin mobile {
+  @media screen and (max-width: 640px) {
+    @content;
+  }
+}

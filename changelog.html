@@ -1,0 +1,18 @@
+---
+layout: page
+---
+
+<div class="posts">
+    {% for post in site.posts.category.changelog %}
+    <article class='post'>
+        <h3>
+            <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a>
+        </h3>
+
+        <div class='entry'>
+            {{ post.content }}
+        </div>
+    </article>
+    {% endfor %}
+</div>
+

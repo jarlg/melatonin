@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta content='text/html; charset=utf-8' http-equiv='Content-Type'>
+        <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0'>
+
+        <title>{% if page.title %}{{ page.title }} – {% endif %}{{ site.name }} – {{ site.description }}</title>
+
+        <meta name="author" content="Giraj" />
+        <meta name="description" content="{{ site.description }}">
+
+        <!--[if lt IE 9]>
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+            <![endif]-->
+
+            <link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/style.css" />
+
+            <!-- Created with Jekyll Now - http://github.com/barryclark/jekyll-now -->
+    </head>
+
+    <body>
+        <div class='container'>
+            <header>
+                <h1><a href="{{ site.baseurl }}/">{{ site.name }}</a></h1>
+                <span class='subtitle'>chrome extension <a href='https://github.com/giraj/melatonin/releases'>(v0.2.6)</a> available on <a href='https://github.com/giraj/melatonin'>github</a> or <a href='https://chrome.google.com/webstore/detail/melatonin/ijificlhclhfomkcamagbdpaodfjeokl'>chrome webstore</a></span>
+            </header>
+
+            <div id="main" role="main">
+                {{ content }}
+            </div>
+
+            <div class="wrapper-footer">
+                <div class="container">
+                    <footer class="footer">
+                        {% include svg-icons.html %}
+                    </footer>
+                </div>
+            </div>
+        </div>
+
+        {% include analytics.html %}
+    </body>
+</html>
