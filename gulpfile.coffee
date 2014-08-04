@@ -1,5 +1,4 @@
 gulp = require 'gulp'
-coffeeify = require 'coffeeify'
 browserify = require 'browserify'
 source = require 'vinyl-source-stream'
 
