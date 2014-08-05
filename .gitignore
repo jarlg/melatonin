@@ -1,3 +1,6 @@
 node_modules/
 *.swp
 *.zip
+Gemfile*
+.sass-cache/
+_site/
