@@ -3,11 +3,11 @@ layout: page
 ---
 
 <div class="posts">
-    {% for post in site.posts %}
+    {% for post in site.categories.blog %}
     <article class='post-link'>
         <h3>
             <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a>
-            <span class='date'>{{ page.date | date: "%B %e, %Y" }}</span>
+            <span class='date'>{{ post.date | date: "%B %e, %Y" }}</span>
         </h3>
     </article>
     {% endfor %}
