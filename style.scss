@@ -169,6 +169,10 @@ img {
     p {
         margin: 1em 0 2em;
     }
+
+    .download-button + p {
+        margin: 2em 0;
+    }
 }
 
 .download-button {
