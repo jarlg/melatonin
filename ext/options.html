@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<head>
+    <title>Melatonin - Options</title>
+    <link href="./options.css" rel="stylesheet">
+</head>
+<body>
+    <canvas id='graph'></canvas>
+    <form action="" id="keyframes-form" method="post">
+        <button id='add-keyframe'>+</button>
+
+        <table id="keyframes">
+            <tr>
+                <th>trigger (
+                    <select id='key-type'>
+                        <option value="time">time</option>
+                        <option value="altitude" selected=true>sun altitude</option>
+                    </select>
+                    )</th>
+                <th>option</th>
+                <th>value</th>
+            </tr>
+
+            <!-- here keyframes are added --!>
+
+        </table>
+    </form>
+    <script type='text/javascript' src='options.js'></script>
+</body>
