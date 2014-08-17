@@ -5,12 +5,15 @@ source = require 'vinyl-source-stream'
 static_files = [
     './src/index.html'
     './src/style.css'
+    './src/options.html'
+    './src/options.css'
 ]
 
 coffee_source_files = [
     'main'
     'app'
     'content_script'
+    'options'
 ]
 
 errorHandler = (err) ->
