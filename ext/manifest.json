@@ -5,6 +5,8 @@
 
     "options_page": "options.html",
 
+    "options_page": "options.html",
+
     "description": "Melatonin for Chrome - your melatonin levels follow the sun, so should you browser!",
     "icons": {
         "16": "./mid16.png",
