@@ -247,10 +247,19 @@ initial_config = {
   custom_color: null,
   latitude: null,
   longitude: null,
-  temperature_map: {
-    night: 2700,
-    day: 6300
-  }
+  keyframes: [
+    {
+      key_type: "altitude",
+      key_value: 0,
+      option: "temperature",
+      value: 2700
+    }, {
+      key_type: "altitude",
+      key_value: 90,
+      option: "temperature",
+      value: 6300
+    }
+  ]
 };
 
 init = function() {
