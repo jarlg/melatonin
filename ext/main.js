@@ -124,7 +124,7 @@ obj = {
 module.exports = obj;
 
 
-},{"./color_helpers.coffee":2,"./sun_altitude.coffee":6,"./temperature_to_color.coffee":7}],2:[function(require,module,exports){
+},{"./color_helpers.coffee":2,"./sun_altitude.coffee":7,"./temperature_to_color.coffee":8}],2:[function(require,module,exports){
 var obj;
 
 obj = {
@@ -230,10 +230,12 @@ module.exports = jd;
 
 
 },{}],5:[function(require,module,exports){
-var B, init, initial_config,
+var B, M, init, initial_config,
   __hasProp = {}.hasOwnProperty;
 
 B = require('./background_helpers.coffee');
+
+M = require('./models.coffee');
 
 initial_config = {
   on: true,
@@ -247,19 +249,7 @@ initial_config = {
   custom_color: null,
   latitude: null,
   longitude: null,
-  keyframes: [
-    {
-      key_type: "altitude",
-      key_value: 0,
-      option: "temperature",
-      value: 2700
-    }, {
-      key_type: "altitude",
-      key_value: 90,
-      option: "temperature",
-      value: 6300
-    }
-  ]
+  keyframes: [new M.Keyframe('altitude', 0, 'temperature', 2700), new M.Keyframe('altitude', 90, 'temperature', 6300)]
 };
 
 init = function() {
@@ -289,7 +279,7 @@ init = function() {
     }
     _fn = function(key, val, items) {
       var obj;
-      if (items[key] == null) {
+      if ((items[key] == null) || key === 'keyframes') {
         obj = {};
         obj[key] = val;
         return chrome.storage.local.set(obj);
@@ -334,7 +324,98 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
 });
 
 
-},{"./background_helpers.coffee":1}],6:[function(require,module,exports){
+},{"./background_helpers.coffee":1,"./models.coffee":6}],6:[function(require,module,exports){
+'use strict';
+var Keyframe, KeyframeView, Models;
+
+HTMLElement.prototype.set = function(attr, val) {
+  this[attr] = val;
+  return this;
+};
+
+Models = {
+  Keyframe: Keyframe = (function() {
+    function Keyframe(key_type, key_value, option, value) {
+      this.key_type = key_type != null ? key_type : 'altitude';
+      this.key_value = key_value != null ? key_value : 0;
+      this.option = option != null ? option : 'temperature';
+      this.value = value != null ? value : 2700;
+    }
+
+    return Keyframe;
+
+  })(),
+  KeyframeView: KeyframeView = (function() {
+    function KeyframeView(model, parent, controller) {
+      this.model = model;
+      this.parent = parent;
+      this.controller = controller;
+    }
+
+    KeyframeView.prototype.option_map = {
+      opacity: 'number',
+      temperature: 'number',
+      color: 'color'
+    };
+
+    KeyframeView.prototype.create = function() {
+      var input, opt, _fn, _fn1, _i, _j, _len, _len1, _ref, _ref1;
+      this.row = document.createElement('tr');
+      this.row.classList.add('keyframe');
+      this.key_value = document.createElement('input').set('type', 'number').set('value', this.model.key_value);
+      this.option = document.createElement('select');
+      _ref = ['color', 'temperature', 'opacity'];
+      _fn = (function(_this) {
+        return function() {
+          return _this.option.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (opt === _this.model.option ? true : void 0));
+        };
+      })(this);
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        opt = _ref[_i];
+        _fn();
+      }
+      this.value = document.createElement('input').set('type', this.option_map[this.model.option]).set('value', this.model.value);
+      this["delete"] = document.createElement('button').set('innerHTML', '-');
+      this["delete"].classList.add('delete');
+      _ref1 = ['key_value', 'option', 'value', 'delete'];
+      _fn1 = (function(_this) {
+        return function(input) {
+          var self;
+          _this.row.appendChild(document.createElement('th')).appendChild(_this[input]);
+          if (input !== 'delete') {
+            self = _this;
+            return _this[input].addEventListener('input', function(event) {
+              return self.model[input] = this.value;
+            });
+          }
+        };
+      })(this);
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        input = _ref1[_j];
+        _fn1(input);
+      }
+      return this;
+    };
+
+    KeyframeView.prototype.render = function() {
+      this.parent.appendChild(this.row);
+      return this;
+    };
+
+    KeyframeView.prototype.erase = function() {
+      this.parent.removeChild(this.row);
+      return this;
+    };
+
+    return KeyframeView;
+
+  })()
+};
+
+module.exports = Models;
+
+
+},{}],7:[function(require,module,exports){
 var H, J, obj;
 
 J = require('./julian_date.coffee');
@@ -395,7 +476,7 @@ obj = {
 module.exports = obj;
 
 
-},{"./helpers.coffee":3,"./julian_date.coffee":4}],7:[function(require,module,exports){
+},{"./helpers.coffee":3,"./julian_date.coffee":4}],8:[function(require,module,exports){
 var obj;
 
 obj = {

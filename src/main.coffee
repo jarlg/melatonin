@@ -1,4 +1,5 @@
 B = require './background_helpers.coffee'
+M = require './models.coffee'
 
 initial_config = 
     on: true,
@@ -13,18 +14,8 @@ initial_config =
     latitude: null,
     longitude: null,
     keyframes: [
-        {
-            key_type: "altitude",
-            key_value: 0,
-            option: "temperature",
-            value: 2700
-        },
-        {
-            key_type: "altitude",
-            key_value: 90,
-            option: "temperature",
-            value: 6300 
-        }
+        new M.Keyframe 'altitude', 0, 'temperature', 2700
+        new M.Keyframe 'altitude', 90, 'temperature', 6300
     ]
 
 init = ->
@@ -41,7 +32,7 @@ init = ->
             # check if any keys are not set, and initialize them
             for own key, val of initial_config
                 do (key, val, items) ->
-                    if not items[key]?
+                    if not items[key]? or key is 'keyframes'
                         obj = {}
                         obj[key] = val
                         chrome.storage.local.set obj
