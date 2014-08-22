@@ -305,7 +305,7 @@ init = function() {
     }
     _fn = function(key, val, items) {
       var obj;
-      if ((items[key] == null) || key === 'keyframes') {
+      if (items[key] == null) {
         obj = {};
         obj[key] = val;
         return chrome.storage.local.set(obj);

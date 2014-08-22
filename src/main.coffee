@@ -32,7 +32,7 @@ init = ->
             # check if any keys are not set, and initialize them
             for own key, val of initial_config
                 do (key, val, items) ->
-                    if not items[key]? or key is 'keyframes'
+                    if not items[key]?
                         obj = {}
                         obj[key] = val
                         chrome.storage.local.set obj
