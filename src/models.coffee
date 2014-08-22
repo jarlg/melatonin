@@ -41,8 +41,10 @@ Models =
                                 .set 'selected', (true if opt is @model.option)
 
                 @value = document.createElement 'input'
-                    .set 'type', @option_map[@model.option]
                     .set 'value', @model.value
+
+                @setValueType()
+                @option.addEventListener 'input', @setValueType.bind @
 
                 @delete = document.createElement 'button'
                     .set 'innerHTML', '-'
@@ -59,6 +61,9 @@ Models =
                                 self.model[input] = @value
 
                 @
+
+            setValueType: ->
+                @value.type = @option_map[@option.value]
 
             render: -> @parent.appendChild @row; @
 

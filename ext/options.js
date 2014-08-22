@@ -48,7 +48,9 @@ Models = {
         opt = _ref[_i];
         _fn();
       }
-      this.value = document.createElement('input').set('type', this.option_map[this.model.option]).set('value', this.model.value);
+      this.value = document.createElement('input').set('value', this.model.value);
+      this.setValueType();
+      this.option.addEventListener('input', this.setValueType.bind(this));
       this["delete"] = document.createElement('button').set('innerHTML', '-');
       this["delete"].classList.add('delete');
       _ref1 = ['key_value', 'option', 'value', 'delete'];
@@ -69,6 +71,10 @@ Models = {
         _fn1(input);
       }
       return this;
+    };
+
+    KeyframeView.prototype.setValueType = function() {
+      return this.value.type = this.option_map[this.option.value];
     };
 
     KeyframeView.prototype.render = function() {
