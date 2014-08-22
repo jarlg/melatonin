@@ -23,4 +23,7 @@ helpers =
     angle_atan: (x) -> @to_angle Math.atan x
     angle_asin: (x) -> @to_angle Math.asin x
 
+    linear: (value, kf1, kf2) ->
+        null
+
 module.exports = helpers
