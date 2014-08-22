@@ -1,4 +1,4 @@
-H = require './color_helpers.coffee'
+C = require './color_helpers.coffee'
 
 init_overlay = ->
     overlay = document.createElement 'div'
@@ -21,22 +21,21 @@ set_bgcolor = (element, color, opacity) ->
         element.style['background-color'] = "transparent"
 
 update_color = (element) ->
+    console.log "updating color!"
     if not element?
         element = document.getElementById 'melatonin-overlay' 
-    chrome.storage.local.get(
-        ['on', 'rgb', 'opacity', 'custom', 'custom_color'],
-        (items) -> 
+    chrome.storage.local
+        .get ['on', 'rgb', 'opacity', 'custom', 'custom_color'], (items) -> 
             if items.on
                 if not items.custom
                     set_bgcolor element, items.rgb, items.opacity
                 else
-                    set_bgcolor element, H.rgb_to_string(H.hex_to_rgb(items.custom_color)), items.opacity
+                    set_bgcolor element, C.rgb_to_string(C.hex_to_rgb(items.custom_color)), items.opacity
             else
                 set_bgcolor element
-    )
 
 init_overlay()
 
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
-    if request.type == 'update_color'
+    if request.type is 'update_color'
         update_color()

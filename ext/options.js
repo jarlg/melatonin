@@ -2,10 +2,12 @@
 'use strict';
 var Keyframe, KeyframeView, Models;
 
-HTMLElement.prototype.set = function(attr, val) {
-  this[attr] = val;
-  return this;
-};
+if (typeof HTMLElement !== "undefined" && HTMLElement !== null) {
+  HTMLElement.prototype.set = function(attr, val) {
+    this[attr] = val;
+    return this;
+  };
+}
 
 Models = {
   Keyframe: Keyframe = (function() {
@@ -74,7 +76,8 @@ Models = {
     };
 
     KeyframeView.prototype.setValueType = function() {
-      return this.value.type = this.option_map[this.option.value];
+      this.value.type = this.option_map[this.option.value];
+      return this.value.value = this.model.value;
     };
 
     KeyframeView.prototype.render = function() {

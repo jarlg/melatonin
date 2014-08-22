@@ -1,6 +1,9 @@
 S = require './sun_altitude.coffee'
 T = require './temperature_to_color.coffee'
-H = require './color_helpers.coffee'
+C = require './color_helpers.coffee'
+H = require './helpers.coffee'
+
+contains = (val, arr) -> arr.some (el) -> el is val
 
 obj =
     errHandler: (err) ->
@@ -9,7 +12,7 @@ obj =
     overlay: (tab) ->
         if tab?
             chrome.tabs
-                .sendMessage tab.id, type: 'update color'
+                .sendMessage tab.id, type: 'update_color'
         else
             # could query out the active one..
             @overlay_all()
@@ -38,12 +41,12 @@ obj =
                                         items.latitude,
                                         items.longitude
                                     ), ->
-                    else if ['altitude', 'keyframes'].some((el) -> el is key)
+                    else if contains key, ['altitude', 'keyframes']
                         @update_temperature()
                     else if key is 'temperature'
                         chrome.storage.local
-                            .set 'rgb': H.rgb_to_string(T.get_color val.newValue), ->
-                    else if ['rgb', 'custom', 'custom_color'].some((el) -> el is key)
+                            .set 'rgb': C.rgb_to_string(T.get_color val.newValue), ->
+                    else if contains key, ['rgb', 'custom', 'custom_color']
                         @overlay_all()
                     else if key is 'opacity'
                         @overlay()
@@ -61,21 +64,31 @@ obj =
     get_temperature: (altitude, keyframes) ->
         # only keyframes affecting color temperature,
         # sorted from lowest trigger altitude to highest
-        keyframes = kf for kf in keyframes if kf.option is 'temperature'
-            .sort (a, b) -> a.key_value - b.key_value
+        kfs = keyframes
+                .filter (kf) -> kf.option is 'temperature'
+                .sort (a, b) -> a.key_value - b.key_value
 
         # keyframes[idx] corresponds to keyframe of 'upper interval',
-        # keyframes[idx-1] to lower
-        idx = null for kf in keyframes if altitude > kf.key_value
-            .length
+        # kfs[idx-1] to lower
+        idx = kfs
+                .filter (kf) -> altitude > kf.key_value
+                .length
 
-        H.interpolate altitude, keyframes[idx-1], keyframes[if idx isnt keyframes.length then idx else 0]
+        H.interpolate(
+            altitude, 
+            kfs[if idx isnt 0 then idx-1 else kfs.length-1].key_value,
+            kfs[if idx isnt 0 then idx-1 else kfs.length-1].value,
+            kfs[if idx isnt kfs.length then idx else 0].key_value,
+            kfs[if idx isnt kfs.length then idx else 0].value
+        )
 
     update_temperature: ->
         chrome.storage.local
             .get ['altitude', 'keyframes'], (items) =>
-                chrome.storage.local
-                    .set 'temperature': @get_temperature(items.altitude, items.keyframes), ->
+                temp = @get_temperature items.altitude, items.keyframes
+                if temp?
+                    chrome.storage.local
+                        .set 'temperature': temp, ->
 
     update_position: ->
         if navigator.geolocation?

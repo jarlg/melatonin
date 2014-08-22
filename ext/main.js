@@ -1,12 +1,20 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var H, S, T, obj,
+var C, H, S, T, contains, obj,
   __hasProp = {}.hasOwnProperty;
 
 S = require('./sun_altitude.coffee');
 
 T = require('./temperature_to_color.coffee');
 
-H = require('./color_helpers.coffee');
+C = require('./color_helpers.coffee');
+
+H = require('./helpers.coffee');
+
+contains = function(val, arr) {
+  return arr.some(function(el) {
+    return el === val;
+  });
+};
 
 obj = {
   errHandler: function(err) {
@@ -43,7 +51,6 @@ obj = {
           if (!__hasProp.call(changes, key)) continue;
           val = changes[key];
           _results.push((function(key, val, namespace) {
-            var c;
             if (key === 'last_update') {
               console.log('updated %s from %s to %s (%smin)', key, val.oldValue, val.newValue, ((val.newValue - val.oldValue) / (1000 * 60)).toFixed(0));
             } else {
@@ -55,18 +62,13 @@ obj = {
                   'altitude': S.get_sun_altitude(new Date(), items.latitude, items.longitude)
                 }, function() {});
               });
-            } else if (key === 'altitude') {
-              return chrome.storage.local.get('temperature_map', function(item) {
-                return chrome.storage.local.set({
-                  'temperature': _this.alt_to_temp(val.newValue, item.temperature_map)
-                }, function() {});
-              });
+            } else if (contains(key, ['altitude', 'keyframes'])) {
+              return _this.update_temperature();
             } else if (key === 'temperature') {
-              c = T.get_color(val.newValue);
               return chrome.storage.local.set({
-                'rgb': H.rgb_to_string(c)
+                'rgb': C.rgb_to_string(T.get_color(val.newValue))
               }, function() {});
-            } else if (key === 'rgb') {
+            } else if (contains(key, ['rgb', 'custom', 'custom_color'])) {
               return _this.overlay_all();
             } else if (key === 'opacity') {
               return _this.overlay();
@@ -74,10 +76,6 @@ obj = {
               if (val.newValue === true) {
                 _this.update_position();
               }
-              return _this.overlay_all();
-            } else if (key === 'custom') {
-              return _this.overlay_all();
-            } else if (key === 'custom_color') {
               return _this.overlay_all();
             } else if (key === 'idle_state') {
               if (val.newValue === 'active') {
@@ -91,30 +89,46 @@ obj = {
       };
     })(this));
   },
-  alt_to_temp: function(alt, map) {
-    var t_alt;
-    if (alt < 0) {
-      return map.night;
-    } else {
-      t_alt = alt;
-      return ((90 - alt) * map.night + alt * map.day) / 90;
-    }
+  get_temperature: function(altitude, keyframes) {
+    var idx, kfs;
+    kfs = keyframes.filter(function(kf) {
+      return kf.option === 'temperature';
+    }).sort(function(a, b) {
+      return a.key_value - b.key_value;
+    });
+    idx = kfs.filter(function(kf) {
+      return altitude > kf.key_value;
+    }).length;
+    return H.interpolate(altitude, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].key_value, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].value, kfs[idx !== kfs.length ? idx : 0].key_value, kfs[idx !== kfs.length ? idx : 0].value);
+  },
+  update_temperature: function() {
+    return chrome.storage.local.get(['altitude', 'keyframes'], (function(_this) {
+      return function(items) {
+        var temp;
+        temp = _this.get_temperature(items.altitude, items.keyframes);
+        if (temp != null) {
+          return chrome.storage.local.set({
+            'temperature': temp
+          }, function() {});
+        }
+      };
+    })(this));
   },
   update_position: function() {
     if (navigator.geolocation != null) {
-      return navigator.geolocation.getCurrentPosition((function(loc) {
+      return navigator.geolocation.getCurrentPosition(function(loc) {
         return chrome.storage.local.set({
           'latitude': loc.coords.latitude,
           'longitude': loc.coords.longitude,
           'last_update': Date.now()
         }, function() {});
-      }), (function(err) {
+      }, function(err) {
         console.log("Geolocation Error:");
         this.errHandler(err);
         return chrome.storage.local.set({
           'last_update': Date.now()
         }, function() {});
-      }), function() {});
+      }, function() {});
     } else {
       return console.log('Geolocation unavailable');
     }
@@ -124,7 +138,7 @@ obj = {
 module.exports = obj;
 
 
-},{"./color_helpers.coffee":2,"./sun_altitude.coffee":7,"./temperature_to_color.coffee":8}],2:[function(require,module,exports){
+},{"./color_helpers.coffee":2,"./helpers.coffee":3,"./sun_altitude.coffee":7,"./temperature_to_color.coffee":8}],2:[function(require,module,exports){
 var obj;
 
 obj = {
@@ -201,6 +215,18 @@ helpers = {
   },
   angle_asin: function(x) {
     return this.to_angle(Math.asin(x));
+  },
+  interpolate: function(value, key1, val1, key2, val2) {
+    if (key2 === key1) {
+      return val1;
+    } else {
+      return val1 + (val2 - val1) * (value - key1) / (key2 - key1);
+    }
+  },
+  contains: function(val, arr) {
+    return arr.some(function(el) {
+      return el === val;
+    });
   }
 };
 
@@ -328,10 +354,12 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
 'use strict';
 var Keyframe, KeyframeView, Models;
 
-HTMLElement.prototype.set = function(attr, val) {
-  this[attr] = val;
-  return this;
-};
+if (typeof HTMLElement !== "undefined" && HTMLElement !== null) {
+  HTMLElement.prototype.set = function(attr, val) {
+    this[attr] = val;
+    return this;
+  };
+}
 
 Models = {
   Keyframe: Keyframe = (function() {
@@ -400,7 +428,8 @@ Models = {
     };
 
     KeyframeView.prototype.setValueType = function() {
-      return this.value.type = this.option_map[this.option.value];
+      this.value.type = this.option_map[this.option.value];
+      return this.value.value = this.model.value;
     };
 
     KeyframeView.prototype.render = function() {
