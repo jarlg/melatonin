@@ -14,6 +14,7 @@ coffee_source_files = [
     'app'
     'content_script'
     'options'
+    'test'
 ]
 
 errorHandler = (err) ->

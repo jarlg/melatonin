@@ -31,9 +31,9 @@ module.exports = obj;
 
 
 },{}],2:[function(require,module,exports){
-var H, init_overlay, set_bgcolor, update_color;
+var C, init_overlay, set_bgcolor, update_color;
 
-H = require('./color_helpers.coffee');
+C = require('./color_helpers.coffee');
 
 init_overlay = function() {
   var overlay;
@@ -60,6 +60,7 @@ set_bgcolor = function(element, color, opacity) {
 };
 
 update_color = function(element) {
+  console.log("updating color!");
   if (element == null) {
     element = document.getElementById('melatonin-overlay');
   }
@@ -68,7 +69,7 @@ update_color = function(element) {
       if (!items.custom) {
         return set_bgcolor(element, items.rgb, items.opacity);
       } else {
-        return set_bgcolor(element, H.rgb_to_string(H.hex_to_rgb(items.custom_color)), items.opacity);
+        return set_bgcolor(element, C.rgb_to_string(C.hex_to_rgb(items.custom_color)), items.opacity);
       }
     } else {
       return set_bgcolor(element);

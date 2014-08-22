@@ -1,8 +1,9 @@
 'use strict'
 
-HTMLElement.prototype.set = (attr, val) ->
-    @[attr] = val
-    @
+if HTMLElement?
+    HTMLElement.prototype.set = (attr, val) ->
+        @[attr] = val
+        @
 
 Models = 
     Keyframe:
