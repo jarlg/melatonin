@@ -64,6 +64,7 @@ Models =
 
             setValueType: ->
                 @value.type = @option_map[@option.value]
+                @value.value = @model.value
 
             render: -> @parent.appendChild @row; @
 

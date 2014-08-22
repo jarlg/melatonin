@@ -23,7 +23,8 @@ helpers =
     angle_atan: (x) -> @to_angle Math.atan x
     angle_asin: (x) -> @to_angle Math.asin x
 
-    linear: (value, kf1, kf2) ->
-        null
+    interpolate: (value, kf1, kf2) ->
+        ratio = (value - kf1.key_value) / (kf2.key_value - kf1.key_value)
+        kf1.value + ratio * (kf2.value - kf2.value)
 
 module.exports = helpers
