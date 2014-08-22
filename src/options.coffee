@@ -30,13 +30,12 @@ class Options
         @models.push model
         @views.push new M.KeyframeView model, @parent
 
-        index = @views.length - 1
-
         last @views
             .create()
             .render()
             .delete.addEventListener 'click', (event) =>
                 event.preventDefault()
+                index = @models.indexOf model
                 @models.splice index, 1
                 last @views.splice index, 1
                     .erase()

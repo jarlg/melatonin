@@ -151,16 +151,16 @@ Options = (function() {
   }
 
   Options.prototype.add = function(model) {
-    var index;
     if (model == null) {
       model = new M.Keyframe();
     }
     this.models.push(model);
     this.views.push(new M.KeyframeView(model, this.parent));
-    index = this.views.length - 1;
     return last(this.views).create().render()["delete"].addEventListener('click', (function(_this) {
       return function(event) {
+        var index;
         event.preventDefault();
+        index = _this.models.indexOf(model);
         _this.models.splice(index, 1);
         return last(_this.views.splice(index, 1)).erase();
       };
