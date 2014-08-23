@@ -10,8 +10,19 @@ M = require './models.coffee'
 
 class Options
     constructor: (@parent, @models=[], @views=[]) ->
+        @prio =
+            temperature: 2,
+            color: 1,
+            opacity: 0
+
         chrome.storage.local
             .get 'keyframes', (item) =>
+                # sort by option first, key_value for same option
+                item.keyframes
+                    .sort (a, b) =>
+                        @prio[a.option] - @prio[b.option] if a.option isnt b.option
+                        a.key_value - b.key_value
+                            
                 @add kf for kf in item.keyframes
 
         $ '#add'
