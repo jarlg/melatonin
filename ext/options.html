@@ -4,23 +4,27 @@
     <link href="./options.css" rel="stylesheet">
 </head>
 <body>
-    <canvas id='graph'></canvas>
-    <form action="" id="keyframes-form" method="post">
+    <div class='container'>
+        <h3>Sun altitude at your current location (starting at midnight, 24h in total)</h3>
+        <canvas id='graph'></canvas>
+        <p>at <span id='time-output'></span>, the sun is <span id='altitude-output'></span> degrees over/under the horizon</p>
+        <form action="" id="keyframes-form" method="post">
 
-        <table id="keyframes">
-            <tr>
-                <th>trigger altitude</th>
-                <th>option</th>
-                <th>value</th>
-                <th>
-                    <button id='add'>+</button>
-                </th>
-            </tr>
+            <table id="keyframes">
+                <tr>
+                    <th>trigger altitude</th>
+                    <th>option</th>
+                    <th>value</th>
+                    <th>
+                        <button id='add'>+</button>
+                    </th>
+                </tr>
 
-            <!-- here keyframes are added --!>
+                <!-- here keyframes are added --!>
 
-        </table>
-        <button id='save'>save</button>
-    </form>
+                    </table>
+                    <button id='save'>save</button>
+                    </form>
+                    </div>
     <script type='text/javascript' src='options.js'></script>
 </body>
