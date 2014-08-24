@@ -1,4 +1,89 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var helpers;
+
+helpers = {
+  between: function(min, max, val) {
+    while (val < min) {
+      val += max - min;
+    }
+    while (max <= val) {
+      val -= max - min;
+    }
+    return val;
+  },
+  angleToQuadrant: function(angle) {
+    angle = this.between(0, 360, angle);
+    if (angle < 90) {
+      return 1;
+    } else if (angle < 180) {
+      return 2;
+    } else if (angle < 270) {
+      return 3;
+    } else if (angle < 360) {
+      return 4;
+    }
+  },
+  to_radians: function(angle) {
+    return angle * Math.PI / 180;
+  },
+  to_angle: function(rad) {
+    return rad * 180 / Math.PI;
+  },
+  angle_sin: function(x) {
+    return Math.sin(this.to_radians(x));
+  },
+  angle_cos: function(x) {
+    return Math.cos(this.to_radians(x));
+  },
+  angle_tan: function(x) {
+    return Math.tan(this.to_radians(x));
+  },
+  angle_atan: function(x) {
+    return this.to_angle(Math.atan(x));
+  },
+  angle_asin: function(x) {
+    return this.to_angle(Math.asin(x));
+  },
+  interpolate: function(value, key1, val1, key2, val2) {
+    if (key2 === key1) {
+      return val1;
+    } else {
+      return val1 + (val2 - val1) * (value - key1) / (key2 - key1);
+    }
+  },
+  contains: function(val, arr) {
+    return arr.some(function(el) {
+      return el === val;
+    });
+  }
+};
+
+module.exports = helpers;
+
+
+},{}],2:[function(require,module,exports){
+var jd;
+
+jd = {
+  get_julian_day: function(date) {
+    var a, m, y;
+    a = date.getUTCMonth() < 2 ? 1 : 0;
+    y = date.getUTCFullYear() + 4800 - a;
+    m = (date.getUTCMonth() + 1) + 12 * a - 3;
+    return date.getUTCDate() + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+  },
+  get_julian_date: function(date) {
+    return this.get_julian_day(date) + (date.getUTCHours() - 12) / 24 + date.getUTCMinutes() / 1440 + date.getUTCSeconds() / 86400;
+  },
+  get_jdn: function(jd) {
+    return jd - 2451545.0;
+  }
+};
+
+module.exports = jd;
+
+
+},{}],3:[function(require,module,exports){
 'use strict';
 var Keyframe, KeyframeView, Models;
 
@@ -98,8 +183,8 @@ Models = {
 module.exports = Models;
 
 
-},{}],2:[function(require,module,exports){
-var $, $$, M, Options, app, last, val;
+},{}],4:[function(require,module,exports){
+var $, $$, Canvas, M, Options, S, app, last, val;
 
 $ = document.querySelector.bind(document);
 
@@ -117,15 +202,29 @@ last = function(arr) {
 
 M = require('./models.coffee');
 
+S = require('./sun_altitude.coffee');
+
 Options = (function() {
   function Options(parent, models, views) {
     this.parent = parent;
     this.models = models != null ? models : [];
     this.views = views != null ? views : [];
-    chrome.storage.local.get('keyframes', (function(_this) {
-      return function(item) {
+    this.prio = {
+      temperature: 2,
+      color: 1,
+      opacity: 0
+    };
+    chrome.storage.local.get(['keyframes', 'latitude', 'longitude'], (function(_this) {
+      return function(items) {
         var kf, _i, _len, _ref, _results;
-        _ref = item.keyframes;
+        items.keyframes.sort(function(a, b) {
+          if (a.option !== b.option) {
+            return _this.prio[b.option] - _this.prio[a.option];
+          } else {
+            return a.key_value - b.key_value;
+          }
+        });
+        _ref = items.keyframes;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           kf = _ref[_i];
@@ -171,7 +270,109 @@ Options = (function() {
 
 })();
 
+Canvas = (function() {
+  function Canvas(el, lat, long) {
+    var d, i, _i, _ref;
+    this.el = el;
+    this.lat = lat;
+    this.long = long;
+    this.el.width = 400;
+    this.el.height = 250;
+    this.ctx = this.el.getContext('2d');
+    this.nPts = 48;
+    this.timespan = 24;
+    d = new Date().setHours(0).setMinutes(0).getTime();
+    console.log('what2');
+    for (i = _i = 0, _ref = this.nPts; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+      this.pts = S.get_sun_altitude(new Date(d + i * this.timespan * 60 * 60 * 1000 / this.nPts), this.lat, this.long);
+    }
+  }
+
+  Canvas.prototype.renderAltitude = function() {
+    var i, yOrigo, _i, _ref;
+    yOrigo = this.el.height / 2;
+    this.ctx.lineWidth = 1;
+    console.log('what');
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = 'silver';
+    this.ctx.moveTo(0, yOrigo);
+    this.ctx.lineTo(this.el.width, yOrigo);
+    this.ctx.stroke();
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = 'orange';
+    this.ctx.moveTo(0, this.pts[0]);
+    for (i = _i = 1, _ref = this.nPts; 1 <= _ref ? _i <= _ref : _i >= _ref; i = 1 <= _ref ? ++_i : --_i) {
+      this.ctx.lineTo(i * this.el.width / this.nPts, this.pts[i]);
+    }
+    return this.ctx.stroke();
+  };
+
+  return Canvas;
+
+})();
+
 app = new Options($('#keyframes'));
 
 
-},{"./models.coffee":1}]},{},[2])
+},{"./models.coffee":3,"./sun_altitude.coffee":5}],5:[function(require,module,exports){
+var H, J, obj;
+
+J = require('./julian_date.coffee');
+
+H = require('./helpers.coffee');
+
+obj = {
+  axial_tilt: 23.439,
+  get_ecliptic_long: function(l, g) {
+    return l + 1.915 * H.angle_sin(g) + 0.02 * H.angle_sin(2 * g);
+  },
+  get_right_ascension: function(ecliptic_long) {
+    return H.angle_atan(H.angle_cos(this.axial_tilt) * H.angle_tan(ecliptic_long));
+  },
+  get_hour_angle: function(jd, longitude, right_ascension) {
+    return H.between(0, 360, this.get_gst(jd) + longitude - right_ascension);
+  },
+  get_declination: function(ecliptic_long) {
+    return H.angle_asin(H.angle_sin(this.axial_tilt) * H.angle_sin(ecliptic_long));
+  },
+  get_sun_altitude: function(date, latitude, longitude) {
+    var dec, ec_long, g, ha, jd, jdn, l, r_asc;
+    jd = J.get_julian_date(date);
+    jdn = J.get_jdn(jd);
+    l = H.between(0, 360, 280.460 + 0.9856474 * jdn);
+    g = H.between(0, 360, 357.528 + 0.9856003 * jdn);
+    ec_long = this.get_ecliptic_long(l, g);
+    r_asc = this.get_right_ascension(ec_long);
+    while (H.angleToQuadrant(ec_long) !== H.angleToQuadrant(r_asc)) {
+      r_asc += r_asc < ec_long ? 90 : -90;
+    }
+    dec = this.get_declination(ec_long);
+    ha = this.get_hour_angle(jd, longitude, r_asc);
+    return H.angle_asin(H.angle_sin(latitude) * H.angle_sin(dec) + H.angle_cos(latitude) * H.angle_cos(dec) * H.angle_cos(ha));
+  },
+  get_last_jd_midnight: function(jd) {
+    if (jd >= Math.floor(jd + 0.5)) {
+      return Math.floor(jd - 1) + 0.5;
+    } else {
+      return Math.floor(jd) + 0.5;
+    }
+  },
+  get_ut_hours: function(jd, last_jd_midnight) {
+    return 24 * (jd - last_jd_midnight);
+  },
+  get_gst_hours: function(jdn_midnight, ut_hours) {
+    var gmst;
+    gmst = 6.697374558 + 0.06570982441908 * jdn_midnight + 1.00273790935 * ut_hours;
+    return H.between(0, 24, gmst);
+  },
+  get_gst: function(jd) {
+    var jdm;
+    jdm = this.get_last_jd_midnight(jd);
+    return 15 * this.get_gst_hours(J.get_jdn(jdm), this.get_ut_hours(jd, jdm));
+  }
+};
+
+module.exports = obj;
+
+
+},{"./helpers.coffee":1,"./julian_date.coffee":2}]},{},[4])
