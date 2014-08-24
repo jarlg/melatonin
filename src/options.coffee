@@ -18,6 +18,9 @@ class Options
 
         chrome.storage.local
             .get ['keyframes', 'latitude', 'longitude'], (items) =>
+                @canvas = new Canvas $('#graph'), items.latitude, items.longitude
+                @canvas.renderAltitude()
+
                 # sort by option first, key_value for same option
                 items.keyframes
                     .sort (a, b) =>
@@ -62,17 +65,38 @@ class Canvas
         @nPts = 48
         @timespan = 24 #hours
         d = new Date()
-            .setHours 0
-            .setMinutes 0
-            .getTime()
+        d.setHours 0
+        d.setMinutes 0
+        d.setSeconds 0
+        time = d.getTime()
 
-        console.log 'what2'
-        @pts = S.get_sun_altitude new Date(d + i * @timespan * 60 * 60 * 1000 / @nPts), @lat, @long for i in [0 .. @nPts]
+        @pts = []
+        for i in [0 .. @nPts-1]
+            do (i) =>
+                @pts.push S.get_sun_altitude new Date(time + i * @timespan * 60 * 60 * 1000 / @nPts), @lat, @long
+
+        @el.addEventListener 'click', (event) =>
+            @el.width = @el.width
+            @renderAltitude()
+            @ctx.beginPath()
+            @ctx.strokeStyle = 'black'
+            @ctx.moveTo event.layerX, 0
+            @ctx.lineTo event.layerX, @el.height
+            @ctx.stroke()
+
+            date = new Date time + @timespan*60*60*1000 * event.layerX / @el.width
+
+            $ '#time-output'
+                .innerHTML = date.getHours() + 'h' + if date.getMinutes() < 10 then '0' + date.getMinutes() else date.getMinutes()
+
+            $ '#altitude-output'
+                .innerHTML = S.get_sun_altitude date, @lat, @long
+                    .toFixed 2
+        @
 
     renderAltitude: ->
         yOrigo = @el.height / 2
         @ctx.lineWidth = 1
-        console.log 'what'
 
         # draw horizon
         @ctx.beginPath()
@@ -84,8 +108,8 @@ class Canvas
         # draw 24h sun path
         @ctx.beginPath()
         @ctx.strokeStyle = 'orange'
-        @ctx.moveTo 0, @pts[0]
-        @ctx.lineTo i * @el.width / @nPts, @pts[i] for i in [1 .. @nPts]
+        @ctx.moveTo 0, yOrigo - @pts[0]
+        @ctx.lineTo i * @el.width / @nPts, yOrigo - @pts[i] for i in [1 .. @nPts]
         @ctx.stroke()
 
 

@@ -217,6 +217,8 @@ Options = (function() {
     chrome.storage.local.get(['keyframes', 'latitude', 'longitude'], (function(_this) {
       return function(items) {
         var kf, _i, _len, _ref, _results;
+        _this.canvas = new Canvas($('#graph'), items.latitude, items.longitude);
+        _this.canvas.renderAltitude();
         items.keyframes.sort(function(a, b) {
           if (a.option !== b.option) {
             return _this.prio[b.option] - _this.prio[a.option];
@@ -272,7 +274,7 @@ Options = (function() {
 
 Canvas = (function() {
   function Canvas(el, lat, long) {
-    var d, i, _i, _ref;
+    var d, i, time, _fn, _i, _ref;
     this.el = el;
     this.lat = lat;
     this.long = long;
@@ -281,18 +283,42 @@ Canvas = (function() {
     this.ctx = this.el.getContext('2d');
     this.nPts = 48;
     this.timespan = 24;
-    d = new Date().setHours(0).setMinutes(0).getTime();
-    console.log('what2');
-    for (i = _i = 0, _ref = this.nPts; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-      this.pts = S.get_sun_altitude(new Date(d + i * this.timespan * 60 * 60 * 1000 / this.nPts), this.lat, this.long);
+    d = new Date();
+    d.setHours(0);
+    d.setMinutes(0);
+    d.setSeconds(0);
+    time = d.getTime();
+    this.pts = [];
+    _fn = (function(_this) {
+      return function(i) {
+        return _this.pts.push(S.get_sun_altitude(new Date(time + i * _this.timespan * 60 * 60 * 1000 / _this.nPts), _this.lat, _this.long));
+      };
+    })(this);
+    for (i = _i = 0, _ref = this.nPts - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+      _fn(i);
     }
+    this.el.addEventListener('click', (function(_this) {
+      return function(event) {
+        var date;
+        _this.el.width = _this.el.width;
+        _this.renderAltitude();
+        _this.ctx.beginPath();
+        _this.ctx.strokeStyle = 'black';
+        _this.ctx.moveTo(event.layerX, 0);
+        _this.ctx.lineTo(event.layerX, _this.el.height);
+        _this.ctx.stroke();
+        date = new Date(time + _this.timespan * 60 * 60 * 1000 * event.layerX / _this.el.width);
+        $('#time-output').innerHTML = date.getHours() + 'h' + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes());
+        return $('#altitude-output').innerHTML = S.get_sun_altitude(date, _this.lat, _this.long).toFixed(2);
+      };
+    })(this));
+    this;
   }
 
   Canvas.prototype.renderAltitude = function() {
     var i, yOrigo, _i, _ref;
     yOrigo = this.el.height / 2;
     this.ctx.lineWidth = 1;
-    console.log('what');
     this.ctx.beginPath();
     this.ctx.strokeStyle = 'silver';
     this.ctx.moveTo(0, yOrigo);
@@ -300,9 +326,9 @@ Canvas = (function() {
     this.ctx.stroke();
     this.ctx.beginPath();
     this.ctx.strokeStyle = 'orange';
-    this.ctx.moveTo(0, this.pts[0]);
+    this.ctx.moveTo(0, yOrigo - this.pts[0]);
     for (i = _i = 1, _ref = this.nPts; 1 <= _ref ? _i <= _ref : _i >= _ref; i = 1 <= _ref ? ++_i : --_i) {
-      this.ctx.lineTo(i * this.el.width / this.nPts, this.pts[i]);
+      this.ctx.lineTo(i * this.el.width / this.nPts, yOrigo - this.pts[i]);
     }
     return this.ctx.stroke();
   };

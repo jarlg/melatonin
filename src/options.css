@@ -2,3 +2,12 @@ table {
     margin: 0 auto;
     width: 350px;
 }
+
+canvas {
+    margin: 0 auto;
+    width: 400px;
+}
+
+.container {
+    text-align: center;
+}
