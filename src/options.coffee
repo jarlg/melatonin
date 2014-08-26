@@ -18,8 +18,9 @@ class Options
 
         chrome.storage.local
             .get ['keyframes', 'latitude', 'longitude'], (items) =>
-                @canvas = new Canvas $('#graph'), items.latitude, items.longitude
+                @canvas = new Canvas $('#graph'), $('#units'), items.latitude, items.longitude
                 @canvas.renderAltitude()
+                @canvas.renderUnits()
 
                 # sort by option first, key_value for same option
                 items.keyframes
@@ -58,12 +59,22 @@ class Options
                     .erase()
 
 class Canvas
-    constructor: (@el, @lat, @long) ->
-        @el.width = 400
-        @el.height = 250
+    constructor: (@el, @units, @lat, @long) ->
+        @el.width = 575
+        @el.height = 340
+
+        @units.width = @el.width
+        @units.height = @el.height
+
         @ctx = @el.getContext '2d'
+        @uCtx = @units.getContext '2d'
+
         @nPts = 48
         @timespan = 24 #hours
+
+        @margin = 40
+        @hoverThreshold = 4
+
         d = new Date()
         d.setHours 0
         d.setMinutes 0
@@ -75,42 +86,55 @@ class Canvas
             do (i) =>
                 @pts.push S.get_sun_altitude new Date(time + i * @timespan * 60 * 60 * 1000 / @nPts), @lat, @long
 
-        @el.addEventListener 'click', (event) =>
-            @el.width = @el.width
-            @renderAltitude()
-            @ctx.beginPath()
-            @ctx.strokeStyle = 'black'
-            @ctx.moveTo event.layerX, 0
-            @ctx.lineTo event.layerX, @el.height
-            @ctx.stroke()
+        @ptXs = []
+        @ptYs = []
+        for i in [0 .. @nPts-1]
+            do (i) =>
+                @ptXs.push @ptX i
+                @ptYs.push @ptY i
 
-            date = new Date time + @timespan*60*60*1000 * event.layerX / @el.width
+        @el.addEventListener 'mousemove', (event) =>
+            for i in [0 .. @nPts-1]
+                do =>
+                    if @hoverThreshold > Math.abs @ptXs[i] - event.layerX
+                        @renderAltitude i
 
-            $ '#time-output'
-                .innerHTML = date.getHours() + 'h' + if date.getMinutes() < 10 then '0' + date.getMinutes() else date.getMinutes()
-
-            $ '#altitude-output'
-                .innerHTML = S.get_sun_altitude date, @lat, @long
-                    .toFixed 2
         @
 
-    renderAltitude: ->
-        yOrigo = @el.height / 2
-        @ctx.lineWidth = 1
+    # highlight nth element of @pts
+    renderAltitude: (n) ->
+        @el.width = @el.width
 
-        # draw horizon
-        @ctx.beginPath()
-        @ctx.strokeStyle = 'silver'
-        @ctx.moveTo 0, yOrigo
-        @ctx.lineTo @el.width, yOrigo
-        @ctx.stroke()
+        n = -1 if not n?
 
         # draw 24h sun path
-        @ctx.beginPath()
-        @ctx.strokeStyle = 'orange'
-        @ctx.moveTo 0, yOrigo - @pts[0]
-        @ctx.lineTo i * @el.width / @nPts, yOrigo - @pts[i] for i in [1 .. @nPts]
-        @ctx.stroke()
+        @ctx.fillStyle = 'orange'
+        for i in [0 .. @nPts-1]
+            do =>
+                @ctx.beginPath()
+                @ctx.fillStyle = 'red' if i is n
+                @ctx.arc @ptXs[i], @ptYs[i], 2, 0, 2*Math.PI, false
+                @ctx.fill()
+                @ctx.fillStyle = 'orange' if i is n
+
+
+    renderUnits: ->
+        @units.width = @units.width
+        @uCtx.font = '8pt sans-serif'
+        @uCtx.fillStyle = 'black'
+
+        @uCtx.fillText '90' , 0, @margin
+        @uCtx.fillText '0'  , 0, @yOrigo()
+        @uCtx.fillText '-90', 0, @el.height - @margin
+
+    yOrigo: -> Math.floor 0.5 + @el.height / 2
+
+    ptX: (i) ->
+        @margin + i * (@el.width - 2*@margin) / @nPts
+
+    ptY: (i) ->
+        @yOrigo() - @pts[i]*(@el.height-2*@margin)/(2*90) 
+
 
 
 app = new Options $ '#keyframes'

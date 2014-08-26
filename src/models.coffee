@@ -32,6 +32,8 @@ Models =
                     .set 'type', 'number'
                     .set 'value', @model.key_value
 
+                @key_value.classList.add 'key-input'
+
                 @option = document.createElement 'select'
 
                 for opt in [ 'color', 'temperature', 'opacity' ]
@@ -43,6 +45,8 @@ Models =
 
                 @value = document.createElement 'input'
                     .set 'value', @model.value
+
+                @value.classList.add 'value-input'
 
                 @setValueType()
                 @option.addEventListener 'input', @setValueType.bind @
