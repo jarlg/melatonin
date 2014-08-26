@@ -391,6 +391,7 @@ Models = {
       this.row = document.createElement('tr');
       this.row.classList.add('keyframe');
       this.key_value = document.createElement('input').set('type', 'number').set('value', this.model.key_value);
+      this.key_value.classList.add('key-input');
       this.option = document.createElement('select');
       _ref = ['color', 'temperature', 'opacity'];
       _fn = (function(_this) {
@@ -403,6 +404,7 @@ Models = {
         _fn();
       }
       this.value = document.createElement('input').set('value', this.model.value);
+      this.value.classList.add('value-input');
       this.setValueType();
       this.option.addEventListener('input', this.setValueType.bind(this));
       this["delete"] = document.createElement('button').set('innerHTML', '-');

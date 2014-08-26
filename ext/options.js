@@ -124,6 +124,7 @@ Models = {
       this.row = document.createElement('tr');
       this.row.classList.add('keyframe');
       this.key_value = document.createElement('input').set('type', 'number').set('value', this.model.key_value);
+      this.key_value.classList.add('key-input');
       this.option = document.createElement('select');
       _ref = ['color', 'temperature', 'opacity'];
       _fn = (function(_this) {
@@ -136,6 +137,7 @@ Models = {
         _fn();
       }
       this.value = document.createElement('input').set('value', this.model.value);
+      this.value.classList.add('value-input');
       this.setValueType();
       this.option.addEventListener('input', this.setValueType.bind(this));
       this["delete"] = document.createElement('button').set('innerHTML', '-');
@@ -217,8 +219,9 @@ Options = (function() {
     chrome.storage.local.get(['keyframes', 'latitude', 'longitude'], (function(_this) {
       return function(items) {
         var kf, _i, _len, _ref, _results;
-        _this.canvas = new Canvas($('#graph'), items.latitude, items.longitude);
+        _this.canvas = new Canvas($('#graph'), $('#units'), items.latitude, items.longitude);
         _this.canvas.renderAltitude();
+        _this.canvas.renderUnits();
         items.keyframes.sort(function(a, b) {
           if (a.option !== b.option) {
             return _this.prio[b.option] - _this.prio[a.option];
@@ -273,16 +276,22 @@ Options = (function() {
 })();
 
 Canvas = (function() {
-  function Canvas(el, lat, long) {
-    var d, i, time, _fn, _i, _ref;
+  function Canvas(el, units, lat, long) {
+    var d, i, time, _fn, _fn1, _i, _j, _ref, _ref1;
     this.el = el;
+    this.units = units;
     this.lat = lat;
     this.long = long;
-    this.el.width = 400;
-    this.el.height = 250;
+    this.el.width = 575;
+    this.el.height = 340;
+    this.units.width = this.el.width;
+    this.units.height = this.el.height;
     this.ctx = this.el.getContext('2d');
+    this.uCtx = this.units.getContext('2d');
     this.nPts = 48;
     this.timespan = 24;
+    this.margin = 40;
+    this.hoverThreshold = 4;
     d = new Date();
     d.setHours(0);
     d.setMinutes(0);
@@ -297,40 +306,79 @@ Canvas = (function() {
     for (i = _i = 0, _ref = this.nPts - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
       _fn(i);
     }
-    this.el.addEventListener('click', (function(_this) {
+    this.ptXs = [];
+    this.ptYs = [];
+    _fn1 = (function(_this) {
+      return function(i) {
+        _this.ptXs.push(_this.ptX(i));
+        return _this.ptYs.push(_this.ptY(i));
+      };
+    })(this);
+    for (i = _j = 0, _ref1 = this.nPts - 1; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+      _fn1(i);
+    }
+    this.el.addEventListener('mousemove', (function(_this) {
       return function(event) {
-        var date;
-        _this.el.width = _this.el.width;
-        _this.renderAltitude();
-        _this.ctx.beginPath();
-        _this.ctx.strokeStyle = 'black';
-        _this.ctx.moveTo(event.layerX, 0);
-        _this.ctx.lineTo(event.layerX, _this.el.height);
-        _this.ctx.stroke();
-        date = new Date(time + _this.timespan * 60 * 60 * 1000 * event.layerX / _this.el.width);
-        $('#time-output').innerHTML = date.getHours() + 'h' + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes());
-        return $('#altitude-output').innerHTML = S.get_sun_altitude(date, _this.lat, _this.long).toFixed(2);
+        var _k, _ref2, _results;
+        _results = [];
+        for (i = _k = 0, _ref2 = _this.nPts - 1; 0 <= _ref2 ? _k <= _ref2 : _k >= _ref2; i = 0 <= _ref2 ? ++_k : --_k) {
+          _results.push((function() {
+            if (_this.hoverThreshold > Math.abs(_this.ptXs[i] - event.layerX)) {
+              return _this.renderAltitude(i);
+            }
+          })());
+        }
+        return _results;
       };
     })(this));
     this;
   }
 
-  Canvas.prototype.renderAltitude = function() {
-    var i, yOrigo, _i, _ref;
-    yOrigo = this.el.height / 2;
-    this.ctx.lineWidth = 1;
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = 'silver';
-    this.ctx.moveTo(0, yOrigo);
-    this.ctx.lineTo(this.el.width, yOrigo);
-    this.ctx.stroke();
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = 'orange';
-    this.ctx.moveTo(0, yOrigo - this.pts[0]);
-    for (i = _i = 1, _ref = this.nPts; 1 <= _ref ? _i <= _ref : _i >= _ref; i = 1 <= _ref ? ++_i : --_i) {
-      this.ctx.lineTo(i * this.el.width / this.nPts, yOrigo - this.pts[i]);
+  Canvas.prototype.renderAltitude = function(n) {
+    var i, _i, _ref, _results;
+    this.el.width = this.el.width;
+    if (n == null) {
+      n = -1;
     }
-    return this.ctx.stroke();
+    this.ctx.fillStyle = 'orange';
+    _results = [];
+    for (i = _i = 0, _ref = this.nPts - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+      _results.push((function(_this) {
+        return function() {
+          _this.ctx.beginPath();
+          if (i === n) {
+            _this.ctx.fillStyle = 'red';
+          }
+          _this.ctx.arc(_this.ptXs[i], _this.ptYs[i], 2, 0, 2 * Math.PI, false);
+          _this.ctx.fill();
+          if (i === n) {
+            return _this.ctx.fillStyle = 'orange';
+          }
+        };
+      })(this)());
+    }
+    return _results;
+  };
+
+  Canvas.prototype.renderUnits = function() {
+    this.units.width = this.units.width;
+    this.uCtx.font = '8pt sans-serif';
+    this.uCtx.fillStyle = 'black';
+    this.uCtx.fillText('90', 0, this.margin);
+    this.uCtx.fillText('0', 0, this.yOrigo());
+    return this.uCtx.fillText('-90', 0, this.el.height - this.margin);
+  };
+
+  Canvas.prototype.yOrigo = function() {
+    return Math.floor(0.5 + this.el.height / 2);
+  };
+
+  Canvas.prototype.ptX = function(i) {
+    return this.margin + i * (this.el.width - 2 * this.margin) / this.nPts;
+  };
+
+  Canvas.prototype.ptY = function(i) {
+    return this.yOrigo() - this.pts[i] * (this.el.height - 2 * this.margin) / (2 * 90);
   };
 
   return Canvas;
