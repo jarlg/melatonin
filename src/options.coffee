@@ -76,7 +76,7 @@ class Canvas
         @hoverThreshold = 4
 
         d = new Date()
-        d.setHours 0
+        d.setHours 6
         d.setMinutes 0
         d.setSeconds 0
         time = d.getTime()
@@ -122,10 +122,6 @@ class Canvas
         @units.width = @units.width
         @uCtx.font = '8pt sans-serif'
         @uCtx.fillStyle = 'black'
-
-        @uCtx.fillText '90' , 0, @margin
-        @uCtx.fillText '0'  , 0, @yOrigo()
-        @uCtx.fillText '-90', 0, @el.height - @margin
 
     yOrigo: -> Math.floor 0.5 + @el.height / 2
 
