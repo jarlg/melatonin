@@ -5,6 +5,8 @@
     display: flex;
     align-items: center;
     justify-items: center;
+
+    font: 12pt sans-serif;
 }
 
 #canvases {
@@ -25,10 +27,41 @@ form {
     text-align: center;
 }
 
+tr,
+th {
+    font-weight: normal;
+}
+
+input {
+    border: none;
+    border-bottom: 1px solid black;
+}
+
+select {
+    background: none;
+    border: none;
+    border-bottom: 1px solid black;
+}
+
+button {
+    font: 16pt normal sans-serif;
+    padding: 5px;
+    border: none;
+    background: none;
+}
+
+button:hover {
+    color: orange;
+}
+
 .key-input {
     width: 35px;
 }
 
 .value-input {
     width: 55px;
+}
+
+.delete {
+    width: 35px;
 }

@@ -293,7 +293,7 @@ Canvas = (function() {
     this.margin = 40;
     this.hoverThreshold = 4;
     d = new Date();
-    d.setHours(0);
+    d.setHours(6);
     d.setMinutes(0);
     d.setSeconds(0);
     time = d.getTime();
@@ -363,10 +363,7 @@ Canvas = (function() {
   Canvas.prototype.renderUnits = function() {
     this.units.width = this.units.width;
     this.uCtx.font = '8pt sans-serif';
-    this.uCtx.fillStyle = 'black';
-    this.uCtx.fillText('90', 0, this.margin);
-    this.uCtx.fillText('0', 0, this.yOrigo());
-    return this.uCtx.fillText('-90', 0, this.el.height - this.margin);
+    return this.uCtx.fillStyle = 'black';
   };
 
   Canvas.prototype.yOrigo = function() {
