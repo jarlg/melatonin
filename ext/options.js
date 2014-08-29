@@ -44,7 +44,28 @@ helpers = {
   angle_asin: function(x) {
     return this.to_angle(Math.asin(x));
   },
-  interpolate: function(value, key1, val1, key2, val2) {
+  get: function(kfs, type, altitude) {
+    var idx;
+    console.log('starting %s interpolation', type);
+    kfs = kfs.filter(function(el) {
+      return el.option === type;
+    });
+    console.log(kfs);
+    if (kfs.length === 0) {
+      return 0;
+    }
+    kfs.sort(function(a, b) {
+      return a.key_value - b.key_value;
+    });
+    console.log('sorting ...');
+    console.log(kfs);
+    idx = kfs.filter(function(el) {
+      return el.key_value < item.altitude;
+    }).length;
+    console.log('got index %s', idx);
+    return this.linear_interpolate(altitude, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].key_value, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].value, kfs[idx !== kfs.length ? idx : 0].key_value, kfs[idx !== kfs.length ? idx : 0].value);
+  },
+  linear_interpolate: function(value, key1, val1, key2, val2) {
     if (key2 === key1) {
       return val1;
     } else {
@@ -277,7 +298,7 @@ Options = (function() {
 
 Canvas = (function() {
   function Canvas(el, units, lat, long) {
-    var d, i, time, _fn, _fn1, _i, _j, _ref, _ref1;
+    var i, _fn, _i, _ref;
     this.el = el;
     this.units = units;
     this.lat = lat;
@@ -292,36 +313,22 @@ Canvas = (function() {
     this.timespan = 24;
     this.margin = 40;
     this.hoverThreshold = 4;
-    d = new Date();
-    d.setHours(6);
-    d.setMinutes(0);
-    d.setSeconds(0);
-    time = d.getTime();
-    this.pts = [];
-    _fn = (function(_this) {
-      return function(i) {
-        return _this.pts.push(S.get_sun_altitude(new Date(time + i * _this.timespan * 60 * 60 * 1000 / _this.nPts), _this.lat, _this.long));
-      };
-    })(this);
-    for (i = _i = 0, _ref = this.nPts - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-      _fn(i);
-    }
     this.ptXs = [];
     this.ptYs = [];
-    _fn1 = (function(_this) {
+    _fn = (function(_this) {
       return function(i) {
         _this.ptXs.push(_this.ptX(i));
         return _this.ptYs.push(_this.ptY(i));
       };
     })(this);
-    for (i = _j = 0, _ref1 = this.nPts - 1; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
-      _fn1(i);
+    for (i = _i = 0, _ref = this.nPts - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+      _fn(i);
     }
     this.el.addEventListener('mousemove', (function(_this) {
       return function(event) {
-        var _k, _ref2, _results;
+        var _j, _ref1, _results;
         _results = [];
-        for (i = _k = 0, _ref2 = _this.nPts - 1; 0 <= _ref2 ? _k <= _ref2 : _k >= _ref2; i = 0 <= _ref2 ? ++_k : --_k) {
+        for (i = _j = 0, _ref1 = _this.nPts - 1; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
           _results.push((function() {
             if (_this.hoverThreshold > Math.abs(_this.ptXs[i] - event.layerX)) {
               return _this.renderAltitude(i);

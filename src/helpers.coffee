@@ -23,7 +23,37 @@ helpers =
     angle_atan: (x) -> @to_angle Math.atan x
     angle_asin: (x) -> @to_angle Math.asin x
 
-    interpolate: (value, key1, val1, key2, val2) ->
+    get: (kfs, type, altitude) ->
+        console.log 'starting %s interpolation', type
+
+        kfs = kfs
+                .filter (el) -> el.option is type
+
+        console.log kfs
+
+        if kfs.length is 0
+            return 0
+
+        kfs.sort (a, b) -> a.key_value - b.key_value
+
+        console.log 'sorting ...'
+        console.log kfs
+
+        idx = kfs
+                .filter (el) -> el.key_value < item.altitude
+                .length
+
+        console.log 'got index %s', idx
+
+        @linear_interpolate(
+            altitude, 
+            kfs[if idx isnt 0 then idx-1 else kfs.length-1].key_value,
+            kfs[if idx isnt 0 then idx-1 else kfs.length-1].value,
+            kfs[if idx isnt kfs.length then idx else 0].key_value,
+            kfs[if idx isnt kfs.length then idx else 0].value
+        )
+
+    linear_interpolate: (value, key1, val1, key2, val2) ->
         if key2 is key1
             val1
         else

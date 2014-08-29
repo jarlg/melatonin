@@ -1,4 +1,5 @@
 C = require './color_helpers.coffee'
+T = require './temperature_to_color.coffee'
 
 init_overlay = ->
     overlay = document.createElement 'div'
@@ -14,25 +15,39 @@ init_overlay = ->
     overlay.style["pointer-events"] = "none"
     document.body.appendChild overlay
 
-set_bgcolor = (element, color, opacity) ->
+set_bgcolor = (el, color, opacity) ->
     if color?
-        element.style['background-color'] = "rgba(" + color + ", " + opacity + ")"
+        el.style['background-color'] = "rgba(" + color + ", " + opacity + ")"
     else
-        element.style['background-color'] = "transparent"
+        el.style['background-color'] = "transparent"
 
-update_color = (element) ->
+handle_customs = (el, items, opac) ->
+    if not items.custom_color
+        set_bgcolor el, C.rgb_to_string(T.get_color items.temperature), opac
+    else
+        set_bgcolor el, C.rgb_to_string(C.hex_to_rgb items.color), opac
+
+
+update_color = (el) ->
     console.log "updating color!"
-    if not element?
-        element = document.getElementById 'melatonin-overlay' 
+    if not el?
+        el = document.getElementById 'melatonin-overlay' 
     chrome.storage.local
-        .get ['on', 'rgb', 'opacity', 'custom', 'custom_color'], (items) -> 
+        .get [
+            'on'
+            'temperature'
+            'opacity'
+            'custom_opacity'
+            'color'
+            'custom_color'
+        ], (items) -> 
             if items.on
-                if not items.custom
-                    set_bgcolor element, items.rgb, items.opacity
+                if items.custom_opacity
+                    handle_customs el, items, items.opacity
                 else
-                    set_bgcolor element, C.rgb_to_string(C.hex_to_rgb(items.custom_color)), items.opacity
+                    C.get_atm_opac (opac) -> handle_customs el, items, opac
             else
-                set_bgcolor element
+                set_bgcolor el
 
 init_overlay()
 

@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var C, H, S, T, contains, obj,
+var C, H, S, T, obj,
   __hasProp = {}.hasOwnProperty;
 
 S = require('./sun_altitude.coffee');
@@ -9,12 +9,6 @@ T = require('./temperature_to_color.coffee');
 C = require('./color_helpers.coffee');
 
 H = require('./helpers.coffee');
-
-contains = function(val, arr) {
-  return arr.some(function(el) {
-    return el === val;
-  });
-};
 
 obj = {
   errHandler: function(err) {
@@ -50,7 +44,7 @@ obj = {
         for (key in changes) {
           if (!__hasProp.call(changes, key)) continue;
           val = changes[key];
-          _results.push((function(key, val, namespace) {
+          _results.push((function(key, val) {
             if (key === 'last_update') {
               console.log('updated %s from %s to %s (%smin)', key, val.oldValue, val.newValue, ((val.newValue - val.oldValue) / (1000 * 60)).toFixed(0));
             } else {
@@ -62,13 +56,9 @@ obj = {
                   'altitude': S.get_sun_altitude(new Date(), items.latitude, items.longitude)
                 }, function() {});
               });
-            } else if (contains(key, ['altitude', 'keyframes'])) {
+            } else if (H.contains(key, ['altitude', 'keyframes'])) {
               return _this.update_temperature();
-            } else if (key === 'temperature') {
-              return chrome.storage.local.set({
-                'rgb': C.rgb_to_string(T.get_color(val.newValue))
-              }, function() {});
-            } else if (contains(key, ['rgb', 'custom', 'custom_color'])) {
+            } else if (H.contains(key, ['temperature', 'rgb', 'custom_color', 'custom_opacity'])) {
               return _this.overlay_all();
             } else if (key === 'opacity') {
               return _this.overlay();
@@ -83,36 +73,22 @@ obj = {
                 return _this.update_position();
               }
             }
-          })(key, val, namespace));
+          })(key, val));
         }
         return _results;
       };
     })(this));
   },
-  get_temperature: function(altitude, keyframes) {
-    var idx, kfs;
-    kfs = keyframes.filter(function(kf) {
-      return kf.option === 'temperature';
-    }).sort(function(a, b) {
-      return a.key_value - b.key_value;
-    });
-    idx = kfs.filter(function(kf) {
-      return altitude > kf.key_value;
-    }).length;
-    return H.interpolate(altitude, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].key_value, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].value, kfs[idx !== kfs.length ? idx : 0].key_value, kfs[idx !== kfs.length ? idx : 0].value);
-  },
   update_temperature: function() {
-    return chrome.storage.local.get(['altitude', 'keyframes'], (function(_this) {
-      return function(items) {
-        var temp;
-        temp = _this.get_temperature(items.altitude, items.keyframes);
-        if (temp != null) {
-          return chrome.storage.local.set({
-            'temperature': temp
-          }, function() {});
-        }
-      };
-    })(this));
+    return chrome.storage.local.get(['altitude', 'keyframes'], function(items) {
+      var temp;
+      temp = H.get(items.keyframes, 'temperature', items.altitude);
+      if (temp != null) {
+        return chrome.storage.local.set({
+          'temperature': temp
+        }, function() {});
+      }
+    });
   },
   update_position: function() {
     if (navigator.geolocation != null) {
@@ -139,7 +115,9 @@ module.exports = obj;
 
 
 },{"./color_helpers.coffee":2,"./helpers.coffee":3,"./sun_altitude.coffee":7,"./temperature_to_color.coffee":8}],2:[function(require,module,exports){
-var obj;
+var H, obj;
+
+H = require('./helpers.coffee');
 
 obj = {
   rgb_to_hex: function(rgb) {
@@ -164,13 +142,18 @@ obj = {
   },
   rgb_to_string: function(rgb) {
     return rgb.r + ", " + rgb.g + ", " + rgb.b;
+  },
+  get_atm_opac: function(cb) {
+    return chrome.storage.local.get(['keyframes', 'altitude'], function(items) {
+      return cb(H.get(items.keyframes, 'opacity', items.altitude));
+    });
   }
 };
 
 module.exports = obj;
 
 
-},{}],3:[function(require,module,exports){
+},{"./helpers.coffee":3}],3:[function(require,module,exports){
 var helpers;
 
 helpers = {
@@ -216,7 +199,28 @@ helpers = {
   angle_asin: function(x) {
     return this.to_angle(Math.asin(x));
   },
-  interpolate: function(value, key1, val1, key2, val2) {
+  get: function(kfs, type, altitude) {
+    var idx;
+    console.log('starting %s interpolation', type);
+    kfs = kfs.filter(function(el) {
+      return el.option === type;
+    });
+    console.log(kfs);
+    if (kfs.length === 0) {
+      return 0;
+    }
+    kfs.sort(function(a, b) {
+      return a.key_value - b.key_value;
+    });
+    console.log('sorting ...');
+    console.log(kfs);
+    idx = kfs.filter(function(el) {
+      return el.key_value < item.altitude;
+    }).length;
+    console.log('got index %s', idx);
+    return this.linear_interpolate(altitude, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].key_value, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].value, kfs[idx !== kfs.length ? idx : 0].key_value, kfs[idx !== kfs.length ? idx : 0].value);
+  },
+  linear_interpolate: function(value, key1, val1, key2, val2) {
     if (key2 === key1) {
       return val1;
     } else {
@@ -256,68 +260,80 @@ module.exports = jd;
 
 
 },{}],5:[function(require,module,exports){
-var B, M, init, initial_config,
+var B, M, defaults, init,
   __hasProp = {}.hasOwnProperty;
 
 B = require('./background_helpers.coffee');
 
 M = require('./models.coffee');
 
-initial_config = {
+defaults = {
   on: true,
-  custom: false,
-  idle_state: 'active',
+  version: '0.3.0',
   last_update: 0,
+  idle_state: 'active',
+  custom_color: false,
+  color: null,
+  custom_opacity: true,
   opacity: 0.5,
   temperature: 2700,
   altitude: 0,
-  rgb: null,
-  custom_color: null,
   latitude: null,
   longitude: null,
   keyframes: [new M.Keyframe('altitude', 0, 'temperature', 2700), new M.Keyframe('altitude', 90, 'temperature', 6300)]
 };
 
 init = function() {
-  var key, _;
   console.log('init melatonin ext');
-  B.bind_storage_events();
-  return chrome.storage.local.get((function() {
-    var _results;
-    _results = [];
-    for (key in initial_config) {
-      if (!__hasProp.call(initial_config, key)) continue;
-      _ = initial_config[key];
-      _results.push(key);
-    }
-    return _results;
-  })(), function(items) {
-    var val, _fn;
-    console.log('in storage: ');
-    for (key in items) {
-      if (!__hasProp.call(items, key)) continue;
-      val = items[key];
-      console.log('%s : %s', key, val);
-    }
-    if (chrome.runtime.lastError) {
-      console.log("error when accessing storage!");
-      return;
-    }
-    _fn = function(key, val, items) {
-      var obj;
-      if (items[key] == null) {
-        obj = {};
-        obj[key] = val;
-        return chrome.storage.local.set(obj);
-      }
-    };
-    for (key in initial_config) {
-      if (!__hasProp.call(initial_config, key)) continue;
-      val = initial_config[key];
-      _fn(key, val, items);
-    }
-    if (Date.now() - items.last_update > 15 * 60 * 1000) {
-      return B.update_position();
+  return chrome.storage.local.get('version', function(item) {
+    var key, _;
+    if ((item.version == null) || item.version !== defaults.version) {
+      console.log('updating version; clearing storage.');
+      return chrome.storage.local.clear(function() {
+        return chrome.storage.local.set({
+          'version': defaults.version
+        }, init);
+      });
+    } else {
+      B.bind_storage_events();
+      return chrome.storage.local.get((function() {
+        var _results;
+        _results = [];
+        for (key in defaults) {
+          if (!__hasProp.call(defaults, key)) continue;
+          _ = defaults[key];
+          _results.push(key);
+        }
+        return _results;
+      })(), function(items) {
+        var val, _fn;
+        console.log('in storage: ');
+        for (key in items) {
+          if (!__hasProp.call(items, key)) continue;
+          val = items[key];
+          console.log('%s : %s', key, val);
+        }
+        if (chrome.runtime.lastError) {
+          console.log("error when accessing storage!");
+          return;
+        }
+        _fn = function(key, val, items) {
+          var obj;
+          if (items[key] == null) {
+            obj = {};
+            obj[key] = val;
+            return chrome.storage.local.set(obj);
+          }
+        };
+        for (key in defaults) {
+          if (!__hasProp.call(defaults, key)) continue;
+          val = defaults[key];
+          _fn(key, val, items);
+        }
+        if (Date.now() - items.last_update > 15 * 60 * 1000) {
+          return B.update_position();
+        }
+      });
     }
   });
 };

@@ -1,12 +1,33 @@
 body {
-    font-family: sans-serif;
-    font-size: 8pt;
-    text-align: center;
+    width: 300px;
+}
+
+canvas {
+    float: left;
+}
+
+label {
+    display: flex;
+    width: 60px;
+    font: 10pt sans-serif;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    float: right;
+    width: 100px;
+}
+
+#checkboxes {
+    width: 60px;
+    float: left;
 }
 
 #opacity {
-    width: 41px;
+    width: 39px;
     -webkit-appearance: slider-vertical;
+    float: right;
 }
 
 #colorpicker {
@@ -17,8 +38,4 @@ body {
 
 .checkbox {
     margin-top: 3px;
-}
-
-form {
-    margin-top: 10px;
 }

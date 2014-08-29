@@ -1,17 +1,17 @@
 B = require './background_helpers.coffee'
 M = require './models.coffee'
 
-initial_config = 
+defaults = 
     on: true,
     version: '0.3.0',
-    custom: false,
-    idle_state: 'active',
     last_update: 0,
+    idle_state: 'active',
+    custom_color: false,
+    color: null,
+    custom_opacity: true,
     opacity: 0.5,
     temperature: 2700,
     altitude: 0,
-    rgb: null,
-    custom_color: null,
     latitude: null,
     longitude: null,
     keyframes: [
@@ -23,15 +23,15 @@ init = ->
     console.log 'init melatonin ext'
     chrome.storage.local
         .get 'version', (item) ->
-            if not item.version? or item.version isnt initial_config.version
+            if not item.version? or item.version isnt defaults.version
                 console.log 'updating version; clearing storage.'
                 chrome.storage.local.clear ->
                     chrome.storage.local
-                        .set 'version': initial_config.version, init
+                        .set 'version': defaults.version, init
             else
                 B.bind_storage_events()
                 chrome.storage.local
-                    .get (key for own key, _ of initial_config), (items) ->
+                    .get (key for own key, _ of defaults), (items) ->
                         console.log 'in storage: '
                         for own key, val of items
                             console.log '%s : %s', key, val
@@ -39,9 +39,10 @@ init = ->
                             console.log "error when accessing storage!"
                             return
                         # check if any keys are not set, and initialize them
-                        for own key, val of initial_config
+                        for own key, val of defaults
                             do (key, val, items) ->
                                 if not items[key]?
+                                    # this is ugly
                                     obj = {}
                                     obj[key] = val
                                     chrome.storage.local.set obj
