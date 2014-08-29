@@ -1,3 +1,5 @@
+H = require './helpers.coffee'
+
 # taken from http://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 obj =
     rgb_to_hex: (rgb) ->
@@ -16,5 +18,11 @@ obj =
             null
 
     rgb_to_string: (rgb) -> rgb.r + ", " + rgb.g + ", " + rgb.b
+
+    # get automatic opacity from keyframes
+    get_atm_opac: (cb) ->
+        chrome.storage.local
+            .get ['keyframes', 'altitude'], (items) ->
+                cb H.get items.keyframes, 'opacity', items.altitude
 
 module.exports = obj

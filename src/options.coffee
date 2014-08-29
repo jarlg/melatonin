@@ -75,16 +75,6 @@ class Canvas
         @margin = 40
         @hoverThreshold = 4
 
-        d = new Date()
-        d.setHours 6
-        d.setMinutes 0
-        d.setSeconds 0
-        time = d.getTime()
-
-        @pts = []
-        for i in [0 .. @nPts-1]
-            do (i) =>
-                @pts.push S.get_sun_altitude new Date(time + i * @timespan * 60 * 60 * 1000 / @nPts), @lat, @long
 
         @ptXs = []
         @ptYs = []

@@ -3,8 +3,6 @@ T = require './temperature_to_color.coffee'
 C = require './color_helpers.coffee'
 H = require './helpers.coffee'
 
-contains = (val, arr) -> arr.some (el) -> el is val
-
 obj =
     errHandler: (err) ->
         console.log err.stack or err
@@ -24,7 +22,7 @@ obj =
     bind_storage_events: ->
         chrome.storage.onChanged.addListener (changes, namespace) =>
             for own key, val of changes
-                do (key, val, namespace) =>
+                do (key, val) =>
                     if key is 'last_update'
                         console.log 'updated %s from %s to %s (%smin)',
                             key, val.oldValue, val.newValue,
@@ -34,19 +32,21 @@ obj =
                             key, val.oldValue, val.newValue
                     if key is 'last_update'
                         chrome.storage.local
-                            .get ['longitude', 'latitude'], (items) =>
+                            .get ['longitude', 'latitude'], (items) ->
                                 chrome.storage.local
                                     .set 'altitude': S.get_sun_altitude(
                                         new Date(),
                                         items.latitude,
                                         items.longitude
                                     ), ->
-                    else if contains key, ['altitude', 'keyframes']
+                    else if H.contains key, ['altitude', 'keyframes']
                         @update_temperature()
-                    else if key is 'temperature'
-                        chrome.storage.local
-                            .set 'rgb': C.rgb_to_string(T.get_color val.newValue), ->
-                    else if contains key, ['rgb', 'custom', 'custom_color']
+                    else if H.contains key, [
+                        'temperature'
+                        'rgb'
+                        'custom_color'
+                        'custom_opacity'
+                    ]
                         @overlay_all()
                     else if key is 'opacity'
                         @overlay()
@@ -59,33 +59,10 @@ obj =
                             console.log 'went from idle to active. updating.'
                             @update_position()
 
-    # interpolation between two keyframes with key_values
-    # whose interval contain @altitude
-    get_temperature: (altitude, keyframes) ->
-        # only keyframes affecting color temperature,
-        # sorted from lowest trigger altitude to highest
-        kfs = keyframes
-                .filter (kf) -> kf.option is 'temperature'
-                .sort (a, b) -> a.key_value - b.key_value
-
-        # keyframes[idx] corresponds to keyframe of 'upper interval',
-        # kfs[idx-1] to lower
-        idx = kfs
-                .filter (kf) -> altitude > kf.key_value
-                .length
-
-        H.interpolate(
-            altitude, 
-            kfs[if idx isnt 0 then idx-1 else kfs.length-1].key_value,
-            kfs[if idx isnt 0 then idx-1 else kfs.length-1].value,
-            kfs[if idx isnt kfs.length then idx else 0].key_value,
-            kfs[if idx isnt kfs.length then idx else 0].value
-        )
-
     update_temperature: ->
         chrome.storage.local
-            .get ['altitude', 'keyframes'], (items) =>
-                temp = @get_temperature items.altitude, items.keyframes
+            .get ['altitude', 'keyframes'], (items) ->
+                temp = H.get items.keyframes, 'temperature', items.altitude
                 if temp?
                     chrome.storage.local
                         .set 'temperature': temp, ->
