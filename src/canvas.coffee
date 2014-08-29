@@ -45,7 +45,7 @@ AltitudeGraph: class AltitudeGraph
 
 AppAltitudeGraph: class AppAltitudeGraph extends AltitudeGraph
     constructor: (el, lat, long) ->
-        super el, lat, long, 200, 100, 24
+        super el, lat, long, 200, 129, 24
         idx = @getCurrentIndex()
         console.log idx
         @render idx

@@ -24,26 +24,17 @@ helpers =
     angle_asin: (x) -> @to_angle Math.asin x
 
     get: (kfs, type, altitude) ->
-        console.log 'starting %s interpolation', type
-
         kfs = kfs
                 .filter (el) -> el.option is type
-
-        console.log kfs
 
         if kfs.length is 0
             return 0
 
         kfs.sort (a, b) -> a.key_value - b.key_value
 
-        console.log 'sorting ...'
-        console.log kfs
-
         idx = kfs
-                .filter (el) -> el.key_value < item.altitude
+                .filter (el) -> el.key_value < altitude
                 .length
-
-        console.log 'got index %s', idx
 
         @linear_interpolate(
             altitude, 

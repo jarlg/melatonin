@@ -46,23 +46,18 @@ helpers = {
   },
   get: function(kfs, type, altitude) {
     var idx;
-    console.log('starting %s interpolation', type);
     kfs = kfs.filter(function(el) {
       return el.option === type;
     });
-    console.log(kfs);
     if (kfs.length === 0) {
       return 0;
     }
     kfs.sort(function(a, b) {
       return a.key_value - b.key_value;
     });
-    console.log('sorting ...');
-    console.log(kfs);
     idx = kfs.filter(function(el) {
-      return el.key_value < item.altitude;
+      return el.key_value < altitude;
     }).length;
-    console.log('got index %s', idx);
     return this.linear_interpolate(altitude, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].key_value, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].value, kfs[idx !== kfs.length ? idx : 0].key_value, kfs[idx !== kfs.length ? idx : 0].value);
   },
   linear_interpolate: function(value, key1, val1, key2, val2) {
