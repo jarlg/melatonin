@@ -46,6 +46,7 @@ obj =
                         'rgb'
                         'custom_color'
                         'custom_opacity'
+                        'color'
                     ]
                         @overlay_all()
                     else if key is 'opacity'
