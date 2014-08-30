@@ -1,9 +1,11 @@
+'use strict' 
+
 S = require './sun_altitude.coffee'
 
-AltitudeGraph: class AltitudeGraph
+class AltitudeGraph
     constructor: (@canvas, @lat, @long, w, h, @nPts) ->
         @canvas.width = w
-        @canvas.h = h
+        @canvas.height = h
         
         @radius = 2
 
@@ -17,7 +19,6 @@ AltitudeGraph: class AltitudeGraph
         @timespan = 24
 
         @pts = (S.get_sun_altitude new Date(time + i * @timespan * 60 * 60 * 1000 / @nPts), @lat, @long for i in [0 .. @nPts-1])
-        console.log @pts
         @
 
     yOrigo: -> Math.floor 0.5 + @canvas.height/2
@@ -43,17 +44,28 @@ AltitudeGraph: class AltitudeGraph
     ptY: (i) ->
         @yOrigo() - @pts[i]*@canvas.height/(2*90) 
 
-AppAltitudeGraph: class AppAltitudeGraph extends AltitudeGraph
-    constructor: (el, lat, long) ->
-        super el, lat, long, 200, 129, 24
-        idx = @getCurrentIndex()
-        console.log idx
-        @render idx
+obj = 
+    AppAltitudeGraph: class AppAltitudeGraph extends AltitudeGraph
+        constructor: (el, lat, long) ->
+            super el, lat, long, 200, 129, 24
+            idx = @getCurrentIndex()
+            @render idx
 
-    # 24 pts for 24 hours, means index = current hour - starting hour
-    getCurrentIndex: ->
-        new Date()
-            .getHours() - 6
+        # 24 pts for 24 hours, means index = current hour - starting hour
+        getCurrentIndex: ->
+            new Date()
+                .getHours() - 6
+
+        render: (n) ->
+            super n
+            @ctx.fillStyle = 'silver'
+            @ctx.font = '18pt sans-serif'
+            @ctx.fillText S.get_sun_altitude(new Date(), @lat, @long).toFixed(0) + '\u00B0', @canvas.width - 40, 30
+
+    OptionsAltitudeGraph: class OptionsAltitudeGraph extends AltitudeGraph
+        constructor: (el, lat, long) ->
+            super el, lat, long, 575, 340, 48
+            @render()
 
 
-module.exports = AppAltitudeGraph
+module.exports = obj

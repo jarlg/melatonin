@@ -8,6 +8,7 @@ last = (arr) -> arr[arr.length-1] if arr.length > 0
 
 M = require './models.coffee'
 S = require './sun_altitude.coffee'
+C = require './canvas.coffee'
 
 class Options
     constructor: (@parent, @models=[], @views=[]) ->
@@ -18,9 +19,7 @@ class Options
 
         chrome.storage.local
             .get ['keyframes', 'latitude', 'longitude'], (items) =>
-                @canvas = new Canvas $('#graph'), $('#units'), items.latitude, items.longitude
-                @canvas.renderAltitude()
-                @canvas.renderUnits()
+                @canvas = new C.OptionsAltitudeGraph $('#graph'), items.latitude, items.longitude
 
                 # sort by option first, key_value for same option
                 items.keyframes
@@ -57,70 +56,6 @@ class Options
                 @models.splice index, 1
                 last @views.splice index, 1
                     .erase()
-
-class Canvas
-    constructor: (@el, @units, @lat, @long) ->
-        @el.width = 575
-        @el.height = 340
-
-        @units.width = @el.width
-        @units.height = @el.height
-
-        @ctx = @el.getContext '2d'
-        @uCtx = @units.getContext '2d'
-
-        @nPts = 48
-        @timespan = 24 #hours
-
-        @margin = 40
-        @hoverThreshold = 4
-
-
-        @ptXs = []
-        @ptYs = []
-        for i in [0 .. @nPts-1]
-            do (i) =>
-                @ptXs.push @ptX i
-                @ptYs.push @ptY i
-
-        @el.addEventListener 'mousemove', (event) =>
-            for i in [0 .. @nPts-1]
-                do =>
-                    if @hoverThreshold > Math.abs @ptXs[i] - event.layerX
-                        @renderAltitude i
-
-        @
-
-    # highlight nth element of @pts
-    renderAltitude: (n) ->
-        @el.width = @el.width
-
-        n = -1 if not n?
-
-        # draw 24h sun path
-        @ctx.fillStyle = 'orange'
-        for i in [0 .. @nPts-1]
-            do =>
-                @ctx.beginPath()
-                @ctx.fillStyle = 'red' if i is n
-                @ctx.arc @ptXs[i], @ptYs[i], 2, 0, 2*Math.PI, false
-                @ctx.fill()
-                @ctx.fillStyle = 'orange' if i is n
-
-
-    renderUnits: ->
-        @units.width = @units.width
-        @uCtx.font = '8pt sans-serif'
-        @uCtx.fillStyle = 'black'
-
-    yOrigo: -> Math.floor 0.5 + @el.height / 2
-
-    ptX: (i) ->
-        @margin + i * (@el.width - 2*@margin) / @nPts
-
-    ptY: (i) ->
-        @yOrigo() - @pts[i]*(@el.height-2*@margin)/(2*90) 
-
 
 
 app = new Options $ '#keyframes'

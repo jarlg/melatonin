@@ -1,4 +1,123 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+'use strict';
+var AltitudeGraph, AppAltitudeGraph, OptionsAltitudeGraph, S, obj,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+S = require('./sun_altitude.coffee');
+
+AltitudeGraph = (function() {
+  function AltitudeGraph(canvas, lat, long, w, h, nPts) {
+    var d, i, time;
+    this.canvas = canvas;
+    this.lat = lat;
+    this.long = long;
+    this.nPts = nPts;
+    this.canvas.width = w;
+    this.canvas.height = h;
+    this.radius = 2;
+    this.ctx = this.canvas.getContext('2d');
+    d = new Date();
+    d.setHours(6);
+    d.setMinutes(0);
+    d.setSeconds(0);
+    time = d.getTime();
+    this.timespan = 24;
+    this.pts = (function() {
+      var _i, _ref, _results;
+      _results = [];
+      for (i = _i = 0, _ref = this.nPts - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+        _results.push(S.get_sun_altitude(new Date(time + i * this.timespan * 60 * 60 * 1000 / this.nPts), this.lat, this.long));
+      }
+      return _results;
+    }).call(this);
+    this;
+  }
+
+  AltitudeGraph.prototype.yOrigo = function() {
+    return Math.floor(0.5 + this.canvas.height / 2);
+  };
+
+  AltitudeGraph.prototype.render = function(n) {
+    var i, _i, _ref, _results;
+    this.canvas.width = this.canvas.width;
+    if (n == null) {
+      n = -1;
+    }
+    this.ctx.fillStyle = 'orange';
+    _results = [];
+    for (i = _i = 0, _ref = this.nPts - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+      _results.push((function(_this) {
+        return function() {
+          _this.ctx.beginPath();
+          if (i === n) {
+            _this.ctx.fillStyle = 'red';
+          }
+          _this.ctx.arc(_this.ptX(i), _this.ptY(i), _this.radius, 0, 2 * Math.PI, false);
+          _this.ctx.fill();
+          if (i === n) {
+            return _this.ctx.fillStyle = 'orange';
+          }
+        };
+      })(this)());
+    }
+    return _results;
+  };
+
+  AltitudeGraph.prototype.ptX = function(i) {
+    return this.radius + i * (this.canvas.width - 2 * this.radius) / this.nPts;
+  };
+
+  AltitudeGraph.prototype.ptY = function(i) {
+    return this.yOrigo() - this.pts[i] * this.canvas.height / (2 * 90);
+  };
+
+  return AltitudeGraph;
+
+})();
+
+obj = {
+  AppAltitudeGraph: AppAltitudeGraph = (function(_super) {
+    __extends(AppAltitudeGraph, _super);
+
+    function AppAltitudeGraph(el, lat, long) {
+      var idx;
+      AppAltitudeGraph.__super__.constructor.call(this, el, lat, long, 200, 129, 24);
+      idx = this.getCurrentIndex();
+      this.render(idx);
+    }
+
+    AppAltitudeGraph.prototype.getCurrentIndex = function() {
+      return new Date().getHours() - 6;
+    };
+
+    AppAltitudeGraph.prototype.render = function(n) {
+      AppAltitudeGraph.__super__.render.call(this, n);
+      this.ctx.fillStyle = 'silver';
+      this.ctx.font = '18pt sans-serif';
+      return this.ctx.fillText(S.get_sun_altitude(new Date(), this.lat, this.long).toFixed(0) + '\u00B0', this.canvas.width - 40, 30);
+    };
+
+    return AppAltitudeGraph;
+
+  })(AltitudeGraph),
+  OptionsAltitudeGraph: OptionsAltitudeGraph = (function(_super) {
+    __extends(OptionsAltitudeGraph, _super);
+
+    function OptionsAltitudeGraph(el, lat, long) {
+      OptionsAltitudeGraph.__super__.constructor.call(this, el, lat, long, 575, 340, 48);
+      this.render();
+    }
+
+    return OptionsAltitudeGraph;
+
+  })(AltitudeGraph)
+};
+
+module.exports = obj;
+
+
+},{"./sun_altitude.coffee":6}],2:[function(require,module,exports){
 var helpers;
 
 helpers = {
@@ -77,7 +196,7 @@ helpers = {
 module.exports = helpers;
 
 
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 var jd;
 
 jd = {
@@ -99,7 +218,7 @@ jd = {
 module.exports = jd;
 
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 'use strict';
 var Keyframe, KeyframeView, Models;
 
@@ -201,8 +320,8 @@ Models = {
 module.exports = Models;
 
 
-},{}],4:[function(require,module,exports){
-var $, $$, Canvas, M, Options, S, app, last, val;
+},{}],5:[function(require,module,exports){
+var $, $$, C, M, Options, S, app, last, val;
 
 $ = document.querySelector.bind(document);
 
@@ -222,6 +341,8 @@ M = require('./models.coffee');
 
 S = require('./sun_altitude.coffee');
 
+C = require('./canvas.coffee');
+
 Options = (function() {
   function Options(parent, models, views) {
     this.parent = parent;
@@ -235,9 +356,7 @@ Options = (function() {
     chrome.storage.local.get(['keyframes', 'latitude', 'longitude'], (function(_this) {
       return function(items) {
         var kf, _i, _len, _ref, _results;
-        _this.canvas = new Canvas($('#graph'), $('#units'), items.latitude, items.longitude);
-        _this.canvas.renderAltitude();
-        _this.canvas.renderUnits();
+        _this.canvas = new C.OptionsAltitudeGraph($('#graph'), items.latitude, items.longitude);
         items.keyframes.sort(function(a, b) {
           if (a.option !== b.option) {
             return _this.prio[b.option] - _this.prio[a.option];
@@ -291,103 +410,10 @@ Options = (function() {
 
 })();
 
-Canvas = (function() {
-  function Canvas(el, units, lat, long) {
-    var i, _fn, _i, _ref;
-    this.el = el;
-    this.units = units;
-    this.lat = lat;
-    this.long = long;
-    this.el.width = 575;
-    this.el.height = 340;
-    this.units.width = this.el.width;
-    this.units.height = this.el.height;
-    this.ctx = this.el.getContext('2d');
-    this.uCtx = this.units.getContext('2d');
-    this.nPts = 48;
-    this.timespan = 24;
-    this.margin = 40;
-    this.hoverThreshold = 4;
-    this.ptXs = [];
-    this.ptYs = [];
-    _fn = (function(_this) {
-      return function(i) {
-        _this.ptXs.push(_this.ptX(i));
-        return _this.ptYs.push(_this.ptY(i));
-      };
-    })(this);
-    for (i = _i = 0, _ref = this.nPts - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-      _fn(i);
-    }
-    this.el.addEventListener('mousemove', (function(_this) {
-      return function(event) {
-        var _j, _ref1, _results;
-        _results = [];
-        for (i = _j = 0, _ref1 = _this.nPts - 1; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
-          _results.push((function() {
-            if (_this.hoverThreshold > Math.abs(_this.ptXs[i] - event.layerX)) {
-              return _this.renderAltitude(i);
-            }
-          })());
-        }
-        return _results;
-      };
-    })(this));
-    this;
-  }
-
-  Canvas.prototype.renderAltitude = function(n) {
-    var i, _i, _ref, _results;
-    this.el.width = this.el.width;
-    if (n == null) {
-      n = -1;
-    }
-    this.ctx.fillStyle = 'orange';
-    _results = [];
-    for (i = _i = 0, _ref = this.nPts - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-      _results.push((function(_this) {
-        return function() {
-          _this.ctx.beginPath();
-          if (i === n) {
-            _this.ctx.fillStyle = 'red';
-          }
-          _this.ctx.arc(_this.ptXs[i], _this.ptYs[i], 2, 0, 2 * Math.PI, false);
-          _this.ctx.fill();
-          if (i === n) {
-            return _this.ctx.fillStyle = 'orange';
-          }
-        };
-      })(this)());
-    }
-    return _results;
-  };
-
-  Canvas.prototype.renderUnits = function() {
-    this.units.width = this.units.width;
-    this.uCtx.font = '8pt sans-serif';
-    return this.uCtx.fillStyle = 'black';
-  };
-
-  Canvas.prototype.yOrigo = function() {
-    return Math.floor(0.5 + this.el.height / 2);
-  };
-
-  Canvas.prototype.ptX = function(i) {
-    return this.margin + i * (this.el.width - 2 * this.margin) / this.nPts;
-  };
-
-  Canvas.prototype.ptY = function(i) {
-    return this.yOrigo() - this.pts[i] * (this.el.height - 2 * this.margin) / (2 * 90);
-  };
-
-  return Canvas;
-
-})();
-
 app = new Options($('#keyframes'));
 
 
-},{"./models.coffee":3,"./sun_altitude.coffee":5}],5:[function(require,module,exports){
+},{"./canvas.coffee":1,"./models.coffee":4,"./sun_altitude.coffee":6}],6:[function(require,module,exports){
 var H, J, obj;
 
 J = require('./julian_date.coffee');
@@ -448,4 +474,4 @@ obj = {
 module.exports = obj;
 
 
-},{"./helpers.coffee":1,"./julian_date.coffee":2}]},{},[4])
+},{"./helpers.coffee":2,"./julian_date.coffee":3}]},{},[5])
