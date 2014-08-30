@@ -1,3 +1,5 @@
+'use strict'
+
 helpers = 
     # suppose max - min is the size of interval (one cycle)
     between: (min, max, val) ->
@@ -36,13 +38,29 @@ helpers =
                 .filter (el) -> el.key_value < altitude
                 .length
 
-        @linear_interpolate(
-            altitude, 
-            kfs[if idx isnt 0 then idx-1 else kfs.length-1].key_value,
-            kfs[if idx isnt 0 then idx-1 else kfs.length-1].value,
-            kfs[if idx isnt kfs.length then idx else 0].key_value,
-            kfs[if idx isnt kfs.length then idx else 0].value
-        )
+        idx1 = if idx isnt 0 then idx-1 else kfs.length-1
+        idx2 = if idx isnt kfs.length then idx else 0
+
+        if type is 'color' # we are dealing with rgb objects
+            rgb = {}
+            for attr in ['r', 'g', 'b']
+                do (attr) =>
+                    rgb[attr] = @linear_interpolate(
+                        altitude, 
+                        kfs[idx1].key_value,
+                        parseInt(kfs[idx1].value[attr]),
+                        kfs[idx2].key_value,
+                        parseInt(kfs[idx2].value[attr])
+                    ).toFixed 0
+            return rgb
+        else
+            @linear_interpolate(
+                altitude, 
+                kfs[idx1].key_value,
+                kfs[idx1].value,
+                kfs[idx2].key_value,
+                kfs[idx2].value
+            )
 
     linear_interpolate: (value, key1, val1, key2, val2) ->
         if key2 is key1
