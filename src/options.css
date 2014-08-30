@@ -32,36 +32,34 @@ th {
     font-weight: normal;
 }
 
-input {
+input,
+select {
     border: none;
-    border-bottom: 1px solid black;
+    border-bottom: 1px dashed black;
+    background: none;
 }
 
 select {
-    background: none;
-    border: none;
-    border-bottom: 1px solid black;
+    padding: 4px 5px;
 }
+
 
 button {
-    font: 16pt normal sans-serif;
-    padding: 5px;
-    border: none;
-    background: none;
+    width: 35px;
+    font: 14pt normal sans-serif;
 }
 
-button:hover {
-    color: orange;
+#save {
+    width: auto;
 }
 
 .key-input {
-    width: 35px;
+    width: 40px;
+    padding: 5px;
 }
 
 .value-input {
     width: 55px;
-}
-
-.delete {
-    width: 35px;
+    padding: 5px 2px;
+    text-align: right;
 }
