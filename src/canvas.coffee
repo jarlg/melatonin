@@ -1,6 +1,6 @@
 'use strict' 
 
-S = require './sun_altitude.coffee'
+A = require './altitude.coffee'
 
 class AltitudeGraph
     constructor: (@canvas, @lat, @long, w, h, @nPts) ->
@@ -18,7 +18,7 @@ class AltitudeGraph
         time = d.getTime()
         @timespan = 24
 
-        @pts = (S.get_sun_altitude new Date(time + i * @timespan * 60 * 60 * 1000 / @nPts), @lat, @long for i in [0 .. @nPts-1])
+        @pts = (A.get_altitude new Date(time + i * @timespan * 60 * 60 * 1000 / @nPts), @lat, @long for i in [0 .. @nPts-1])
         @
 
     yOrigo: -> Math.floor 0.5 + @canvas.height/2
@@ -60,7 +60,7 @@ obj =
             super n
             @ctx.fillStyle = 'silver'
             @ctx.font = '18pt sans-serif'
-            @ctx.fillText S.get_sun_altitude(new Date(), @lat, @long).toFixed(0) + '\u00B0', @canvas.width - 40, 30
+            @ctx.fillText A.get_altitude(new Date(), @lat, @long).toFixed(0) + '\u00B0', @canvas.width - 55, 30
 
     OptionsAltitudeGraph: class OptionsAltitudeGraph extends AltitudeGraph
         constructor: (el, lat, long) ->

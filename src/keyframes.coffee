@@ -48,8 +48,8 @@ Models =
 
                 @value.classList.add 'value-input'
 
-                @setValueType()
-                @option.addEventListener 'input', @setValueType.bind @
+                @set_value_type()
+                @option.addEventListener 'input', @set_value_type.bind @
 
                 @delete = document.createElement 'button'
                     .set 'innerHTML', '-'
@@ -63,11 +63,13 @@ Models =
                         if input isnt 'delete'
                             self = this
                             @[input].addEventListener 'input', (event) ->
-                                self.model[input] = @value
-
+                                if @type is 'color'
+                                    self.model[input] = C.hex_to_rgb @value
+                                else
+                                    self.model[input] = @value
                 @
 
-            setValueType: ->
+            set_value_type: ->
                 @value.type = @option_map[@option.value]
                 @value.value = @model.value
 

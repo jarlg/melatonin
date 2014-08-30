@@ -25,7 +25,7 @@ obj =
     get_declination: (ecliptic_long) ->
         H.angle_asin(H.angle_sin(@axial_tilt) * H.angle_sin(ecliptic_long))
 
-    get_sun_altitude: (date, latitude, longitude) ->
+    get_altitude: (date, latitude, longitude) ->
         jd = J.get_julian_date date
         jdn = J.get_jdn jd
 

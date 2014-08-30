@@ -1,10 +1,71 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var H, J, obj;
+
+J = require('./julian_date.coffee');
+
+H = require('./helpers.coffee');
+
+obj = {
+  axial_tilt: 23.439,
+  get_ecliptic_long: function(l, g) {
+    return l + 1.915 * H.angle_sin(g) + 0.02 * H.angle_sin(2 * g);
+  },
+  get_right_ascension: function(ecliptic_long) {
+    return H.angle_atan(H.angle_cos(this.axial_tilt) * H.angle_tan(ecliptic_long));
+  },
+  get_hour_angle: function(jd, longitude, right_ascension) {
+    return H.between(0, 360, this.get_gst(jd) + longitude - right_ascension);
+  },
+  get_declination: function(ecliptic_long) {
+    return H.angle_asin(H.angle_sin(this.axial_tilt) * H.angle_sin(ecliptic_long));
+  },
+  get_altitude: function(date, latitude, longitude) {
+    var dec, ec_long, g, ha, jd, jdn, l, r_asc;
+    jd = J.get_julian_date(date);
+    jdn = J.get_jdn(jd);
+    l = H.between(0, 360, 280.460 + 0.9856474 * jdn);
+    g = H.between(0, 360, 357.528 + 0.9856003 * jdn);
+    ec_long = this.get_ecliptic_long(l, g);
+    r_asc = this.get_right_ascension(ec_long);
+    while (H.angleToQuadrant(ec_long) !== H.angleToQuadrant(r_asc)) {
+      r_asc += r_asc < ec_long ? 90 : -90;
+    }
+    dec = this.get_declination(ec_long);
+    ha = this.get_hour_angle(jd, longitude, r_asc);
+    return H.angle_asin(H.angle_sin(latitude) * H.angle_sin(dec) + H.angle_cos(latitude) * H.angle_cos(dec) * H.angle_cos(ha));
+  },
+  get_last_jd_midnight: function(jd) {
+    if (jd >= Math.floor(jd + 0.5)) {
+      return Math.floor(jd - 1) + 0.5;
+    } else {
+      return Math.floor(jd) + 0.5;
+    }
+  },
+  get_ut_hours: function(jd, last_jd_midnight) {
+    return 24 * (jd - last_jd_midnight);
+  },
+  get_gst_hours: function(jdn_midnight, ut_hours) {
+    var gmst;
+    gmst = 6.697374558 + 0.06570982441908 * jdn_midnight + 1.00273790935 * ut_hours;
+    return H.between(0, 24, gmst);
+  },
+  get_gst: function(jd) {
+    var jdm;
+    jdm = this.get_last_jd_midnight(jd);
+    return 15 * this.get_gst_hours(J.get_jdn(jdm), this.get_ut_hours(jd, jdm));
+  }
+};
+
+module.exports = obj;
+
+
+},{"./helpers.coffee":3,"./julian_date.coffee":4}],2:[function(require,module,exports){
 'use strict';
-var AltitudeGraph, AppAltitudeGraph, OptionsAltitudeGraph, S, obj,
+var A, AltitudeGraph, AppAltitudeGraph, OptionsAltitudeGraph, obj,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-S = require('./sun_altitude.coffee');
+A = require('./altitude.coffee');
 
 AltitudeGraph = (function() {
   function AltitudeGraph(canvas, lat, long, w, h, nPts) {
@@ -27,7 +88,7 @@ AltitudeGraph = (function() {
       var _i, _ref, _results;
       _results = [];
       for (i = _i = 0, _ref = this.nPts - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-        _results.push(S.get_sun_altitude(new Date(time + i * this.timespan * 60 * 60 * 1000 / this.nPts), this.lat, this.long));
+        _results.push(A.get_altitude(new Date(time + i * this.timespan * 60 * 60 * 1000 / this.nPts), this.lat, this.long));
       }
       return _results;
     }).call(this);
@@ -95,7 +156,7 @@ obj = {
       AppAltitudeGraph.__super__.render.call(this, n);
       this.ctx.fillStyle = 'silver';
       this.ctx.font = '18pt sans-serif';
-      return this.ctx.fillText(S.get_sun_altitude(new Date(), this.lat, this.long).toFixed(0) + '\u00B0', this.canvas.width - 40, 30);
+      return this.ctx.fillText(A.get_altitude(new Date(), this.lat, this.long).toFixed(0) + '\u00B0', this.canvas.width - 55, 30);
     };
 
     return AppAltitudeGraph;
@@ -117,7 +178,8 @@ obj = {
 module.exports = obj;
 
 
-},{"./sun_altitude.coffee":6}],2:[function(require,module,exports){
+},{"./altitude.coffee":1}],3:[function(require,module,exports){
+'use strict';
 var helpers;
 
 helpers = {
@@ -164,7 +226,7 @@ helpers = {
     return this.to_angle(Math.asin(x));
   },
   get: function(kfs, type, altitude) {
-    var idx;
+    var attr, idx, idx1, idx2, rgb, _fn, _i, _len, _ref;
     kfs = kfs.filter(function(el) {
       return el.option === type;
     });
@@ -177,7 +239,24 @@ helpers = {
     idx = kfs.filter(function(el) {
       return el.key_value < altitude;
     }).length;
-    return this.linear_interpolate(altitude, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].key_value, kfs[idx !== 0 ? idx - 1 : kfs.length - 1].value, kfs[idx !== kfs.length ? idx : 0].key_value, kfs[idx !== kfs.length ? idx : 0].value);
+    idx1 = idx !== 0 ? idx - 1 : kfs.length - 1;
+    idx2 = idx !== kfs.length ? idx : 0;
+    if (type === 'color') {
+      rgb = {};
+      _ref = ['r', 'g', 'b'];
+      _fn = (function(_this) {
+        return function(attr) {
+          return rgb[attr] = _this.linear_interpolate(altitude, kfs[idx1].key_value, parseInt(kfs[idx1].value[attr]), kfs[idx2].key_value, parseInt(kfs[idx2].value[attr])).toFixed(0);
+        };
+      })(this);
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        attr = _ref[_i];
+        _fn(attr);
+      }
+      return rgb;
+    } else {
+      return this.linear_interpolate(altitude, kfs[idx1].key_value, kfs[idx1].value, kfs[idx2].key_value, kfs[idx2].value);
+    }
   },
   linear_interpolate: function(value, key1, val1, key2, val2) {
     if (key2 === key1) {
@@ -196,7 +275,7 @@ helpers = {
 module.exports = helpers;
 
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var jd;
 
 jd = {
@@ -218,7 +297,7 @@ jd = {
 module.exports = jd;
 
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict';
 var Keyframe, KeyframeView, Models;
 
@@ -273,8 +352,8 @@ Models = {
       }
       this.value = document.createElement('input').set('value', this.model.value);
       this.value.classList.add('value-input');
-      this.setValueType();
-      this.option.addEventListener('input', this.setValueType.bind(this));
+      this.set_value_type();
+      this.option.addEventListener('input', this.set_value_type.bind(this));
       this["delete"] = document.createElement('button').set('innerHTML', '-');
       this["delete"].classList.add('delete');
       _ref1 = ['key_value', 'option', 'value', 'delete'];
@@ -285,7 +364,11 @@ Models = {
           if (input !== 'delete') {
             self = _this;
             return _this[input].addEventListener('input', function(event) {
-              return self.model[input] = this.value;
+              if (this.type === 'color') {
+                return self.model[input] = C.hex_to_rgb(this.value);
+              } else {
+                return self.model[input] = this.value;
+              }
             });
           }
         };
@@ -297,7 +380,7 @@ Models = {
       return this;
     };
 
-    KeyframeView.prototype.setValueType = function() {
+    KeyframeView.prototype.set_value_type = function() {
       this.value.type = this.option_map[this.option.value];
       return this.value.value = this.model.value;
     };
@@ -320,8 +403,9 @@ Models = {
 module.exports = Models;
 
 
-},{}],5:[function(require,module,exports){
-var $, $$, C, M, Options, S, app, last, val;
+},{}],6:[function(require,module,exports){
+'use strict';
+var $, $$, G, M, Options, app, last, val;
 
 $ = document.querySelector.bind(document);
 
@@ -337,11 +421,9 @@ last = function(arr) {
   }
 };
 
-M = require('./models.coffee');
+M = require('./keyframes.coffee');
 
-S = require('./sun_altitude.coffee');
-
-C = require('./canvas.coffee');
+G = require('./canvas.coffee');
 
 Options = (function() {
   function Options(parent, models, views) {
@@ -356,7 +438,7 @@ Options = (function() {
     chrome.storage.local.get(['keyframes', 'latitude', 'longitude'], (function(_this) {
       return function(items) {
         var kf, _i, _len, _ref, _results;
-        _this.canvas = new C.OptionsAltitudeGraph($('#graph'), items.latitude, items.longitude);
+        _this.canvas = new G.OptionsAltitudeGraph($('#graph'), items.latitude, items.longitude);
         items.keyframes.sort(function(a, b) {
           if (a.option !== b.option) {
             return _this.prio[b.option] - _this.prio[a.option];
@@ -413,65 +495,4 @@ Options = (function() {
 app = new Options($('#keyframes'));
 
 
-},{"./canvas.coffee":1,"./models.coffee":4,"./sun_altitude.coffee":6}],6:[function(require,module,exports){
-var H, J, obj;
-
-J = require('./julian_date.coffee');
-
-H = require('./helpers.coffee');
-
-obj = {
-  axial_tilt: 23.439,
-  get_ecliptic_long: function(l, g) {
-    return l + 1.915 * H.angle_sin(g) + 0.02 * H.angle_sin(2 * g);
-  },
-  get_right_ascension: function(ecliptic_long) {
-    return H.angle_atan(H.angle_cos(this.axial_tilt) * H.angle_tan(ecliptic_long));
-  },
-  get_hour_angle: function(jd, longitude, right_ascension) {
-    return H.between(0, 360, this.get_gst(jd) + longitude - right_ascension);
-  },
-  get_declination: function(ecliptic_long) {
-    return H.angle_asin(H.angle_sin(this.axial_tilt) * H.angle_sin(ecliptic_long));
-  },
-  get_sun_altitude: function(date, latitude, longitude) {
-    var dec, ec_long, g, ha, jd, jdn, l, r_asc;
-    jd = J.get_julian_date(date);
-    jdn = J.get_jdn(jd);
-    l = H.between(0, 360, 280.460 + 0.9856474 * jdn);
-    g = H.between(0, 360, 357.528 + 0.9856003 * jdn);
-    ec_long = this.get_ecliptic_long(l, g);
-    r_asc = this.get_right_ascension(ec_long);
-    while (H.angleToQuadrant(ec_long) !== H.angleToQuadrant(r_asc)) {
-      r_asc += r_asc < ec_long ? 90 : -90;
-    }
-    dec = this.get_declination(ec_long);
-    ha = this.get_hour_angle(jd, longitude, r_asc);
-    return H.angle_asin(H.angle_sin(latitude) * H.angle_sin(dec) + H.angle_cos(latitude) * H.angle_cos(dec) * H.angle_cos(ha));
-  },
-  get_last_jd_midnight: function(jd) {
-    if (jd >= Math.floor(jd + 0.5)) {
-      return Math.floor(jd - 1) + 0.5;
-    } else {
-      return Math.floor(jd) + 0.5;
-    }
-  },
-  get_ut_hours: function(jd, last_jd_midnight) {
-    return 24 * (jd - last_jd_midnight);
-  },
-  get_gst_hours: function(jdn_midnight, ut_hours) {
-    var gmst;
-    gmst = 6.697374558 + 0.06570982441908 * jdn_midnight + 1.00273790935 * ut_hours;
-    return H.between(0, 24, gmst);
-  },
-  get_gst: function(jd) {
-    var jdm;
-    jdm = this.get_last_jd_midnight(jd);
-    return 15 * this.get_gst_hours(J.get_jdn(jdm), this.get_ut_hours(jd, jdm));
-  }
-};
-
-module.exports = obj;
-
-
-},{"./helpers.coffee":2,"./julian_date.coffee":3}]},{},[5])
+},{"./canvas.coffee":2,"./keyframes.coffee":5}]},{},[6])
