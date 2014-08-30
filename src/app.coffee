@@ -1,4 +1,4 @@
-Canvas = require './canvas.coffee'
+C = require './canvas.coffee'
 $ = document.querySelector.bind document
 
 # i think i lost myself a bit
@@ -44,4 +44,4 @@ chrome.storage.local
 
 chrome.storage.local
     .get ['latitude', 'longitude'], (items) ->
-        canvas = new Canvas $('#graph'), items.latitude, items.longitude
+        canvas = new C.AppAltitudeGraph $('#graph'), items.latitude, items.longitude
