@@ -9,11 +9,11 @@ Version 0.3 marks a point for Melatonin where I am satisfied
 with its functionality and unable to immediately improve upon
 it. Notably, the extension is:
 
-	- automatic and in tune with the sun
-	- responsive and interactive (real-time changes)
-	- customizable
+- automatic and in tune with the sun
+- responsive and interactive (real-time changes)
+- customizable
     
-There are still problems ([see Technical Difficulties on ChromeOS)]({{ site.baseurl }}/Technical-ChromeOS/)), and I'll solve them when I can. For the time being, their solutions aren't technically obvious.
+There are still problems ([see Technical Difficulties on ChromeOS]({{ site.baseurl }}/Technical-ChromeOS/)), and I'll solve them when I can. For the time being, their solutions aren't technically obvious.
 
 I'm putting a lot of thought into the interface of Melatonin, as
 I am trying to finalize it. It's gone from just a single slider,
