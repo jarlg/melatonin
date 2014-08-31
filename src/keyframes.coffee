@@ -57,7 +57,7 @@ Models =
 
                 @delete = document.createElement 'button'
                     .set 'innerHTML', '-'
-                @delete.classList.add 'delete'
+                @delete.classList.add 'delete', 'pure-button'
 
                 for input in ['key_value', 'option', 'value', 'delete']
                     do (input) =>

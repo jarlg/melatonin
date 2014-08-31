@@ -434,7 +434,7 @@ Models = {
         };
       })(this));
       this["delete"] = document.createElement('button').set('innerHTML', '-');
-      this["delete"].classList.add('delete');
+      this["delete"].classList.add('delete', 'pure-button');
       _ref1 = ['key_value', 'option', 'value', 'delete'];
       _fn1 = (function(_this) {
         return function(input) {
@@ -514,6 +514,7 @@ G = require('./canvas.coffee');
 
 Options = (function() {
   function Options(parent, models, views) {
+    var self;
     this.parent = parent;
     this.models = models != null ? models : [];
     this.views = views != null ? views : [];
@@ -548,15 +549,24 @@ Options = (function() {
         return _this.add();
       };
     })(this));
-    $('#save').addEventListener('click', (function(_this) {
-      return function(event) {
-        event.preventDefault();
-        console.log(_this.models);
-        return chrome.storage.local.set({
-          'keyframes': _this.models
-        }, function() {});
-      };
-    })(this));
+    self = this;
+    $('#save').addEventListener('click', function(event) {
+      event.preventDefault();
+      return chrome.storage.local.set({
+        'keyframes': self.models
+      }, (function(_this) {
+        return function() {
+          _this.classList.remove('pure-button-primary');
+          _this.classList.add('button-success');
+          _this.innerHTML = 'saved!';
+          return window.setTimeout((function() {
+            _this.classList.add('pure-button-primary');
+            _this.classList.remove('button-success');
+            return _this.innerHTML = 'save';
+          }), 1000);
+        };
+      })(this));
+    });
   }
 
   Options.prototype.add = function(model) {

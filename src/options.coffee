@@ -37,12 +37,22 @@ class Options
                 event.preventDefault()
                 @add()
         
+
+        self = this
         $ '#save'
-            .addEventListener 'click', (event) =>
+            .addEventListener 'click', (event) ->
                 event.preventDefault()
-                console.log @models
                 chrome.storage.local
-                    .set 'keyframes': @models, ->
+                    .set 'keyframes': self.models, =>
+                        @classList.remove 'pure-button-primary'
+                        @classList.add 'button-success'
+                        @innerHTML = 'saved!'
+                        window.setTimeout (=>
+                            @classList.add 'pure-button-primary'
+                            @classList.remove 'button-success'
+                            @innerHTML = 'save'
+                        ), 1000
+
 
     add: (model) ->
         model = new M.Keyframe() if not model?
