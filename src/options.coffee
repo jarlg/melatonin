@@ -9,7 +9,6 @@ val = (obj) -> obj.value
 last = (arr) -> arr[arr.length-1] if arr.length > 0
 
 M = require './keyframes.coffee'
-G = require './canvas.coffee'
 
 class Options
     constructor: (@parent, @models=[], @views=[]) ->
@@ -20,8 +19,6 @@ class Options
 
         chrome.storage.local
             .get ['keyframes', 'latitude', 'longitude'], (items) =>
-                @canvas = new G.OptionsAltitudeGraph $('#graph'), items.latitude, items.longitude
-
                 # sort by option first, key_value for same option
                 items.keyframes
                     .sort (a, b) =>
