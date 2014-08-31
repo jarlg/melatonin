@@ -1,26 +1,19 @@
 .container {
-    width: 950px;
-    height: 400px;
+    width: 640px;
     margin: 20vh auto 0;
-    display: flex;
-    align-items: center;
-    justify-items: center;
 }
 
-#canvases {
+h1 {
+    font-size: 18pt;
+}
+
+p {
+    width: 350px;
     float: left;
-    width: 585px;
-    height: 340px;
-    position: relative;
-}
-
-canvas {
-    position: absolute;
-    left: 0;
 }
 
 form {
-    float:right;
+    float: right;
     text-align: center;
 }
 
