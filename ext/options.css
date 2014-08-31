@@ -5,8 +5,6 @@
     display: flex;
     align-items: center;
     justify-items: center;
-
-    font: 12pt sans-serif;
 }
 
 #canvases {
@@ -23,19 +21,12 @@ canvas {
 
 form {
     float:right;
-    width: 330px;
     text-align: center;
-}
-
-tr,
-th {
-    font-weight: normal;
 }
 
 input,
 select {
     border: none;
-    border-bottom: 1px dashed black;
     background: none;
 }
 
@@ -43,15 +34,6 @@ select {
     padding: 4px 5px;
 }
 
-
-button {
-    width: 35px;
-    font: 14pt normal sans-serif;
-}
-
-#save {
-    width: auto;
-}
 
 .key-input {
     width: 40px;
@@ -66,4 +48,20 @@ button {
 
 .value-input.color-input {
     padding: 1px 2px;
+}
+
+.button-success {
+    color: white;
+    border-radius: 4px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    background: rgb(28, 184, 65); /* this is a green */
+}
+
+.delete {
+    width: 41px;
+}
+
+#save {
+    width: 100%;
+    margin-top: 2px;
 }

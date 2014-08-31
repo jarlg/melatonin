@@ -479,7 +479,7 @@ Models = {
         };
       })(this));
       this["delete"] = document.createElement('button').set('innerHTML', '-');
-      this["delete"].classList.add('delete');
+      this["delete"].classList.add('delete', 'pure-button');
       _ref1 = ['key_value', 'option', 'value', 'delete'];
       _fn1 = (function(_this) {
         return function(input) {
