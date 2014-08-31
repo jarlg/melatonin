@@ -234,7 +234,11 @@ var obj;
 
 obj = {
   rgb_to_hex: function(rgb) {
-    return "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+    if ((rgb != null) && (rgb.r != null) && (rgb.g != null) && (rgb.g != null)) {
+      return "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+    } else {
+      return null;
+    }
   },
   hex_to_rgb: function(hex) {
     var result, shorthandRegex;
@@ -412,7 +416,9 @@ module.exports = jd;
 
 },{}],6:[function(require,module,exports){
 'use strict';
-var Keyframe, KeyframeView, Models;
+var C, Keyframe, KeyframeView, Models;
+
+C = require('./color_helpers.coffee');
 
 if (typeof HTMLElement !== "undefined" && HTMLElement !== null) {
   HTMLElement.prototype.set = function(attr, val) {
@@ -434,10 +440,9 @@ Models = {
 
   })(),
   KeyframeView: KeyframeView = (function() {
-    function KeyframeView(model, parent, controller) {
+    function KeyframeView(model, parent) {
       this.model = model;
       this.parent = parent;
-      this.controller = controller;
     }
 
     KeyframeView.prototype.option_map = {
@@ -463,10 +468,16 @@ Models = {
         opt = _ref[_i];
         _fn();
       }
-      this.value = document.createElement('input').set('value', this.model.value);
+      this.value = document.createElement('input');
       this.value.classList.add('value-input');
       this.set_value_type();
-      this.option.addEventListener('input', this.set_value_type.bind(this));
+      this.set_value_value();
+      this.option.addEventListener('input', (function(_this) {
+        return function() {
+          _this.set_value_type();
+          return _this.set_value_value();
+        };
+      })(this));
       this["delete"] = document.createElement('button').set('innerHTML', '-');
       this["delete"].classList.add('delete');
       _ref1 = ['key_value', 'option', 'value', 'delete'];
@@ -495,7 +506,15 @@ Models = {
 
     KeyframeView.prototype.set_value_type = function() {
       this.value.type = this.option_map[this.option.value];
-      return this.value.value = this.model.value;
+      if (this.value.type === 'color') {
+        return this.value.classList.add('color-input');
+      } else {
+        return this.value.classList.remove('color-input');
+      }
+    };
+
+    KeyframeView.prototype.set_value_value = function() {
+      return this.value.value = this.value.type === 'color' ? C.rgb_to_hex(this.model.value) : this.model.value;
     };
 
     KeyframeView.prototype.render = function() {
@@ -516,7 +535,7 @@ Models = {
 module.exports = Models;
 
 
-},{}],7:[function(require,module,exports){
+},{"./color_helpers.coffee":3}],7:[function(require,module,exports){
 'use strict';
 var B;
 

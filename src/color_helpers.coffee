@@ -3,7 +3,10 @@
 # taken from http://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 obj =
     rgb_to_hex: (rgb) ->
-        "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1)
+        if rgb? and rgb.r? and rgb.g? and rgb.g?
+            "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1)
+        else
+            null
 
     hex_to_rgb: (hex) ->
         #Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")

@@ -63,3 +63,7 @@ button {
     padding: 5px 2px;
     text-align: right;
 }
+
+.value-input.color-input {
+    padding: 1px 2px;
+}

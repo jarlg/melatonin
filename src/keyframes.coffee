@@ -1,5 +1,7 @@
 'use strict'
 
+C = require './color_helpers.coffee'
+
 if HTMLElement?
     HTMLElement.prototype.set = (attr, val) ->
         @[attr] = val
@@ -17,7 +19,7 @@ Models =
 
     KeyframeView:
         class KeyframeView
-            constructor: (@model, @parent, @controller) ->
+            constructor: (@model, @parent) ->
 
             option_map:
                 opacity: 'number',
@@ -44,12 +46,14 @@ Models =
                                 .set 'selected', (true if opt is @model.option)
 
                 @value = document.createElement 'input'
-                    .set 'value', @model.value
 
                 @value.classList.add 'value-input'
-
                 @set_value_type()
-                @option.addEventListener 'input', @set_value_type.bind @
+                @set_value_value()
+
+                @option.addEventListener 'input', =>
+                    @set_value_type()
+                    @set_value_value()
 
                 @delete = document.createElement 'button'
                     .set 'innerHTML', '-'
@@ -71,7 +75,13 @@ Models =
 
             set_value_type: ->
                 @value.type = @option_map[@option.value]
-                @value.value = @model.value
+                if @value.type is 'color'
+                    @value.classList.add 'color-input'
+                else
+                    @value.classList.remove 'color-input'
+
+            set_value_value: ->
+                @value.value = if @value.type is 'color' then C.rgb_to_hex(@model.value) else @model.value
 
             render: -> @parent.appendChild @row; @
 

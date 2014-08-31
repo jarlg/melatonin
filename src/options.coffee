@@ -40,6 +40,7 @@ class Options
         $ '#save'
             .addEventListener 'click', (event) =>
                 event.preventDefault()
+                console.log @models
                 chrome.storage.local
                     .set 'keyframes': @models, ->
 

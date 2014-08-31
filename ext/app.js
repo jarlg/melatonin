@@ -230,7 +230,12 @@ obj = {
     }
 
     AppAltitudeGraph.prototype.getCurrentIndex = function() {
-      return new Date().getHours() - 6;
+      var idx;
+      idx = new Date().getHours() - 6;
+      if (idx < 0) {
+        idx += 24;
+      }
+      return idx;
     };
 
     AppAltitudeGraph.prototype.render = function(n) {
@@ -265,7 +270,11 @@ var obj;
 
 obj = {
   rgb_to_hex: function(rgb) {
-    return "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+    if ((rgb != null) && (rgb.r != null) && (rgb.g != null) && (rgb.g != null)) {
+      return "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+    } else {
+      return null;
+    }
   },
   hex_to_rgb: function(hex) {
     var result, shorthandRegex;
