@@ -53,8 +53,11 @@ obj =
 
         # 24 pts for 24 hours, means index = current hour - starting hour
         getCurrentIndex: ->
-            new Date()
-                .getHours() - 6
+            idx = new Date()
+                    .getHours() - 6
+            if idx < 0
+                idx += 24
+            idx
 
         render: (n) ->
             super n

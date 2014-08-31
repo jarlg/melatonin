@@ -59,7 +59,7 @@ obj = {
 module.exports = obj;
 
 
-},{"./helpers.coffee":3,"./julian_date.coffee":4}],2:[function(require,module,exports){
+},{"./helpers.coffee":4,"./julian_date.coffee":5}],2:[function(require,module,exports){
 'use strict';
 var A, AltitudeGraph, AppAltitudeGraph, OptionsAltitudeGraph, obj,
   __hasProp = {}.hasOwnProperty,
@@ -149,7 +149,12 @@ obj = {
     }
 
     AppAltitudeGraph.prototype.getCurrentIndex = function() {
-      return new Date().getHours() - 6;
+      var idx;
+      idx = new Date().getHours() - 6;
+      if (idx < 0) {
+        idx += 24;
+      }
+      return idx;
     };
 
     AppAltitudeGraph.prototype.render = function(n) {
@@ -179,6 +184,73 @@ module.exports = obj;
 
 
 },{"./altitude.coffee":1}],3:[function(require,module,exports){
+'use strict';
+var obj;
+
+obj = {
+  rgb_to_hex: function(rgb) {
+    if ((rgb != null) && (rgb.r != null) && (rgb.g != null) && (rgb.g != null)) {
+      return "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+    } else {
+      return null;
+    }
+  },
+  hex_to_rgb: function(hex) {
+    var result, shorthandRegex;
+    shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+      return r + r + g + g + b + b;
+    });
+    result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) {
+      return {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      };
+    } else {
+      return null;
+    }
+  },
+  rgb_to_string: function(rgb) {
+    if (rgb != null) {
+      return String(rgb.r) + ", " + String(rgb.g) + ", " + String(rgb.b);
+    } else {
+      return "255, 255, 255";
+    }
+  },
+  temp_to_rgb: function(temperature) {
+    var blue, green, red, temp;
+    temp = temperature / 100;
+    if (temp <= 66) {
+      red = 255;
+      green = temp;
+      green = 99.4708025861 * Math.log(green) - 161.1195681661;
+      if (temp <= 19) {
+        blue = 0;
+      } else {
+        blue = temp - 10;
+        blue = 138.5177312231 * Math.log(blue) - 305.0447927307;
+      }
+    } else {
+      red = temp - 60;
+      red = 329.698727446 * Math.pow(red, -0.1332047592);
+      green = temp - 60;
+      green = 288.1221695283 * Math.pow(green, -0.0755148492);
+      blue = 255;
+    }
+    return {
+      r: red < 0 ? 0 : red > 255 ? 255 : red.toFixed(0),
+      g: green < 0 ? 0 : green > 255 ? 255 : green.toFixed(0),
+      b: blue < 0 ? 0 : blue > 255 ? 255 : blue.toFixed(0)
+    };
+  }
+};
+
+module.exports = obj;
+
+
+},{}],4:[function(require,module,exports){
 'use strict';
 var helpers;
 
@@ -275,7 +347,7 @@ helpers = {
 module.exports = helpers;
 
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var jd;
 
 jd = {
@@ -297,9 +369,11 @@ jd = {
 module.exports = jd;
 
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
-var Keyframe, KeyframeView, Models;
+var C, Keyframe, KeyframeView, Models;
+
+C = require('./color_helpers.coffee');
 
 if (typeof HTMLElement !== "undefined" && HTMLElement !== null) {
   HTMLElement.prototype.set = function(attr, val) {
@@ -321,10 +395,9 @@ Models = {
 
   })(),
   KeyframeView: KeyframeView = (function() {
-    function KeyframeView(model, parent, controller) {
+    function KeyframeView(model, parent) {
       this.model = model;
       this.parent = parent;
-      this.controller = controller;
     }
 
     KeyframeView.prototype.option_map = {
@@ -350,10 +423,16 @@ Models = {
         opt = _ref[_i];
         _fn();
       }
-      this.value = document.createElement('input').set('value', this.model.value);
+      this.value = document.createElement('input');
       this.value.classList.add('value-input');
       this.set_value_type();
-      this.option.addEventListener('input', this.set_value_type.bind(this));
+      this.set_value_value();
+      this.option.addEventListener('input', (function(_this) {
+        return function() {
+          _this.set_value_type();
+          return _this.set_value_value();
+        };
+      })(this));
       this["delete"] = document.createElement('button').set('innerHTML', '-');
       this["delete"].classList.add('delete');
       _ref1 = ['key_value', 'option', 'value', 'delete'];
@@ -382,7 +461,15 @@ Models = {
 
     KeyframeView.prototype.set_value_type = function() {
       this.value.type = this.option_map[this.option.value];
-      return this.value.value = this.model.value;
+      if (this.value.type === 'color') {
+        return this.value.classList.add('color-input');
+      } else {
+        return this.value.classList.remove('color-input');
+      }
+    };
+
+    KeyframeView.prototype.set_value_value = function() {
+      return this.value.value = this.value.type === 'color' ? C.rgb_to_hex(this.model.value) : this.model.value;
     };
 
     KeyframeView.prototype.render = function() {
@@ -403,7 +490,7 @@ Models = {
 module.exports = Models;
 
 
-},{}],6:[function(require,module,exports){
+},{"./color_helpers.coffee":3}],7:[function(require,module,exports){
 'use strict';
 var $, $$, G, M, Options, app, last, val;
 
@@ -464,6 +551,7 @@ Options = (function() {
     $('#save').addEventListener('click', (function(_this) {
       return function(event) {
         event.preventDefault();
+        console.log(_this.models);
         return chrome.storage.local.set({
           'keyframes': _this.models
         }, function() {});
@@ -495,4 +583,4 @@ Options = (function() {
 app = new Options($('#keyframes'));
 
 
-},{"./canvas.coffee":2,"./keyframes.coffee":5}]},{},[6])
+},{"./canvas.coffee":2,"./keyframes.coffee":6}]},{},[7])
