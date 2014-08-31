@@ -23,7 +23,7 @@ obj =
         ]
 
     init: ->
-        chrome.storage.local.get 'version', (it) =>
+        chrome.storage.local.get null, (it) =>
             console.log 'initializing Melatonin(%s)...', it.version
             if not it.version? or it.version isnt @config.version
                 console.log 'updating version; clearing storage...'
@@ -32,23 +32,22 @@ obj =
                     chrome.storage.local.set 'version': @config.version, @init
             else
                 @bind_storage_events()
-                chrome.storage.local.get (k for own k, _ of @config), (it) =>
-                    console.log 'in storage: '
-                    for own k, v of it
-                        console.log '%s : %s', k, v
-                    if chrome.runtime.lastError 
-                        console.log "error when accessing storage!"
-                        return
-                    # check if any keys are not set, and initialize them
-                    for own k, v of @config
-                        do (k, v) ->
-                            if not it[k]?
-                                # this is ugly
-                                obj = {}
-                                obj[k] = v
-                                chrome.storage.local.set obj
-                    if Date.now() - it.last_update > 15 * 60 * 1000 # 15min
-                        @update_position()
+                console.log 'in storage: '
+                for own k, v of it
+                    console.log '%s : %s', k, v
+                if chrome.runtime.lastError 
+                    console.log "error when accessing storage!"
+                    return
+                # check if any keys are not set, and initialize them
+                for own k, v of @config
+                    do (k, v) ->
+                        if not it[k]?
+                            # this is ugly
+                            obj = {}
+                            obj[k] = v
+                            chrome.storage.local.set obj
+                if Date.now() - it.last_update > 15 * 60 * 1000 # 15min
+                    @update_position()
 
     errHandler: (err) ->
         console.log err.stack or err
