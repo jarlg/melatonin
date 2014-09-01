@@ -85,14 +85,6 @@ p {
     margin: 15px 0;
 }
 
-p + img {
-    text-align: center;
-}
-
-img {
-    margin: 0.5em 0;
-}
-
 a {
     color: $orange;
     text-decoration: none;
@@ -132,6 +124,8 @@ strong, b {
 }
 
 img {
+    display: block;
+    margin: 0.5em auto;
     max-width: 100%;
 }
 
