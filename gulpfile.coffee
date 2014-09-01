@@ -3,8 +3,8 @@ browserify = require 'browserify'
 source = require 'vinyl-source-stream'
 
 static_files = [
-    './src/index.html'
-    './src/style.css'
+    './src/popup.html'
+    './src/popup.css'
     './src/options.html'
     './src/options.css'
 ]
