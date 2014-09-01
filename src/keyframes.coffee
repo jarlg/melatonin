@@ -1,30 +1,35 @@
 'use strict'
 
 C = require './color_helpers.coffee'
+H = require './helpers.coffee'
 
 if HTMLElement?
     HTMLElement.prototype.set = (attr, val) ->
         @[attr] = val
         @
 
-Models = 
+obj = 
     Keyframe:
         # model
         class Keyframe
             constructor: (
-                @key_type='altitude',
                 @key_value=0,
                 @option='temperature',
-                @value=2700) ->
+                @value=2700,
+                @direction=0) ->
 
     KeyframeView:
         class KeyframeView
             constructor: (@model, @parent) ->
 
             option_map:
-                opacity: 'number',
                 temperature: 'number',
                 color: 'color'
+
+            direction_map:
+                asc: 1
+                desc: -1
+                both: 0
 
             create: ->
                 @row = document.createElement 'tr'
@@ -33,12 +38,11 @@ Models =
                 @key_value = document.createElement 'input'
                     .set 'type', 'number'
                     .set 'value', @model.key_value
-
                 @key_value.classList.add 'key-input'
 
                 @option = document.createElement 'select'
-
-                for opt in [ 'color', 'temperature', 'opacity' ]
+                @option.classList.add 'option-input'
+                for opt in [ 'color', 'temperature']
                     do =>
                         @option
                             .appendChild document.createElement 'option'
@@ -46,8 +50,8 @@ Models =
                                 .set 'selected', (true if opt is @model.option)
 
                 @value = document.createElement 'input'
-
                 @value.classList.add 'value-input'
+
                 @set_value_type()
                 @set_value_value()
 
@@ -55,11 +59,20 @@ Models =
                     @set_value_type()
                     @set_value_value()
 
+                @direction = document.createElement 'select'
+                @direction.classList.add 'direction-input'
+                for opt in ['asc', 'desc', 'both']
+                    do =>
+                        @direction
+                            .appendChild document.createElement 'option'
+                                .set 'innerHTML', opt
+                                .set 'selected', (true if @direction_map[opt] is @model.direction)
+
                 @delete = document.createElement 'button'
                     .set 'innerHTML', '-'
                 @delete.classList.add 'delete', 'pure-button'
 
-                for input in ['key_value', 'option', 'value', 'delete']
+                for input in ['key_value', 'option', 'value', 'direction', 'delete']
                     do (input) =>
                         @row
                             .appendChild document.createElement 'th'
@@ -69,6 +82,8 @@ Models =
                             @[input].addEventListener 'input', (event) ->
                                 if @type is 'color'
                                     self.model[input] = C.hex_to_rgb @value
+                                else if input is 'direction'
+                                    self.model[input] = @direction_map[@value]
                                 else
                                     self.model[input] = @value
                 @
@@ -87,5 +102,58 @@ Models =
 
             erase:  -> @parent.removeChild @row; @
 
+    get_color: (kfs, alt, dir) ->
+        for kf in kfs
+            do (kf) ->
+                if kf.option is 'temperature'
+                    kf.option = 'color'
+                    kf.value = C.temp_to_rgb kf.value
 
-module.exports = Models
+        if kfs.length is 0
+            return null
+        else if kfs.length is 1
+            return kfs[0].value
+
+        kfs.sort (a, b) -> a.key_value - b.key_value
+
+        lkf = @_get_last_kf kfs, alt, dir
+        nkf = @_get_next_kf kfs, alt, dir
+
+        rgb = {}
+        for attr in ['r', 'g', 'b']
+            do (attr) =>
+                rgb[attr] = H.interpolate(
+                    alt,
+                    lkf.key_value,
+                    parseInt(lkf.value[attr]),
+                    nkf.key_value,
+                    parseInt(nkf.value[attr])
+                ).toFixed 0
+        return rgb
+
+    _get_last_kf: (kfs, alt, dir) ->
+        # keyframes of same direction since last direction change
+        cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (alt - kf.key_value)*dir >= 0
+
+        if cands.length > 0
+            return if dir then H.last(cands) else cands[0]
+
+        # keyframes of opposite direction, thus before last direction change
+        cands = kfs.filter (kf) -> kf.direction is -dir
+
+        return if dir then cands[0] else H.last cands
+
+    _get_next_kf: (kfs, alt, dir) ->
+        # keyframes of same direction before next direction change
+        cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (kf.key_value - alt)*dir >= 0
+
+        if cands.length > 0
+            return if dir then cands[0] else H.last cands
+
+        # keyframes of opposite dir, thus after next dir change
+        cands = kfs.filter (kf) -> kf.direction is -dir
+
+        return if dir then H.last(cands) else cands[0]
+
+
+module.exports = obj

@@ -67,9 +67,92 @@ module.exports = obj;
 
 },{}],2:[function(require,module,exports){
 'use strict';
-var C, Keyframe, KeyframeView, Models;
+var helpers;
+
+helpers = {
+  $: function(id) {
+    if (typeof document !== "undefined" && document !== null) {
+      return document.querySelector(id);
+    }
+  },
+  $$: function(id) {
+    if (typeof document !== "undefined" && document !== null) {
+      return document.querySelectorAll(id);
+    }
+  },
+  between: function(min, max, val) {
+    while (val < min) {
+      val += max - min;
+    }
+    while (max <= val) {
+      val -= max - min;
+    }
+    return val;
+  },
+  angleToQuadrant: function(angle) {
+    angle = this.between(0, 360, angle);
+    if (angle < 90) {
+      return 1;
+    } else if (angle < 180) {
+      return 2;
+    } else if (angle < 270) {
+      return 3;
+    } else if (angle < 360) {
+      return 4;
+    }
+  },
+  to_radians: function(angle) {
+    return angle * Math.PI / 180;
+  },
+  to_angle: function(rad) {
+    return rad * 180 / Math.PI;
+  },
+  angle_sin: function(x) {
+    return Math.sin(this.to_radians(x));
+  },
+  angle_cos: function(x) {
+    return Math.cos(this.to_radians(x));
+  },
+  angle_tan: function(x) {
+    return Math.tan(this.to_radians(x));
+  },
+  angle_atan: function(x) {
+    return this.to_angle(Math.atan(x));
+  },
+  angle_asin: function(x) {
+    return this.to_angle(Math.asin(x));
+  },
+  interpolate: function(value, key1, val1, key2, val2) {
+    if (key2 === key1) {
+      return val1;
+    } else {
+      return val1 + (val2 - val1) * (value - key1) / (key2 - key1);
+    }
+  },
+  contains: function(val, arr) {
+    return arr.some(function(el) {
+      return el === val;
+    });
+  },
+  last: function(arr) {
+    if (arr.length > 0) {
+      return arr[arr.length - 1];
+    } else {
+      return null;
+    }
+  }
+};
+
+module.exports = helpers;
+
+
+},{}],3:[function(require,module,exports){
+'use strict';
+var C, H, Keyframe, KeyframeView, obj;
 
 C = require('./color_helpers.coffee');
+
+H = require('./helpers.coffee');
 
 if (typeof HTMLElement !== "undefined" && HTMLElement !== null) {
   HTMLElement.prototype.set = function(attr, val) {
@@ -78,13 +161,13 @@ if (typeof HTMLElement !== "undefined" && HTMLElement !== null) {
   };
 }
 
-Models = {
+obj = {
   Keyframe: Keyframe = (function() {
-    function Keyframe(key_type, key_value, option, value) {
-      this.key_type = key_type != null ? key_type : 'altitude';
+    function Keyframe(key_value, option, value, direction) {
       this.key_value = key_value != null ? key_value : 0;
       this.option = option != null ? option : 'temperature';
       this.value = value != null ? value : 2700;
+      this.direction = direction != null ? direction : 0;
     }
 
     return Keyframe;
@@ -97,19 +180,25 @@ Models = {
     }
 
     KeyframeView.prototype.option_map = {
-      opacity: 'number',
       temperature: 'number',
       color: 'color'
     };
 
+    KeyframeView.prototype.direction_map = {
+      asc: 1,
+      desc: -1,
+      both: 0
+    };
+
     KeyframeView.prototype.create = function() {
-      var input, opt, _fn, _fn1, _i, _j, _len, _len1, _ref, _ref1;
+      var input, opt, _fn, _fn1, _fn2, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
       this.row = document.createElement('tr');
       this.row.classList.add('keyframe');
       this.key_value = document.createElement('input').set('type', 'number').set('value', this.model.key_value);
       this.key_value.classList.add('key-input');
       this.option = document.createElement('select');
-      _ref = ['color', 'temperature', 'opacity'];
+      this.option.classList.add('option-input');
+      _ref = ['color', 'temperature'];
       _fn = (function(_this) {
         return function() {
           return _this.option.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (opt === _this.model.option ? true : void 0));
@@ -129,10 +218,22 @@ Models = {
           return _this.set_value_value();
         };
       })(this));
+      this.direction = document.createElement('select');
+      this.direction.classList.add('direction-input');
+      _ref1 = ['asc', 'desc', 'both'];
+      _fn1 = (function(_this) {
+        return function() {
+          return _this.direction.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (_this.direction_map[opt] === _this.model.direction ? true : void 0));
+        };
+      })(this);
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        opt = _ref1[_j];
+        _fn1();
+      }
       this["delete"] = document.createElement('button').set('innerHTML', '-');
       this["delete"].classList.add('delete', 'pure-button');
-      _ref1 = ['key_value', 'option', 'value', 'delete'];
-      _fn1 = (function(_this) {
+      _ref2 = ['key_value', 'option', 'value', 'direction', 'delete'];
+      _fn2 = (function(_this) {
         return function(input) {
           var self;
           _this.row.appendChild(document.createElement('th')).appendChild(_this[input]);
@@ -141,6 +242,8 @@ Models = {
             return _this[input].addEventListener('input', function(event) {
               if (this.type === 'color') {
                 return self.model[input] = C.hex_to_rgb(this.value);
+              } else if (input === 'direction') {
+                return self.model[input] = this.direction_map[this.value];
               } else {
                 return self.model[input] = this.value;
               }
@@ -148,9 +251,9 @@ Models = {
           }
         };
       })(this);
-      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-        input = _ref1[_j];
-        _fn1(input);
+      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+        input = _ref2[_k];
+        _fn2(input);
       }
       return this;
     };
@@ -180,13 +283,90 @@ Models = {
 
     return KeyframeView;
 
-  })()
+  })(),
+  get_color: function(kfs, alt, dir) {
+    var attr, kf, lkf, nkf, rgb, _fn, _fn1, _i, _j, _len, _len1, _ref;
+    _fn = function(kf) {
+      if (kf.option === 'temperature') {
+        kf.option = 'color';
+        return kf.value = C.temp_to_rgb(kf.value);
+      }
+    };
+    for (_i = 0, _len = kfs.length; _i < _len; _i++) {
+      kf = kfs[_i];
+      _fn(kf);
+    }
+    if (kfs.length === 0) {
+      return null;
+    } else if (kfs.length === 1) {
+      return kfs[0].value;
+    }
+    kfs.sort(function(a, b) {
+      return a.key_value - b.key_value;
+    });
+    lkf = this._get_last_kf(kfs, alt, dir);
+    nkf = this._get_next_kf(kfs, alt, dir);
+    rgb = {};
+    _ref = ['r', 'g', 'b'];
+    _fn1 = (function(_this) {
+      return function(attr) {
+        return rgb[attr] = H.interpolate(alt, lkf.key_value, parseInt(lkf.value[attr]), nkf.key_value, parseInt(nkf.value[attr])).toFixed(0);
+      };
+    })(this);
+    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+      attr = _ref[_j];
+      _fn1(attr);
+    }
+    return rgb;
+  },
+  _get_last_kf: function(kfs, alt, dir) {
+    var cands;
+    cands = kfs.filter(function(kf) {
+      return kf.direction * dir >= 0 && (alt - kf.key_value) * dir >= 0;
+    });
+    if (cands.length > 0) {
+      if (dir) {
+        return H.last(cands);
+      } else {
+        return cands[0];
+      }
+    }
+    cands = kfs.filter(function(kf) {
+      return kf.direction === -dir;
+    });
+    if (dir) {
+      return cands[0];
+    } else {
+      return H.last(cands);
+    }
+  },
+  _get_next_kf: function(kfs, alt, dir) {
+    var cands;
+    cands = kfs.filter(function(kf) {
+      return kf.direction * dir >= 0 && (kf.key_value - alt) * dir >= 0;
+    });
+    if (cands.length > 0) {
+      if (dir) {
+        return cands[0];
+      } else {
+        return H.last(cands);
+      }
+    }
+    cands = kfs.filter(function(kf) {
+      return kf.direction === -dir;
+    });
+    if (dir) {
+      return H.last(cands);
+    } else {
+      return cands[0];
+    }
+  }
 };
 
-module.exports = Models;
+module.exports = obj;
 
 
-},{"./color_helpers.coffee":1}],3:[function(require,module,exports){
+},{"./color_helpers.coffee":1,"./helpers.coffee":2}],4:[function(require,module,exports){
 'use strict';
 var $, $$, M, Options, app, last, val;
 
@@ -214,8 +394,7 @@ Options = (function() {
     this.views = views != null ? views : [];
     this.prio = {
       temperature: 2,
-      color: 1,
-      opacity: 0
+      color: 1
     };
     chrome.storage.local.get(['keyframes', 'latitude', 'longitude'], (function(_this) {
       return function(items) {
@@ -286,4 +465,4 @@ Options = (function() {
 app = new Options($('#keyframes'));
 
 
-},{"./keyframes.coffee":2}]},{},[3])
+},{"./keyframes.coffee":3}]},{},[4])

@@ -1,51 +1,65 @@
-G = require './canvas.coffee'
+'use strict'
+
+A = require './altitude.coffee'
+H = require './helpers.coffee'
 C = require './color_helpers.coffee'
+Storage = require './storage.coffee'
+K = require './keyframes.coffee'
 
-$ = document.querySelector.bind document
+class App
+    constructor: (config) ->
+        @storage = new Storage config
 
-# transform is applied to the given object's desired attribute before adding to
-# storage (ex. for #colorpicker we want this.value, so we add
-# transform(this.value) to the storage)
-map = 
-    'on':
-        el: '#active-toggle',
-        attr: 'checked',
-        event: 'click'
-    'custom_opacity':
-        el: '#opacity-toggle',
-        attr: 'checked',
-        event: 'click'
-    'custom_color':
-        el: '#color-toggle',
-        attr: 'checked',
-        event: 'click'
-    'color':
-        el: '#colorpicker',
-        attr: 'value',
-        event: 'input'
-        transform: C.hex_to_rgb
-        inverse: C.rgb_to_hex
-    'opacity':
-        el: '#opacity',
-        attr: 'value',
-        event: 'input'
+        # events
+        chrome.alarms.create 'update_altitude', periodInMinutes: 15
+        chrome.alarms.onAlarm.addListener @update_altitude
 
-chrome.storage.local.get (k for own k, _ of map), (it) ->
-        for own k, _ of map 
-            do (k) ->
-                # get values from storage,
-                # and put them in the app
-                transform = if map[k].inverse? then map[k].inverse else (e) -> e
-                $(map[k].el)[map[k].attr] = transform it[k]
+        chrome.tabs.onUpdated.addListener (_, __, tab) -> B.refresh_overlay tab
 
-                # app updates storage on input
-                $ map[k].el
-                    .addEventListener map[k].event, ->
-                        # looking for a nicer way to write this
-                        transform = if map[k].transform? then map[k].transform else (e) -> e
-                        obj = {}
-                        obj[k] = transform @[map[k].attr]
-                        chrome.storage.local.set obj
+        chrome.runtime.onMessage.addListener (req, sender, resp) ->
+            if req.type is 'new_altitude'
+                @refresh_all_overlays()
+            else if req.type is 'init_popup'
+                @storage.get ['opac', 'lat', 'long'], resp
+            else if req.type is 'init_tab'
+                @storage.get [
+                    'mode'
+                    'alt' 
+                    'color'
+                    'kfs'
+                    'opac'
+                    'dir'
+                ], (it) =>
+                    if it.mode is 'manual'
+                        resp color: it.color, opac: it.opac
+                    else
+                        res opac: it.opac, color: H.get_color kfs, alt, dir
+            else if req.type is 'set_opac'
+                chrome.tabs.query {}, (tabs) ->
+                    chrome.tabs.sendMessage tab.id, type: 'set', opac: req.opac for tab in tabs
+                @storage.set 'opac': req.opac
 
-chrome.storage.local.get ['latitude', 'longitude'], (it) ->
-    canvas = new G.AppAltitudeGraph $('#graph'), it.latitude, it.longitude
+    errHandler: (err) ->
+        console.log err.stack or err
+
+    refresh_all_overlays: ->
+        @storage.get ['mode', 'alt', 'opac', 'kfs', 'dir'], (it) =>
+            false
+
+    update_altitude: ->
+        @get_altitude (alt) => @storage.set 'alt': alt
+
+    get_altitude: (cb) ->
+        @_get_position (lat, long) =>
+            cb A.get_altitude new Date(), lat, long
+
+    _get_position: (cb) ->
+        if navigator.geolocation?
+            navigator.geolocation.getCurrentPosition (loc) ->
+                cb loc.coords.latitude, loc.coords.longitude
+            , (err) => 
+                @errHandler err
+        else
+            console.log 'Geolocation unavailable'
+
+module.exports = App

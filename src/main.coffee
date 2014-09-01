@@ -1,23 +1,19 @@
 'use strict'
 
-B = require './background.coffee'
+K = require './keyframes.coffee'
+App = require './app.coffee'
 
-B.init()
+config = 
+    ver: '0.3.0',
+    last_update: 0,
+    mode: 'auto', # or 'manual'
+    alt: 0,
+    dir: 'asc', # or 'desc'
+    color: null, # color is an rgb object
+    opac: 0.5,
+    kfs: [
+        new K.Keyframe 0, 'temperature', 2700, 0
+        new K.Keyframe 90, 'temperature', 6300, 0
+    ]
 
-chrome.alarms.create 'update_position', periodInMinutes: 15
-chrome.alarms.onAlarm.addListener B.update_position
-
-#chrome.tabs.onUpdated.addListener (tabid, changeInfo, tab) ->
-#    B.update_overlay tab
-
-chrome.idle.onStateChanged.addListener (newstate) ->
-    console.log 'idle state change to ' + newstate
-    chrome.storage.local.set 'idle_state': newstate, ->
-
-chrome.runtime.onMessage.addListener (request, sender, sendMessage) ->
-    if request.type is 'display'
-        console.log request.value
-    else if request.type is 'update'
-        B.update_position()
-    else if request.type is 'initialize'
-        B.update_overlay sender.tab
+app = new App config

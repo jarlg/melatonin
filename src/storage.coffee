@@ -4,44 +4,47 @@ H = require './helpers.coffee'
 A = require './altitude.coffee'
 C = require './color_helpers.coffee'
 
-obj =
-    with_color: (cb) ->
-        console.log 'getting from storage...'
-        chrome.storage.local.get [
-            'on'
-            'custom_color'
-            'color'
-            'custom_opacity'
-            'opacity'
-            'latitude'
-            'longitude'
-            'keyframes'
-        ], (it) =>
-            if not it.on
-                return cb 0, null
-
-            if it.custom_color
-                color = it.color
+class Storage
+    constructor: (config) ->
+        @get null, (it) =>
+            if not it.version? or it.version < '0.3.0'
+                @clear =>
+                    @set config, =>
+                        @print()
+                        @bind_events()
             else
-                color = @_get_kf_color it.keyframes, it.latitude, it.longitude
+                obj = {}
+                for own k, v of config
+                    do ->
+                        obj[k] = v if not it[k]?
+                @set obj, =>
+                    @print()
+                    @bind_events()
 
-            if it.custom_opacity
-                opacity = it.opacity
-            else
-                opacity = @_get_kf_opacity it.keyframes, it.latitude, it.longitude
+    set: (obj, cb) ->
+        if H.contains 'altitude', (k for own k, _ of obj)
+            obj.last_update = Date.now()
+        chrome.storage.local.set obj, cb
 
-            cb opacity, color
+    get: (arr, cb) ->
+        chrome.storage.local.get arr, cb
 
-    _get_kf_color: (kfs, lat, long) ->
-        for kf in kfs
-            do (kf) ->
-                if kf.option is 'temperature'
-                    kf.option = 'color'
-                    kf.value = C.temp_to_rgb kf.value
+    clear: (cb) ->
+        chrome.storage.local.clear cb
 
-        H.get kfs, 'color', A.get_altitude new Date(), lat, long
+    print: ->
+        @get null, (it) ->
+            console.log 'in storage:'
+            for own k, v of it
+                do ->
+                    console.log k + " : " + v
 
-    _get_kf_opacity: (kfs, lat, long) ->
-        H.get kfs, 'opacity', A.get_altitude new Date(), lat, long
+    bind_events: ->
+        chrome.storage.onChanged.addListener (changes, namespace) =>
+            for own k, v of changes
+                do (k, v) ->
+                    if k is 'altitude'
+                        chrome.runtime.sendMessage type: 'new_altitude',
+                                                   value: v.newValue
 
-module.exports = obj
+module.exports = Storage

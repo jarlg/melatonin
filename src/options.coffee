@@ -14,8 +14,7 @@ class Options
     constructor: (@parent, @models=[], @views=[]) ->
         @prio =
             temperature: 2,
-            color: 1,
-            opacity: 0
+            color: 1
 
         chrome.storage.local
             .get ['keyframes', 'latitude', 'longitude'], (items) =>
