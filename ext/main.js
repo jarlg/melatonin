@@ -61,174 +61,121 @@ module.exports = obj;
 
 },{"./helpers.coffee":4,"./julian_date.coffee":5}],2:[function(require,module,exports){
 'use strict';
-var C, H, M, S, obj,
-  __hasProp = {}.hasOwnProperty;
+var A, App, C, H, K, Storage;
+
+A = require('./altitude.coffee');
 
 H = require('./helpers.coffee');
 
 C = require('./color_helpers.coffee');
 
-S = require('./storage.coffee');
+Storage = require('./storage.coffee');
 
-M = require('./keyframes.coffee');
+K = require('./keyframes.coffee');
 
-obj = {
-  config: {
-    on: true,
-    version: '0.3.0',
-    last_update: 0,
-    idle_state: 'active',
-    custom_color: false,
-    color: null,
-    custom_opacity: true,
-    opacity: 0.5,
-    latitude: null,
-    longitude: null,
-    keyframes: [new M.Keyframe('altitude', 0, 'temperature', 2700), new M.Keyframe('altitude', 90, 'temperature', 6300)]
-  },
-  init: function() {
-    return chrome.storage.local.get('version', (function(_this) {
-      return function(it) {
-        var k, _;
-        console.log('initializing Melatonin(%s)...', it.version);
-        if ((it.version == null) || it.version !== _this.config.version) {
-          console.log('updating version; clearing storage...');
-          return chrome.storage.local.clear(function() {
-            console.log('cleared storage');
-            return chrome.storage.local.set({
-              'version': _this.config.version
-            }, _this.init);
-          });
-        } else {
-          _this.bind_storage_events();
-          return chrome.storage.local.get((function() {
-            var _ref, _results;
-            _ref = this.config;
-            _results = [];
-            for (k in _ref) {
-              if (!__hasProp.call(_ref, k)) continue;
-              _ = _ref[k];
-              _results.push(k);
-            }
-            return _results;
-          }).call(_this), function(it) {
-            var v, _fn, _ref;
-            console.log('in storage: ');
-            for (k in it) {
-              if (!__hasProp.call(it, k)) continue;
-              v = it[k];
-              console.log('%s : %s', k, v);
-            }
-            if (chrome.runtime.lastError) {
-              console.log("error when accessing storage!");
-              return;
-            }
-            _ref = _this.config;
-            _fn = function(k, v) {
-              if (it[k] == null) {
-                obj = {};
-                obj[k] = v;
-                return chrome.storage.local.set(obj);
-              }
-            };
-            for (k in _ref) {
-              if (!__hasProp.call(_ref, k)) continue;
-              v = _ref[k];
-              _fn(k, v);
-            }
-            if (Date.now() - it.last_update > 15 * 60 * 1000) {
-              return _this.update_position();
-            }
-          });
-        }
-      };
-    })(this));
-  },
-  errHandler: function(err) {
-    return console.log(err.stack || err);
-  },
-  overlay: function(tab, opac, color) {
-    return chrome.tabs.sendMessage(tab.id, {
-      type: 'set_color',
-      opacity: opac,
-      color: color
+App = (function() {
+  function App(config) {
+    this.storage = new Storage(config);
+    chrome.alarms.create('update_altitude', {
+      periodInMinutes: 15
     });
-  },
-  update_overlay: function(tab) {
-    return S.with_color((function(_this) {
-      return function(opac, rgb) {
-        return _this.overlay(tab, opac, C.rgb_to_string(rgb));
-      };
-    })(this));
-  },
-  update_overlays: function() {
-    return S.with_color((function(_this) {
-      return function(opac, rgb) {
-        return chrome.tabs.query({}, function(tabs) {
+    chrome.alarms.onAlarm.addListener(this.update_altitude);
+    chrome.tabs.onUpdated.addListener(function(_, __, tab) {
+      return B.refresh_overlay(tab);
+    });
+    chrome.runtime.onMessage.addListener(function(req, sender, resp) {
+      if (req.type === 'new_altitude') {
+        return this.refresh_all_overlays();
+      } else if (req.type === 'init_popup') {
+        return this.storage.get(['opac', 'lat', 'long'], resp);
+      } else if (req.type === 'init_tab') {
+        return this.storage.get(['mode', 'alt', 'color', 'kfs', 'opac', 'dir'], (function(_this) {
+          return function(it) {
+            if (it.mode === 'manual') {
+              return resp({
+                color: it.color,
+                opac: it.opac
+              });
+            } else {
+              return res({
+                opac: it.opac,
+                color: H.get_color(kfs, alt, dir)
+              });
+            }
+          };
+        })(this));
+      } else if (req.type === 'set_opac') {
+        chrome.tabs.query({}, function(tabs) {
           var tab, _i, _len, _results;
           _results = [];
           for (_i = 0, _len = tabs.length; _i < _len; _i++) {
             tab = tabs[_i];
-            _results.push(_this.overlay(tab, opac, C.rgb_to_string(rgb)));
+            _results.push(chrome.tabs.sendMessage(tab.id, {
+              type: 'set',
+              opac: req.opac
+            }));
           }
           return _results;
         });
+        return this.storage.set({
+          'opac': req.opac
+        });
+      }
+    });
+  }
+
+  App.prototype.errHandler = function(err) {
+    return console.log(err.stack || err);
+  };
+
+  App.prototype.refresh_all_overlays = function() {
+    return this.storage.get(['mode', 'alt', 'opac', 'kfs', 'dir'], (function(_this) {
+      return function(it) {
+        return false;
       };
     })(this));
-  },
-  bind_storage_events: function() {
-    return chrome.storage.onChanged.addListener((function(_this) {
-      return function(changes, namespace) {
-        var k, v, _results;
-        _results = [];
-        for (k in changes) {
-          if (!__hasProp.call(changes, k)) continue;
-          v = changes[k];
-          _results.push((function(k, v) {
-            if (k === 'last_update') {
-              console.log('updated %s from %s to %s (%smin)', k, v.oldValue, v.newValue, ((v.newValue - v.oldValue) / (1000 * 60)).toFixed(0));
-            } else {
-              console.log('updated %s from %s to %s', k, v.oldValue, v.newValue);
-            }
-            if ((k === 'on' && v.newValue) || k === 'idle_state') {
-              _this.update_position();
-            }
-            if (H.contains(k, ['on', 'custom_color', 'color', 'custom_opacity', 'opacity', 'longitude', 'latitude', 'keyframes'])) {
-              return _this.update_overlays();
-            }
-          })(k, v));
-        }
-        return _results;
+  };
+
+  App.prototype.update_altitude = function() {
+    return this.get_altitude((function(_this) {
+      return function(alt) {
+        return _this.storage.set({
+          'alt': alt
+        });
       };
     })(this));
-  },
-  update_position: function() {
+  };
+
+  App.prototype.get_altitude = function(cb) {
+    return this._get_position((function(_this) {
+      return function(lat, long) {
+        return cb(A.get_altitude(new Date(), lat, long));
+      };
+    })(this));
+  };
+
+  App.prototype._get_position = function(cb) {
     if (navigator.geolocation != null) {
       return navigator.geolocation.getCurrentPosition(function(loc) {
-        return chrome.storage.local.set({
-          'latitude': loc.coords.latitude,
-          'longitude': loc.coords.longitude,
-          'last_update': Date.now()
-        });
+        return cb(loc.coords.latitude, loc.coords.longitude);
       }, (function(_this) {
         return function(err) {
-          console.log("Geolocation Error:");
-          _this.errHandler(err);
-          return chrome.storage.local.set({
-            'last_update': Date.now()
-          });
+          return _this.errHandler(err);
         };
-      })(this), function() {});
+      })(this));
     } else {
       return console.log('Geolocation unavailable');
     }
-  }
-};
+  };
 
-module.exports = obj;
+  return App;
+
+})();
+
+module.exports = App;
 
 
-},{"./color_helpers.coffee":3,"./helpers.coffee":4,"./keyframes.coffee":6,"./storage.coffee":8}],3:[function(require,module,exports){
+},{"./altitude.coffee":1,"./color_helpers.coffee":3,"./helpers.coffee":4,"./keyframes.coffee":6,"./storage.coffee":8}],3:[function(require,module,exports){
 'use strict';
 var obj;
 
@@ -300,6 +247,16 @@ module.exports = obj;
 var helpers;
 
 helpers = {
+  $: function(id) {
+    if (typeof document !== "undefined" && document !== null) {
+      return document.querySelector(id);
+    }
+  },
+  $$: function(id) {
+    if (typeof document !== "undefined" && document !== null) {
+      return document.querySelectorAll(id);
+    }
+  },
   between: function(min, max, val) {
     while (val < min) {
       val += max - min;
@@ -342,40 +299,7 @@ helpers = {
   angle_asin: function(x) {
     return this.to_angle(Math.asin(x));
   },
-  get: function(kfs, type, altitude) {
-    var attr, idx, idx1, idx2, rgb, _fn, _i, _len, _ref;
-    kfs = kfs.filter(function(el) {
-      return el.option === type;
-    });
-    if (kfs.length === 0) {
-      return 0;
-    }
-    kfs.sort(function(a, b) {
-      return a.key_value - b.key_value;
-    });
-    idx = kfs.filter(function(el) {
-      return el.key_value < altitude;
-    }).length;
-    idx1 = idx !== 0 ? idx - 1 : kfs.length - 1;
-    idx2 = idx !== kfs.length ? idx : 0;
-    if (type === 'color') {
-      rgb = {};
-      _ref = ['r', 'g', 'b'];
-      _fn = (function(_this) {
-        return function(attr) {
-          return rgb[attr] = _this.linear_interpolate(altitude, kfs[idx1].key_value, parseInt(kfs[idx1].value[attr]), kfs[idx2].key_value, parseInt(kfs[idx2].value[attr])).toFixed(0);
-        };
-      })(this);
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        attr = _ref[_i];
-        _fn(attr);
-      }
-      return rgb;
-    } else {
-      return this.linear_interpolate(altitude, kfs[idx1].key_value, kfs[idx1].value, kfs[idx2].key_value, kfs[idx2].value);
-    }
-  },
-  linear_interpolate: function(value, key1, val1, key2, val2) {
+  interpolate: function(value, key1, val1, key2, val2) {
     if (key2 === key1) {
       return val1;
     } else {
@@ -386,6 +310,13 @@ helpers = {
     return arr.some(function(el) {
       return el === val;
     });
+  },
+  last: function(arr) {
+    if (arr.length > 0) {
+      return arr[arr.length - 1];
+    } else {
+      return null;
+    }
   }
 };
 
@@ -416,9 +347,11 @@ module.exports = jd;
 
 },{}],6:[function(require,module,exports){
 'use strict';
-var C, Keyframe, KeyframeView, Models;
+var C, H, Keyframe, KeyframeView, obj;
 
 C = require('./color_helpers.coffee');
+
+H = require('./helpers.coffee');
 
 if (typeof HTMLElement !== "undefined" && HTMLElement !== null) {
   HTMLElement.prototype.set = function(attr, val) {
@@ -427,13 +360,13 @@ if (typeof HTMLElement !== "undefined" && HTMLElement !== null) {
   };
 }
 
-Models = {
+obj = {
   Keyframe: Keyframe = (function() {
-    function Keyframe(key_type, key_value, option, value) {
-      this.key_type = key_type != null ? key_type : 'altitude';
+    function Keyframe(key_value, option, value, direction) {
       this.key_value = key_value != null ? key_value : 0;
       this.option = option != null ? option : 'temperature';
       this.value = value != null ? value : 2700;
+      this.direction = direction != null ? direction : 0;
     }
 
     return Keyframe;
@@ -446,19 +379,25 @@ Models = {
     }
 
     KeyframeView.prototype.option_map = {
-      opacity: 'number',
       temperature: 'number',
       color: 'color'
     };
 
+    KeyframeView.prototype.direction_map = {
+      asc: 1,
+      desc: -1,
+      both: 0
+    };
+
     KeyframeView.prototype.create = function() {
-      var input, opt, _fn, _fn1, _i, _j, _len, _len1, _ref, _ref1;
+      var input, opt, _fn, _fn1, _fn2, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
       this.row = document.createElement('tr');
       this.row.classList.add('keyframe');
       this.key_value = document.createElement('input').set('type', 'number').set('value', this.model.key_value);
       this.key_value.classList.add('key-input');
       this.option = document.createElement('select');
-      _ref = ['color', 'temperature', 'opacity'];
+      this.option.classList.add('option-input');
+      _ref = ['color', 'temperature'];
       _fn = (function(_this) {
         return function() {
           return _this.option.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (opt === _this.model.option ? true : void 0));
@@ -478,10 +417,22 @@ Models = {
           return _this.set_value_value();
         };
       })(this));
+      this.direction = document.createElement('select');
+      this.direction.classList.add('direction-input');
+      _ref1 = ['asc', 'desc', 'both'];
+      _fn1 = (function(_this) {
+        return function() {
+          return _this.direction.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (_this.direction_map[opt] === _this.model.direction ? true : void 0));
+        };
+      })(this);
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        opt = _ref1[_j];
+        _fn1();
+      }
       this["delete"] = document.createElement('button').set('innerHTML', '-');
       this["delete"].classList.add('delete', 'pure-button');
-      _ref1 = ['key_value', 'option', 'value', 'delete'];
-      _fn1 = (function(_this) {
+      _ref2 = ['key_value', 'option', 'value', 'direction', 'delete'];
+      _fn2 = (function(_this) {
         return function(input) {
           var self;
           _this.row.appendChild(document.createElement('th')).appendChild(_this[input]);
@@ -490,6 +441,8 @@ Models = {
             return _this[input].addEventListener('input', function(event) {
               if (this.type === 'color') {
                 return self.model[input] = C.hex_to_rgb(this.value);
+              } else if (input === 'direction') {
+                return self.model[input] = this.direction_map[this.value];
               } else {
                 return self.model[input] = this.value;
               }
@@ -497,9 +450,9 @@ Models = {
           }
         };
       })(this);
-      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-        input = _ref1[_j];
-        _fn1(input);
+      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+        input = _ref2[_k];
+        _fn2(input);
       }
       return this;
     };
@@ -529,79 +482,9 @@ Models = {
 
     return KeyframeView;
 
-  })()
-};
-
-module.exports = Models;
-
-
-},{"./color_helpers.coffee":3}],7:[function(require,module,exports){
-'use strict';
-var B;
-
-B = require('./background.coffee');
-
-B.init();
-
-chrome.alarms.create('update_position', {
-  periodInMinutes: 15
-});
-
-chrome.alarms.onAlarm.addListener(B.update_position);
-
-chrome.idle.onStateChanged.addListener(function(newstate) {
-  console.log('idle state change to ' + newstate);
-  return chrome.storage.local.set({
-    'idle_state': newstate
-  }, function() {});
-});
-
-chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
-  if (request.type === 'display') {
-    return console.log(request.value);
-  } else if (request.type === 'update') {
-    return B.update_position();
-  } else if (request.type === 'initialize') {
-    return B.update_overlay(sender.tab);
-  }
-});
-
-
-},{"./background.coffee":2}],8:[function(require,module,exports){
-'use strict';
-var A, C, H, obj;
-
-H = require('./helpers.coffee');
-
-A = require('./altitude.coffee');
-
-C = require('./color_helpers.coffee');
-
-obj = {
-  with_color: function(cb) {
-    console.log('getting from storage...');
-    return chrome.storage.local.get(['on', 'custom_color', 'color', 'custom_opacity', 'opacity', 'latitude', 'longitude', 'keyframes'], (function(_this) {
-      return function(it) {
-        var color, opacity;
-        if (!it.on) {
-          return cb(0, null);
-        }
-        if (it.custom_color) {
-          color = it.color;
-        } else {
-          color = _this._get_kf_color(it.keyframes, it.latitude, it.longitude);
-        }
-        if (it.custom_opacity) {
-          opacity = it.opacity;
-        } else {
-          opacity = _this._get_kf_opacity(it.keyframes, it.latitude, it.longitude);
-        }
-        return cb(opacity, color);
-      };
-    })(this));
-  },
-  _get_kf_color: function(kfs, lat, long) {
-    var kf, _fn, _i, _len;
+  })(),
+  get_color: function(kfs, alt, dir) {
+    var attr, kf, lkf, nkf, rgb, _fn, _fn1, _i, _j, _len, _len1, _ref;
     _fn = function(kf) {
       if (kf.option === 'temperature') {
         kf.option = 'color';
@@ -612,14 +495,211 @@ obj = {
       kf = kfs[_i];
       _fn(kf);
     }
-    return H.get(kfs, 'color', A.get_altitude(new Date(), lat, long));
+    if (kfs.length === 0) {
+      return null;
+    } else if (kfs.length === 1) {
+      return kfs[0].value;
+    }
+    kfs.sort(function(a, b) {
+      return a.key_value - b.key_value;
+    });
+    lkf = this._get_last_kf(kfs, alt, dir);
+    nkf = this._get_next_kf(kfs, alt, dir);
+    rgb = {};
+    _ref = ['r', 'g', 'b'];
+    _fn1 = (function(_this) {
+      return function(attr) {
+        return rgb[attr] = H.interpolate(alt, lkf.key_value, parseInt(lkf.value[attr]), nkf.key_value, parseInt(nkf.value[attr])).toFixed(0);
+      };
+    })(this);
+    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+      attr = _ref[_j];
+      _fn1(attr);
+    }
+    return rgb;
   },
-  _get_kf_opacity: function(kfs, lat, long) {
-    return H.get(kfs, 'opacity', A.get_altitude(new Date(), lat, long));
+  _get_last_kf: function(kfs, alt, dir) {
+    var cands;
+    cands = kfs.filter(function(kf) {
+      return kf.direction * dir >= 0 && (alt - kf.key_value) * dir >= 0;
+    });
+    if (cands.length > 0) {
+      if (dir) {
+        return H.last(cands);
+      } else {
+        return cands[0];
+      }
+    }
+    cands = kfs.filter(function(kf) {
+      return kf.direction === -dir;
+    });
+    if (dir) {
+      return cands[0];
+    } else {
+      return H.last(cands);
+    }
+  },
+  _get_next_kf: function(kfs, alt, dir) {
+    var cands;
+    cands = kfs.filter(function(kf) {
+      return kf.direction * dir >= 0 && (kf.key_value - alt) * dir >= 0;
+    });
+    if (cands.length > 0) {
+      if (dir) {
+        return cands[0];
+      } else {
+        return H.last(cands);
+      }
+    }
+    cands = kfs.filter(function(kf) {
+      return kf.direction === -dir;
+    });
+    if (dir) {
+      return H.last(cands);
+    } else {
+      return cands[0];
+    }
   }
 };
 
 module.exports = obj;
+
+
+},{"./color_helpers.coffee":3,"./helpers.coffee":4}],7:[function(require,module,exports){
+'use strict';
+var App, K, app, config;
+
+K = require('./keyframes.coffee');
+
+App = require('./app.coffee');
+
+config = {
+  ver: '0.3.0',
+  last_update: 0,
+  mode: 'auto',
+  alt: 0,
+  dir: 'asc',
+  color: null,
+  opac: 0.5,
+  kfs: [new K.Keyframe(0, 'temperature', 2700, 0), new K.Keyframe(90, 'temperature', 6300, 0)]
+};
+
+app = new App(config);
+
+
+},{"./app.coffee":2,"./keyframes.coffee":6}],8:[function(require,module,exports){
+'use strict';
+var A, C, H, Storage,
+  __hasProp = {}.hasOwnProperty;
+
+H = require('./helpers.coffee');
+
+A = require('./altitude.coffee');
+
+C = require('./color_helpers.coffee');
+
+Storage = (function() {
+  function Storage(config) {
+    this.get(null, (function(_this) {
+      return function(it) {
+        var k, obj, v, _fn;
+        if ((it.version == null) || it.version < '0.3.0') {
+          return _this.clear(function() {
+            return _this.set(config, function() {
+              _this.print();
+              return _this.bind_events();
+            });
+          });
+        } else {
+          obj = {};
+          _fn = function() {
+            if (it[k] == null) {
+              return obj[k] = v;
+            }
+          };
+          for (k in config) {
+            if (!__hasProp.call(config, k)) continue;
+            v = config[k];
+            _fn();
+          }
+          return _this.set(obj, function() {
+            _this.print();
+            return _this.bind_events();
+          });
+        }
+      };
+    })(this));
+  }
+
+  Storage.prototype.set = function(obj, cb) {
+    var k, _;
+    if (H.contains('altitude', (function() {
+      var _results;
+      _results = [];
+      for (k in obj) {
+        if (!__hasProp.call(obj, k)) continue;
+        _ = obj[k];
+        _results.push(k);
+      }
+      return _results;
+    })())) {
+      obj.last_update = Date.now();
+    }
+    return chrome.storage.local.set(obj, cb);
+  };
+
+  Storage.prototype.get = function(arr, cb) {
+    return chrome.storage.local.get(arr, cb);
+  };
+
+  Storage.prototype.clear = function(cb) {
+    return chrome.storage.local.clear(cb);
+  };
+
+  Storage.prototype.print = function() {
+    return this.get(null, function(it) {
+      var k, v, _results;
+      console.log('in storage:');
+      _results = [];
+      for (k in it) {
+        if (!__hasProp.call(it, k)) continue;
+        v = it[k];
+        _results.push((function() {
+          return console.log(k + " : " + v);
+        })());
+      }
+      return _results;
+    });
+  };
+
+  Storage.prototype.bind_events = function() {
+    return chrome.storage.onChanged.addListener((function(_this) {
+      return function(changes, namespace) {
+        var k, v, _results;
+        _results = [];
+        for (k in changes) {
+          if (!__hasProp.call(changes, k)) continue;
+          v = changes[k];
+          _results.push((function(k, v) {
+            if (k === 'altitude') {
+              return chrome.runtime.sendMessage({
+                type: 'new_altitude'
+              }, {
+                value: v.newValue
+              });
+            }
+          })(k, v));
+        }
+        return _results;
+      };
+    })(this));
+  };
+
+  return Storage;
+
+})();
+
+module.exports = Storage;
 
 
 },{"./altitude.coffee":1,"./color_helpers.coffee":3,"./helpers.coffee":4}]},{},[7])

@@ -44,31 +44,25 @@ class AltitudeGraph
     ptY: (i) ->
         @yOrigo() - @pts[i]*@canvas.height/(2*90) 
 
-obj = 
-    AppAltitudeGraph: class AppAltitudeGraph extends AltitudeGraph
-        constructor: (el, lat, long) ->
-            super el, lat, long, 200, 129, 24
-            idx = @getCurrentIndex()
-            @render idx
+class AppAltitudeGraph extends AltitudeGraph
+    constructor: (lat, long, el) ->
+        super el, lat, long, 200, 129, 24
+        idx = @getCurrentIndex()
+        @render idx
 
-        # 24 pts for 24 hours, means index = current hour - starting hour
-        getCurrentIndex: ->
-            idx = new Date()
-                    .getHours() - 6
-            if idx < 0
-                idx += 24
-            idx
+    # 24 pts for 24 hours, means index = current hour - starting hour
+    getCurrentIndex: ->
+        idx = new Date()
+                .getHours() - 6
+        if idx < 0
+            idx += 24
+        idx
 
-        render: (n) ->
-            super n
-            @ctx.fillStyle = 'silver'
-            @ctx.font = '18pt sans-serif'
-            @ctx.fillText A.get_altitude(new Date(), @lat, @long).toFixed(0) + '\u00B0', @canvas.width - 55, 30
-
-    OptionsAltitudeGraph: class OptionsAltitudeGraph extends AltitudeGraph
-        constructor: (el, lat, long) ->
-            super el, lat, long, 575, 340, 48
-            @render()
+    render: (n) ->
+        super n
+        @ctx.fillStyle = 'silver'
+        @ctx.font = '18pt sans-serif'
+        @ctx.fillText A.get_altitude(new Date(), @lat, @long).toFixed(0) + '\u00B0', @canvas.width - 55, 30
 
 
-module.exports = obj
+module.exports = AppAltitudeGraph

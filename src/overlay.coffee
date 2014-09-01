@@ -1,7 +1,11 @@
 'use strict'
 
+C = require './color_helpers.coffee'
+
 class Overlay
     constructor: ->
+        @opac = 0
+        @color = null
         @el = document.createElement 'div'
         @el.style["transition"] = "background-color 0.2s" # reduce the flashing
         @el.style.width = "100vw"
@@ -12,11 +16,13 @@ class Overlay
         @el.style["z-index"] = 9999999999
         @el.style["pointer-events"] = "none"
         document.body.appendChild @el
-        chrome.runtime.sendMessage type: 'initialize'
 
-    update: (opac, color) ->
-        console.log 'setting color %s and opacity %s', color, opac
-        @el.style["background-color"] = "rgba(" + color + ", " + opac + ")"
-        console.log 'done.'
+    set: (obj) ->
+        @opac = obj.opac if obj.opac?
+        @color = obj.color if obj.color?
+        @render()
+
+    render: ->
+        @el.style["background-color"] = "rgba(" + C.rgb_to_string(@color) + ", " + @opac + ")"
 
 module.exports = Overlay

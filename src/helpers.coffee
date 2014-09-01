@@ -1,6 +1,9 @@
 'use strict'
 
 helpers = 
+    $: (id) -> document.querySelector id if document?
+    $$: (id) -> document.querySelectorAll id if document?
+
     # suppose max - min is the size of interval (one cycle)
     between: (min, max, val) ->
         while val < min
@@ -25,49 +28,13 @@ helpers =
     angle_atan: (x) -> @to_angle Math.atan x
     angle_asin: (x) -> @to_angle Math.asin x
 
-    get: (kfs, type, altitude) ->
-        kfs = kfs
-                .filter (el) -> el.option is type
-
-        if kfs.length is 0
-            return 0
-
-        kfs.sort (a, b) -> a.key_value - b.key_value
-
-        idx = kfs
-                .filter (el) -> el.key_value < altitude
-                .length
-
-        idx1 = if idx isnt 0 then idx-1 else kfs.length-1
-        idx2 = if idx isnt kfs.length then idx else 0
-
-        if type is 'color' # we are dealing with rgb objects
-            rgb = {}
-            for attr in ['r', 'g', 'b']
-                do (attr) =>
-                    rgb[attr] = @linear_interpolate(
-                        altitude, 
-                        kfs[idx1].key_value,
-                        parseInt(kfs[idx1].value[attr]),
-                        kfs[idx2].key_value,
-                        parseInt(kfs[idx2].value[attr])
-                    ).toFixed 0
-            return rgb
-        else
-            @linear_interpolate(
-                altitude, 
-                kfs[idx1].key_value,
-                kfs[idx1].value,
-                kfs[idx2].key_value,
-                kfs[idx2].value
-            )
-
-    linear_interpolate: (value, key1, val1, key2, val2) ->
+    interpolate: (value, key1, val1, key2, val2) ->
         if key2 is key1
             val1
         else
             val1 + (val2 - val1) * (value - key1) / (key2 - key1) 
 
     contains: (val, arr) -> arr.some (el) -> el is val
+    last: (arr) -> if arr.length > 0 then arr[arr.length-1] else null
 
 module.exports = helpers

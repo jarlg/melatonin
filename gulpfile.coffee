@@ -11,7 +11,7 @@ static_files = [
 
 coffee_source_files = [
     'main'
-    'app'
+    'popup'
     'content_script'
     'options'
     'test'

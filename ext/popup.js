@@ -59,33 +59,9 @@ obj = {
 module.exports = obj;
 
 
-},{"./helpers.coffee":4,"./julian_date.coffee":5}],2:[function(require,module,exports){
+},{"./helpers.coffee":3,"./julian_date.coffee":4}],2:[function(require,module,exports){
 'use strict';
-var $, G;
-
-G = require('./canvas.coffee');
-
-$ = document.querySelector.bind(document);
-
-$('#opacity').addEventListener('input', function() {
-  return chrome.runtime.sendMessage({
-    type: 'set',
-    value: {
-      'opacity': this.value
-    }
-  });
-});
-
-chrome.storage.local.get(['latitude', 'longitude', 'opacity'], function(it) {
-  var canvas;
-  canvas = new G.AppAltitudeGraph($('#graph'), it.latitude, it.longitude);
-  return $('#opacity').value = it.opacity;
-});
-
-
-},{"./canvas.coffee":3}],3:[function(require,module,exports){
-'use strict';
-var A, AltitudeGraph, AppAltitudeGraph, OptionsAltitudeGraph, obj,
+var A, AltitudeGraph, AppAltitudeGraph,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -161,57 +137,54 @@ AltitudeGraph = (function() {
 
 })();
 
-obj = {
-  AppAltitudeGraph: AppAltitudeGraph = (function(_super) {
-    __extends(AppAltitudeGraph, _super);
+AppAltitudeGraph = (function(_super) {
+  __extends(AppAltitudeGraph, _super);
 
-    function AppAltitudeGraph(el, lat, long) {
-      var idx;
-      AppAltitudeGraph.__super__.constructor.call(this, el, lat, long, 200, 129, 24);
-      idx = this.getCurrentIndex();
-      this.render(idx);
+  function AppAltitudeGraph(lat, long, el) {
+    var idx;
+    AppAltitudeGraph.__super__.constructor.call(this, el, lat, long, 200, 129, 24);
+    idx = this.getCurrentIndex();
+    this.render(idx);
+  }
+
+  AppAltitudeGraph.prototype.getCurrentIndex = function() {
+    var idx;
+    idx = new Date().getHours() - 6;
+    if (idx < 0) {
+      idx += 24;
     }
+    return idx;
+  };
 
-    AppAltitudeGraph.prototype.getCurrentIndex = function() {
-      var idx;
-      idx = new Date().getHours() - 6;
-      if (idx < 0) {
-        idx += 24;
-      }
-      return idx;
-    };
+  AppAltitudeGraph.prototype.render = function(n) {
+    AppAltitudeGraph.__super__.render.call(this, n);
+    this.ctx.fillStyle = 'silver';
+    this.ctx.font = '18pt sans-serif';
+    return this.ctx.fillText(A.get_altitude(new Date(), this.lat, this.long).toFixed(0) + '\u00B0', this.canvas.width - 55, 30);
+  };
 
-    AppAltitudeGraph.prototype.render = function(n) {
-      AppAltitudeGraph.__super__.render.call(this, n);
-      this.ctx.fillStyle = 'silver';
-      this.ctx.font = '18pt sans-serif';
-      return this.ctx.fillText(A.get_altitude(new Date(), this.lat, this.long).toFixed(0) + '\u00B0', this.canvas.width - 55, 30);
-    };
+  return AppAltitudeGraph;
 
-    return AppAltitudeGraph;
+})(AltitudeGraph);
 
-  })(AltitudeGraph),
-  OptionsAltitudeGraph: OptionsAltitudeGraph = (function(_super) {
-    __extends(OptionsAltitudeGraph, _super);
-
-    function OptionsAltitudeGraph(el, lat, long) {
-      OptionsAltitudeGraph.__super__.constructor.call(this, el, lat, long, 575, 340, 48);
-      this.render();
-    }
-
-    return OptionsAltitudeGraph;
-
-  })(AltitudeGraph)
-};
-
-module.exports = obj;
+module.exports = AppAltitudeGraph;
 
 
-},{"./altitude.coffee":1}],4:[function(require,module,exports){
+},{"./altitude.coffee":1}],3:[function(require,module,exports){
 'use strict';
 var helpers;
 
 helpers = {
+  $: function(id) {
+    if (typeof document !== "undefined" && document !== null) {
+      return document.querySelector(id);
+    }
+  },
+  $$: function(id) {
+    if (typeof document !== "undefined" && document !== null) {
+      return document.querySelectorAll(id);
+    }
+  },
   between: function(min, max, val) {
     while (val < min) {
       val += max - min;
@@ -254,40 +227,7 @@ helpers = {
   angle_asin: function(x) {
     return this.to_angle(Math.asin(x));
   },
-  get: function(kfs, type, altitude) {
-    var attr, idx, idx1, idx2, rgb, _fn, _i, _len, _ref;
-    kfs = kfs.filter(function(el) {
-      return el.option === type;
-    });
-    if (kfs.length === 0) {
-      return 0;
-    }
-    kfs.sort(function(a, b) {
-      return a.key_value - b.key_value;
-    });
-    idx = kfs.filter(function(el) {
-      return el.key_value < altitude;
-    }).length;
-    idx1 = idx !== 0 ? idx - 1 : kfs.length - 1;
-    idx2 = idx !== kfs.length ? idx : 0;
-    if (type === 'color') {
-      rgb = {};
-      _ref = ['r', 'g', 'b'];
-      _fn = (function(_this) {
-        return function(attr) {
-          return rgb[attr] = _this.linear_interpolate(altitude, kfs[idx1].key_value, parseInt(kfs[idx1].value[attr]), kfs[idx2].key_value, parseInt(kfs[idx2].value[attr])).toFixed(0);
-        };
-      })(this);
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        attr = _ref[_i];
-        _fn(attr);
-      }
-      return rgb;
-    } else {
-      return this.linear_interpolate(altitude, kfs[idx1].key_value, kfs[idx1].value, kfs[idx2].key_value, kfs[idx2].value);
-    }
-  },
-  linear_interpolate: function(value, key1, val1, key2, val2) {
+  interpolate: function(value, key1, val1, key2, val2) {
     if (key2 === key1) {
       return val1;
     } else {
@@ -298,13 +238,20 @@ helpers = {
     return arr.some(function(el) {
       return el === val;
     });
+  },
+  last: function(arr) {
+    if (arr.length > 0) {
+      return arr[arr.length - 1];
+    } else {
+      return null;
+    }
   }
 };
 
 module.exports = helpers;
 
 
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var jd;
 
 jd = {
@@ -326,4 +273,28 @@ jd = {
 module.exports = jd;
 
 
-},{}]},{},[2])
+},{}],5:[function(require,module,exports){
+'use strict';
+var $, Graph;
+
+Graph = require('./canvas.coffee');
+
+$ = document.querySelector.bind(document);
+
+chrome.runtime.sendMessage({
+  type: 'init_popup'
+}, function(resp) {
+  var canvas;
+  canvas = new Graph(resp.lat, resp.long, $('#graph'));
+  return $('#opacity').value = resp.opac;
+});
+
+$('#opacity').addEventListener('input', function() {
+  return chrome.runtime.sendMessage({
+    type: 'set_opac',
+    opac: this.value
+  });
+});
+
+
+},{"./canvas.coffee":2}]},{},[5])
