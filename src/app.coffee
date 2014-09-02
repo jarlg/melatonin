@@ -3,8 +3,8 @@
 A = require './altitude.coffee'
 H = require './helpers.coffee'
 C = require './color_helpers.coffee'
-Storage = require './storage.coffee'
 K = require './keyframes.coffee'
+Storage = require './storage.coffee'
 
 class App
     constructor: (config) ->
@@ -25,6 +25,8 @@ class App
                 @storage.get [
                     'mode'
                     'alt' 
+                    'min'
+                    'max'
                     'color'
                     'kfs'
                     'opac'
@@ -33,7 +35,7 @@ class App
                     if it.mode is 'manual'
                         resp color: it.color, opac: it.opac
                     else
-                        res opac: it.opac, color: H.get_color kfs, alt, dir
+                        res opac: it.opac, color: H.get_color it.kfs, it.alt, it.dir, it.min, it.max
             else if req.type is 'set_opac'
                 chrome.tabs.query {}, (tabs) ->
                     chrome.tabs.sendMessage tab.id, type: 'set', opac: req.opac for tab in tabs
@@ -47,11 +49,12 @@ class App
             false
 
     update_altitude: ->
-        @get_altitude (alt) => @storage.set 'alt': alt
+        @get_altitude (alt, min, max) => @storage.set 'alt': alt, 'min': min, 'max': max
 
     get_altitude: (cb) ->
         @_get_position (lat, long) =>
-            cb A.get_altitude new Date(), lat, long
+            d = new Date()
+            cb A.get_altitude(d, lat, long), A.get_lowest_altitude(d, lat, long), A.get_highest_altitude(d, lat, long)
 
     _get_position: (cb) ->
         if navigator.geolocation?

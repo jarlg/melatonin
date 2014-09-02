@@ -25,6 +25,25 @@ obj =
     get_declination: (ecliptic_long) ->
         H.angle_asin(H.angle_sin(@axial_tilt) * H.angle_sin(ecliptic_long))
 
+    # approximations
+    get_highest_altitude: (date, lat, long) ->
+        date = new Date date.getTime()
+        # search from morning
+        date.setHours 6
+        date.setMinutes 0
+        time = date.getTime()
+
+        H.max (@get_altitude new Date(time + 20*i * 1000 * 60), lat, long for i in [0 .. 36])
+
+    get_lowest_altitude: (date, lat, long) ->
+        date = new Date date.getTime()
+        # search in the evening
+        date.setHours 18
+        date.setMinutes 0
+        time = date.getTime()
+
+        H.min (@get_altitude new Date(time + 20*i * 1000 * 60), lat, long for i in [0 .. 36])
+
     get_altitude: (date, latitude, longitude) ->
         jd = J.get_julian_date date
         jdn = J.get_jdn jd
