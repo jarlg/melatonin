@@ -1,5 +1,7 @@
 'use strict'
 
+A = require './altitude.coffee'
+
 helpers = 
     $: (id) -> document.querySelector id if document?
     $$: (id) -> document.querySelectorAll id if document?
@@ -28,13 +30,59 @@ helpers =
     angle_atan: (x) -> @to_angle Math.atan x
     angle_asin: (x) -> @to_angle Math.asin x
 
-    interpolate: (value, key1, val1, key2, val2) ->
-        if key2 is key1
-            val1
+    # direction change since last kf means we passed a solar noon or midnight
+    # since last kf; this means we have to calculate t (abs. difference in
+    # altitude between keyframes, etc) via this wave crest / wave through
+    interpolate: (alt, dir, kf1, kf2, min, max) ->
+        # kfs in same direction
+        if kf1.direction * kf2.direction >= 0
+            # we are between kfs of same direction
+            if dir * kf1.direction >= 0
+                t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude)
+            # last kf was before previous direction change;
+            # next is after next direction change
+            else
+                # t must be calculated over the curve top (via sun noon or midnight)
+                if dir
+                    # we are ascending, both keyframes are descending
+                    t = (alt + kf1.altitude - 2*min) / (2 * (max-min) - (kf2.altitude - kf1.altitude))
+                else
+                    # we are descending, both keyframes are ascending
+                    t = (2*max - alt - kf1.altitude) / (2 * (max-min) - (kf1.altitude - kf2.altitude))
         else
-            val1 + (val2 - val1) * (value - key1) / (key2 - key1) 
+            # kfs of opposite directions
+            if dir * kf1.direction >= 0
+                # no direction change since last kf
+                if dir
+                    t = (alt - kf1.altitude) / (2*max - kf1.altitude - kf2.altitude)
+                else
+                    t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2*min)
+            else
+                if dir
+                    t = (kf1.altitude + alt - 2*min) / (kf1.altitude + kf2.altitude - 2*min)
+                else
+                    t = (2*max - kf1.altitude - alt) / (2*max - kf1.altitude - kf2.altitude)
+
+        return @_interpolate_colors kf1.value, kf2.value, t
+
+     # t as in parametrics: t*rgb1 + (1-t)rgb2 -> result
+    _interpolate_colors: (rgb1, rgb2, t) -> 
+        rbg = {}
+        for attr in ['r', 'g', 'b']
+            do ->
+                rgb[attr] = t * rgb1[attr] + (1-t) * rgb2[attr]
+        rgb
 
     contains: (val, arr) -> arr.some (el) -> el is val
     last: (arr) -> if arr.length > 0 then arr[arr.length-1] else null
+    max: (arr) ->
+        max = arr[0]
+        for val in arr
+            do ->
+                max = val if val > max
+        max
+
+    min: (arr) ->
+        @max (-val for val in arr)
 
 module.exports = helpers

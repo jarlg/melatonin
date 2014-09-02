@@ -8,7 +8,9 @@ config =
     last_update: 0,
     mode: 'auto', # or 'manual'
     alt: 0,
-    dir: 'asc', # or 'desc'
+    min: -90, 
+    max: 90, # solar noon altitude
+    dir: 1, # 1 -> asc, -1 -> desc
     color: null, # color is an rgb object
     opac: 0.5,
     kfs: [

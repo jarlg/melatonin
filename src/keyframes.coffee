@@ -13,7 +13,7 @@ obj =
         # model
         class Keyframe
             constructor: (
-                @key_value=0,
+                @altitude=0,
                 @option='temperature',
                 @value=2700,
                 @direction=0) ->
@@ -35,10 +35,10 @@ obj =
                 @row = document.createElement 'tr'
                 @row.classList.add 'keyframe'
 
-                @key_value = document.createElement 'input'
+                @altitude = document.createElement 'input'
                     .set 'type', 'number'
-                    .set 'value', @model.key_value
-                @key_value.classList.add 'key-input'
+                    .set 'value', @model.altitude
+                @altitude.classList.add 'key-input'
 
                 @option = document.createElement 'select'
                 @option.classList.add 'option-input'
@@ -72,7 +72,7 @@ obj =
                     .set 'innerHTML', '-'
                 @delete.classList.add 'delete', 'pure-button'
 
-                for input in ['key_value', 'option', 'value', 'direction', 'delete']
+                for input in ['altitude', 'option', 'value', 'direction', 'delete']
                     do (input) =>
                         @row
                             .appendChild document.createElement 'th'
@@ -102,7 +102,7 @@ obj =
 
             erase:  -> @parent.removeChild @row; @
 
-    get_color: (kfs, alt, dir) ->
+    get_color: (kfs, alt, dir, min, max) ->
         for kf in kfs
             do (kf) ->
                 if kf.option is 'temperature'
@@ -114,26 +114,16 @@ obj =
         else if kfs.length is 1
             return kfs[0].value
 
-        kfs.sort (a, b) -> a.key_value - b.key_value
+        kfs.sort (a, b) -> a.altitude - b.altitude
 
         lkf = @_get_last_kf kfs, alt, dir
         nkf = @_get_next_kf kfs, alt, dir
 
-        rgb = {}
-        for attr in ['r', 'g', 'b']
-            do (attr) =>
-                rgb[attr] = H.interpolate(
-                    alt,
-                    lkf.key_value,
-                    parseInt(lkf.value[attr]),
-                    nkf.key_value,
-                    parseInt(nkf.value[attr])
-                ).toFixed 0
-        return rgb
+        H.interpolate alt, dir, lkf, nkf, min, max
 
     _get_last_kf: (kfs, alt, dir) ->
         # keyframes of same direction since last direction change
-        cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (alt - kf.key_value)*dir >= 0
+        cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (alt - kf.altitude)*dir >= 0
 
         if cands.length > 0
             return if dir then H.last(cands) else cands[0]
@@ -145,7 +135,7 @@ obj =
 
     _get_next_kf: (kfs, alt, dir) ->
         # keyframes of same direction before next direction change
-        cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (kf.key_value - alt)*dir >= 0
+        cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (kf.altitude - alt)*dir >= 0
 
         if cands.length > 0
             return if dir then cands[0] else H.last cands
