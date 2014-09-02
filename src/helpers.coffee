@@ -36,6 +36,7 @@ helpers =
     interpolate: (alt, dir, kf1, kf2, min, max) ->
         # kfs in same direction
         if kf1.direction * kf2.direction >= 0
+            console.log 'got same dirs : %s and %s', kf1.direction, kf2.direction
             # we are between kfs of same direction
             if dir * kf1.direction >= 0
                 t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude)
@@ -51,9 +52,11 @@ helpers =
                     t = (2*max - alt - kf1.altitude) / (2 * (max-min) - (kf1.altitude - kf2.altitude))
         else
             # kfs of opposite directions
+            console.log 'opposites'
             if dir * kf1.direction >= 0
                 # no direction change since last kf
                 if dir
+                    console.log 'same as last'
                     t = (alt - kf1.altitude) / (2*max - kf1.altitude - kf2.altitude)
                 else
                     t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2*min)
@@ -63,14 +66,15 @@ helpers =
                 else
                     t = (2*max - kf1.altitude - alt) / (2*max - kf1.altitude - kf2.altitude)
 
+        console.log 'got t : %s', t
         return @_interpolate_colors kf1.value, kf2.value, t
 
      # t as in parametrics: t*rgb1 + (1-t)rgb2 -> result
     _interpolate_colors: (rgb1, rgb2, t) -> 
-        rbg = {}
+        rgb = {}
         for attr in ['r', 'g', 'b']
             do ->
-                rgb[attr] = t * rgb1[attr] + (1-t) * rgb2[attr]
+                rgb[attr] = (t * rgb2[attr] + (1-t) * rgb1[attr]).toFixed 0
         rgb
 
     contains: (val, arr) -> arr.some (el) -> el is val
@@ -83,6 +87,6 @@ helpers =
         max
 
     min: (arr) ->
-        @max (-val for val in arr)
+        -@max (-val for val in arr)
 
 module.exports = helpers

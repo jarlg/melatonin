@@ -1,0 +1,15 @@
+body {
+    width: 240px;
+}
+
+canvas {
+    width: 200px;
+    float: left;
+}
+
+#opacity {
+    width: 33px;
+    margin: 0 1px 5px;
+    -webkit-appearance: slider-vertical;
+    float: right;
+}

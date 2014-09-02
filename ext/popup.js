@@ -19,6 +19,36 @@ obj = {
   get_declination: function(ecliptic_long) {
     return H.angle_asin(H.angle_sin(this.axial_tilt) * H.angle_sin(ecliptic_long));
   },
+  get_highest_altitude: function(date, lat, long) {
+    var i, time;
+    date = new Date(date.getTime());
+    date.setHours(6);
+    date.setMinutes(0);
+    time = date.getTime();
+    return H.max((function() {
+      var _i, _results;
+      _results = [];
+      for (i = _i = 0; _i <= 36; i = ++_i) {
+        _results.push(this.get_altitude(new Date(time + 20 * i * 1000 * 60), lat, long));
+      }
+      return _results;
+    }).call(this));
+  },
+  get_lowest_altitude: function(date, lat, long) {
+    var i, time;
+    date = new Date(date.getTime());
+    date.setHours(18);
+    date.setMinutes(0);
+    time = date.getTime();
+    return H.min((function() {
+      var _i, _results;
+      _results = [];
+      for (i = _i = 0; _i <= 36; i = ++_i) {
+        _results.push(this.get_altitude(new Date(time + 20 * i * 1000 * 60), lat, long));
+      }
+      return _results;
+    }).call(this));
+  },
   get_altitude: function(date, latitude, longitude) {
     var dec, ec_long, g, ha, jd, jdn, l, r_asc;
     jd = J.get_julian_date(date);
@@ -172,7 +202,9 @@ module.exports = AppAltitudeGraph;
 
 },{"./altitude.coffee":1}],3:[function(require,module,exports){
 'use strict';
-var helpers;
+var A, helpers;
+
+A = require('./altitude.coffee');
 
 helpers = {
   $: function(id) {
@@ -227,12 +259,51 @@ helpers = {
   angle_asin: function(x) {
     return this.to_angle(Math.asin(x));
   },
-  interpolate: function(value, key1, val1, key2, val2) {
-    if (key2 === key1) {
-      return val1;
+  interpolate: function(alt, dir, kf1, kf2, min, max) {
+    var t;
+    if (kf1.direction * kf2.direction >= 0) {
+      console.log('got same dirs : %s and %s', kf1.direction, kf2.direction);
+      if (dir * kf1.direction >= 0) {
+        t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude);
+      } else {
+        if (dir) {
+          t = (alt + kf1.altitude - 2 * min) / (2 * (max - min) - (kf2.altitude - kf1.altitude));
+        } else {
+          t = (2 * max - alt - kf1.altitude) / (2 * (max - min) - (kf1.altitude - kf2.altitude));
+        }
+      }
     } else {
-      return val1 + (val2 - val1) * (value - key1) / (key2 - key1);
+      console.log('opposites');
+      if (dir * kf1.direction >= 0) {
+        if (dir) {
+          console.log('same as last');
+          t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
+        } else {
+          t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
+        }
+      } else {
+        if (dir) {
+          t = (kf1.altitude + alt - 2 * min) / (kf1.altitude + kf2.altitude - 2 * min);
+        } else {
+          t = (2 * max - kf1.altitude - alt) / (2 * max - kf1.altitude - kf2.altitude);
+        }
+      }
     }
+    console.log('got t : %s', t);
+    return this._interpolate_colors(kf1.value, kf2.value, t);
+  },
+  _interpolate_colors: function(rgb1, rgb2, t) {
+    var attr, rgb, _fn, _i, _len, _ref;
+    rgb = {};
+    _ref = ['r', 'g', 'b'];
+    _fn = function() {
+      return rgb[attr] = (t * rgb2[attr] + (1 - t) * rgb1[attr]).toFixed(0);
+    };
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      attr = _ref[_i];
+      _fn();
+    }
+    return rgb;
   },
   contains: function(val, arr) {
     return arr.some(function(el) {
@@ -245,13 +316,39 @@ helpers = {
     } else {
       return null;
     }
+  },
+  max: function(arr) {
+    var max, val, _fn, _i, _len;
+    max = arr[0];
+    _fn = function() {
+      if (val > max) {
+        return max = val;
+      }
+    };
+    for (_i = 0, _len = arr.length; _i < _len; _i++) {
+      val = arr[_i];
+      _fn();
+    }
+    return max;
+  },
+  min: function(arr) {
+    var val;
+    return -this.max((function() {
+      var _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = arr.length; _i < _len; _i++) {
+        val = arr[_i];
+        _results.push(-val);
+      }
+      return _results;
+    })());
   }
 };
 
 module.exports = helpers;
 
 
-},{}],4:[function(require,module,exports){
+},{"./altitude.coffee":1}],4:[function(require,module,exports){
 var jd;
 
 jd = {
