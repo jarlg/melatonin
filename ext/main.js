@@ -19,6 +19,36 @@ obj = {
   get_declination: function(ecliptic_long) {
     return H.angle_asin(H.angle_sin(this.axial_tilt) * H.angle_sin(ecliptic_long));
   },
+  get_highest_altitude: function(date, lat, long) {
+    var i, time;
+    date = new Date(date.getTime());
+    date.setHours(6);
+    date.setMinutes(0);
+    time = date.getTime();
+    return H.max((function() {
+      var _i, _results;
+      _results = [];
+      for (i = _i = 0; _i <= 36; i = ++_i) {
+        _results.push(this.get_altitude(new Date(time + 20 * i * 1000 * 60), lat, long));
+      }
+      return _results;
+    }).call(this));
+  },
+  get_lowest_altitude: function(date, lat, long) {
+    var i, time;
+    date = new Date(date.getTime());
+    date.setHours(18);
+    date.setMinutes(0);
+    time = date.getTime();
+    return H.min((function() {
+      var _i, _results;
+      _results = [];
+      for (i = _i = 0; _i <= 36; i = ++_i) {
+        _results.push(this.get_altitude(new Date(time + 20 * i * 1000 * 60), lat, long));
+      }
+      return _results;
+    }).call(this));
+  },
   get_altitude: function(date, latitude, longitude) {
     var dec, ec_long, g, ha, jd, jdn, l, r_asc;
     jd = J.get_julian_date(date);
@@ -69,9 +99,9 @@ H = require('./helpers.coffee');
 
 C = require('./color_helpers.coffee');
 
-Storage = require('./storage.coffee');
-
 K = require('./keyframes.coffee');
+
+Storage = require('./storage.coffee');
 
 App = (function() {
   function App(config) {
@@ -89,7 +119,7 @@ App = (function() {
       } else if (req.type === 'init_popup') {
         return this.storage.get(['opac', 'lat', 'long'], resp);
       } else if (req.type === 'init_tab') {
-        return this.storage.get(['mode', 'alt', 'color', 'kfs', 'opac', 'dir'], (function(_this) {
+        return this.storage.get(['mode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'], (function(_this) {
           return function(it) {
             if (it.mode === 'manual') {
               return resp({
@@ -99,7 +129,7 @@ App = (function() {
             } else {
               return res({
                 opac: it.opac,
-                color: H.get_color(kfs, alt, dir)
+                color: H.get_color(it.kfs, it.alt, it.dir, it.min, it.max)
               });
             }
           };
@@ -138,9 +168,11 @@ App = (function() {
 
   App.prototype.update_altitude = function() {
     return this.get_altitude((function(_this) {
-      return function(alt) {
+      return function(alt, min, max) {
         return _this.storage.set({
-          'alt': alt
+          'alt': alt,
+          'min': min,
+          'max': max
         });
       };
     })(this));
@@ -149,7 +181,9 @@ App = (function() {
   App.prototype.get_altitude = function(cb) {
     return this._get_position((function(_this) {
       return function(lat, long) {
-        return cb(A.get_altitude(new Date(), lat, long));
+        var d;
+        d = new Date();
+        return cb(A.get_altitude(d, lat, long), A.get_lowest_altitude(d, lat, long), A.get_highest_altitude(d, lat, long));
       };
     })(this));
   };
@@ -244,7 +278,9 @@ module.exports = obj;
 
 },{}],4:[function(require,module,exports){
 'use strict';
-var helpers;
+var A, helpers;
+
+A = require('./altitude.coffee');
 
 helpers = {
   $: function(id) {
@@ -299,12 +335,51 @@ helpers = {
   angle_asin: function(x) {
     return this.to_angle(Math.asin(x));
   },
-  interpolate: function(value, key1, val1, key2, val2) {
-    if (key2 === key1) {
-      return val1;
+  interpolate: function(alt, dir, kf1, kf2, min, max) {
+    var t;
+    if (kf1.direction * kf2.direction >= 0) {
+      console.log('got same dirs : %s and %s', kf1.direction, kf2.direction);
+      if (dir * kf1.direction >= 0) {
+        t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude);
+      } else {
+        if (dir) {
+          t = (alt + kf1.altitude - 2 * min) / (2 * (max - min) - (kf2.altitude - kf1.altitude));
+        } else {
+          t = (2 * max - alt - kf1.altitude) / (2 * (max - min) - (kf1.altitude - kf2.altitude));
+        }
+      }
     } else {
-      return val1 + (val2 - val1) * (value - key1) / (key2 - key1);
+      console.log('opposites');
+      if (dir * kf1.direction >= 0) {
+        if (dir) {
+          console.log('same as last');
+          t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
+        } else {
+          t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
+        }
+      } else {
+        if (dir) {
+          t = (kf1.altitude + alt - 2 * min) / (kf1.altitude + kf2.altitude - 2 * min);
+        } else {
+          t = (2 * max - kf1.altitude - alt) / (2 * max - kf1.altitude - kf2.altitude);
+        }
+      }
     }
+    console.log('got t : %s', t);
+    return this._interpolate_colors(kf1.value, kf2.value, t);
+  },
+  _interpolate_colors: function(rgb1, rgb2, t) {
+    var attr, rgb, _fn, _i, _len, _ref;
+    rgb = {};
+    _ref = ['r', 'g', 'b'];
+    _fn = function() {
+      return rgb[attr] = (t * rgb2[attr] + (1 - t) * rgb1[attr]).toFixed(0);
+    };
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      attr = _ref[_i];
+      _fn();
+    }
+    return rgb;
   },
   contains: function(val, arr) {
     return arr.some(function(el) {
@@ -317,13 +392,39 @@ helpers = {
     } else {
       return null;
     }
+  },
+  max: function(arr) {
+    var max, val, _fn, _i, _len;
+    max = arr[0];
+    _fn = function() {
+      if (val > max) {
+        return max = val;
+      }
+    };
+    for (_i = 0, _len = arr.length; _i < _len; _i++) {
+      val = arr[_i];
+      _fn();
+    }
+    return max;
+  },
+  min: function(arr) {
+    var val;
+    return -this.max((function() {
+      var _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = arr.length; _i < _len; _i++) {
+        val = arr[_i];
+        _results.push(-val);
+      }
+      return _results;
+    })());
   }
 };
 
 module.exports = helpers;
 
 
-},{}],5:[function(require,module,exports){
+},{"./altitude.coffee":1}],5:[function(require,module,exports){
 var jd;
 
 jd = {
@@ -362,8 +463,8 @@ if (typeof HTMLElement !== "undefined" && HTMLElement !== null) {
 
 obj = {
   Keyframe: Keyframe = (function() {
-    function Keyframe(key_value, option, value, direction) {
-      this.key_value = key_value != null ? key_value : 0;
+    function Keyframe(altitude, option, value, direction) {
+      this.altitude = altitude != null ? altitude : 0;
       this.option = option != null ? option : 'temperature';
       this.value = value != null ? value : 2700;
       this.direction = direction != null ? direction : 0;
@@ -393,8 +494,8 @@ obj = {
       var input, opt, _fn, _fn1, _fn2, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
       this.row = document.createElement('tr');
       this.row.classList.add('keyframe');
-      this.key_value = document.createElement('input').set('type', 'number').set('value', this.model.key_value);
-      this.key_value.classList.add('key-input');
+      this.altitude = document.createElement('input').set('type', 'number').set('value', this.model.altitude);
+      this.altitude.classList.add('key-input');
       this.option = document.createElement('select');
       this.option.classList.add('option-input');
       _ref = ['color', 'temperature'];
@@ -431,7 +532,7 @@ obj = {
       }
       this["delete"] = document.createElement('button').set('innerHTML', '-');
       this["delete"].classList.add('delete', 'pure-button');
-      _ref2 = ['key_value', 'option', 'value', 'direction', 'delete'];
+      _ref2 = ['altitude', 'option', 'value', 'direction', 'delete'];
       _fn2 = (function(_this) {
         return function(input) {
           var self;
@@ -483,8 +584,8 @@ obj = {
     return KeyframeView;
 
   })(),
-  get_color: function(kfs, alt, dir) {
-    var attr, kf, lkf, nkf, rgb, _fn, _fn1, _i, _j, _len, _len1, _ref;
+  get_color: function(kfs, alt, dir, min, max) {
+    var kf, last, next, _fn, _i, _len;
     _fn = function(kf) {
       if (kf.option === 'temperature') {
         kf.option = 'color';
@@ -501,30 +602,19 @@ obj = {
       return kfs[0].value;
     }
     kfs.sort(function(a, b) {
-      return a.key_value - b.key_value;
+      return a.altitude - b.altitude;
     });
-    lkf = this._get_last_kf(kfs, alt, dir);
-    nkf = this._get_next_kf(kfs, alt, dir);
-    rgb = {};
-    _ref = ['r', 'g', 'b'];
-    _fn1 = (function(_this) {
-      return function(attr) {
-        return rgb[attr] = H.interpolate(alt, lkf.key_value, parseInt(lkf.value[attr]), nkf.key_value, parseInt(nkf.value[attr])).toFixed(0);
-      };
-    })(this);
-    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-      attr = _ref[_j];
-      _fn1(attr);
-    }
-    return rgb;
+    last = this._get_last_kf(kfs, alt, dir);
+    next = this._get_next_kf(kfs, alt, dir);
+    return H.interpolate(alt, dir, last, next, min, max);
   },
   _get_last_kf: function(kfs, alt, dir) {
     var cands;
     cands = kfs.filter(function(kf) {
-      return kf.direction * dir >= 0 && (alt - kf.key_value) * dir >= 0;
+      return kf.direction * dir >= 0 && (alt - kf.altitude) * dir >= 0;
     });
     if (cands.length > 0) {
-      if (dir) {
+      if (dir === 1) {
         return H.last(cands);
       } else {
         return cands[0];
@@ -533,7 +623,7 @@ obj = {
     cands = kfs.filter(function(kf) {
       return kf.direction === -dir;
     });
-    if (dir) {
+    if (dir === 1) {
       return cands[0];
     } else {
       return H.last(cands);
@@ -542,10 +632,10 @@ obj = {
   _get_next_kf: function(kfs, alt, dir) {
     var cands;
     cands = kfs.filter(function(kf) {
-      return kf.direction * dir >= 0 && (kf.key_value - alt) * dir >= 0;
+      return kf.direction * dir >= 0 && (kf.altitude - alt) * dir > 0;
     });
     if (cands.length > 0) {
-      if (dir) {
+      if (dir === 1) {
         return cands[0];
       } else {
         return H.last(cands);
@@ -554,7 +644,7 @@ obj = {
     cands = kfs.filter(function(kf) {
       return kf.direction === -dir;
     });
-    if (dir) {
+    if (dir === 1) {
       return H.last(cands);
     } else {
       return cands[0];
@@ -578,7 +668,9 @@ config = {
   last_update: 0,
   mode: 'auto',
   alt: 0,
-  dir: 'asc',
+  min: -90,
+  max: 90,
+  dir: 1,
   color: null,
   opac: 0.5,
   kfs: [new K.Keyframe(0, 'temperature', 2700, 0), new K.Keyframe(90, 'temperature', 6300, 0)]

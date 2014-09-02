@@ -116,34 +116,34 @@ obj =
 
         kfs.sort (a, b) -> a.altitude - b.altitude
 
-        lkf = @_get_last_kf kfs, alt, dir
-        nkf = @_get_next_kf kfs, alt, dir
+        last = @_get_last_kf kfs, alt, dir
+        next = @_get_next_kf kfs, alt, dir
 
-        H.interpolate alt, dir, lkf, nkf, min, max
+        H.interpolate alt, dir, last, next, min, max
 
     _get_last_kf: (kfs, alt, dir) ->
         # keyframes of same direction since last direction change
         cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (alt - kf.altitude)*dir >= 0
 
         if cands.length > 0
-            return if dir then H.last(cands) else cands[0]
+            return if dir is 1 then H.last(cands) else cands[0]
 
         # keyframes of opposite direction, thus before last direction change
         cands = kfs.filter (kf) -> kf.direction is -dir
 
-        return if dir then cands[0] else H.last cands
+        return if dir is 1 then cands[0] else H.last cands
 
     _get_next_kf: (kfs, alt, dir) ->
         # keyframes of same direction before next direction change
-        cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (kf.altitude - alt)*dir >= 0
+        cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (kf.altitude - alt)*dir > 0
 
         if cands.length > 0
-            return if dir then cands[0] else H.last cands
+            return if dir is 1 then cands[0] else H.last cands
 
         # keyframes of opposite dir, thus after next dir change
         cands = kfs.filter (kf) -> kf.direction is -dir
 
-        return if dir then H.last(cands) else cands[0]
+        return if dir is 1 then H.last(cands) else cands[0]
 
 
 module.exports = obj
