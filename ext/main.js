@@ -132,12 +132,12 @@ App = (function() {
     })(this));
     chrome.tabs.onUpdated.addListener((function(_this) {
       return function(_, __, tab) {
-        return _this.refresh_overlay(tab, null);
+        return _this.refresh_overlay(tab);
       };
     })(this));
     chrome.runtime.onMessage.addListener((function(_this) {
       return function(req, sender, resp) {
-        if (req.type === 'new_altitude') {
+        if (req.type === 'refresh_all') {
           return _this.refresh_all_overlays();
         } else if (req.type === 'init_popup') {
           _this.storage.get(['opac', 'lat', 'long'], resp);
@@ -145,22 +145,35 @@ App = (function() {
         } else if (req.type === 'init_tab') {
           _this.refresh_overlay(null, resp);
           return true;
-        } else if (req.type === 'set_opac') {
-          chrome.tabs.query({}, function(tabs) {
-            var tab, _i, _len, _results;
-            _results = [];
-            for (_i = 0, _len = tabs.length; _i < _len; _i++) {
-              tab = tabs[_i];
-              _results.push(chrome.tabs.sendMessage(tab.id, {
-                type: 'set',
-                opac: req.opac
-              }));
-            }
-            return _results;
+        } else if (req.type === 'init_options') {
+          _this.storage.get(['mode', 'kfs', 'color'], resp);
+          return true;
+        } else if (req.type === 'set') {
+          if (req.opac != null) {
+            chrome.tabs.query({
+              active: true
+            }, function(tabs) {
+              var tab, _i, _len, _results;
+              _results = [];
+              for (_i = 0, _len = tabs.length; _i < _len; _i++) {
+                tab = tabs[_i];
+                _results.push(chrome.tabs.sendMessage(tab.id, {
+                  type: 'set',
+                  opac: req.opac
+                }));
+              }
+              return _results;
+            });
+          }
+          _this.storage.set({
+            opac: req.opac != null ? req.opac : void 0,
+            kfs: req.kfs != null ? req.kfs : void 0,
+            color: req.color != null ? req.color : void 0,
+            mode: req.mode != null ? req.mode : void 0
+          }, function() {
+            return resp(chrome.runtime.lastError == null ? true : false);
           });
-          return _this.storage.set({
-            'opac': req.opac
-          });
+          return true;
         }
       };
     })(this));
@@ -640,6 +653,9 @@ obj = {
     });
     last = this._get_last_kf(kfs, alt, dir);
     next = this._get_next_kf(kfs, alt, dir);
+    if (next === last) {
+      return last.value;
+    }
     return H.interpolate(alt, dir, last, next, min, max);
   },
   _get_last_kf: function(kfs, alt, dir) {
@@ -655,7 +671,7 @@ obj = {
       }
     }
     cands = kfs.filter(function(kf) {
-      return kf.direction === -dir;
+      return kf.direction * dir <= 0;
     });
     if (dir === 1) {
       return cands[0];
@@ -676,7 +692,7 @@ obj = {
       }
     }
     cands = kfs.filter(function(kf) {
-      return kf.direction === -dir;
+      return kf.direction * dir <= 0;
     });
     if (dir === 1) {
       return H.last(cands);
@@ -816,11 +832,9 @@ Storage = (function() {
           if (!__hasProp.call(changes, k)) continue;
           v = changes[k];
           _results.push((function(k, v) {
-            if (k === 'altitude') {
+            if (H.contains(k, ['alt', 'kfs', 'mode', 'color'])) {
               return chrome.runtime.sendMessage({
-                type: 'new_altitude'
-              }, {
-                value: v.newValue
+                type: 'refresh_all'
               });
             }
           })(k, v));

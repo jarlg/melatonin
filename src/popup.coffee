@@ -13,4 +13,4 @@ window.onload = ->
 
     $ '#opacity'
         .addEventListener 'input', ->
-            chrome.runtime.sendMessage type: 'set_opac', opac: @value
+            chrome.runtime.sendMessage type: 'set', opac: @value

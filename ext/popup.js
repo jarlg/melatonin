@@ -395,7 +395,7 @@ window.onload = function() {
   });
   return $('#opacity').addEventListener('input', function() {
     return chrome.runtime.sendMessage({
-      type: 'set_opac',
+      type: 'set',
       opac: this.value
     });
   });

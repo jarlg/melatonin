@@ -367,6 +367,9 @@ obj = {
     });
     last = this._get_last_kf(kfs, alt, dir);
     next = this._get_next_kf(kfs, alt, dir);
+    if (next === last) {
+      return last.value;
+    }
     return H.interpolate(alt, dir, last, next, min, max);
   },
   _get_last_kf: function(kfs, alt, dir) {
@@ -382,7 +385,7 @@ obj = {
       }
     }
     cands = kfs.filter(function(kf) {
-      return kf.direction === -dir;
+      return kf.direction * dir <= 0;
     });
     if (dir === 1) {
       return cands[0];
@@ -403,7 +406,7 @@ obj = {
       }
     }
     cands = kfs.filter(function(kf) {
-      return kf.direction === -dir;
+      return kf.direction * dir <= 0;
     });
     if (dir === 1) {
       return H.last(cands);
@@ -425,7 +428,19 @@ module.exports = obj;
 
 },{"./color_helpers.coffee":1,"./helpers.coffee":2}],4:[function(require,module,exports){
 'use strict';
-var $, $$, M, Options, app, last, val;
+var Options;
+
+Options = require('./options_model.coffee');
+
+window.onload = function() {
+  var options;
+  return options = new Options();
+};
+
+
+},{"./options_model.coffee":5}],5:[function(require,module,exports){
+'use strict';
+var $, $$, C, M, Options, last, val;
 
 $ = document.querySelector.bind(document);
 
@@ -443,27 +458,26 @@ last = function(arr) {
 
 M = require('./keyframes.coffee');
 
+C = require('./color_helpers.coffee');
+
 Options = (function() {
-  function Options(parent, models, views) {
+  function Options(kfs, kfviews, mode, color) {
     var self;
-    this.parent = parent;
-    this.models = models != null ? models : [];
-    this.views = views != null ? views : [];
-    this.prio = {
-      temperature: 2,
-      color: 1
-    };
-    chrome.storage.local.get(['keyframes', 'latitude', 'longitude'], (function(_this) {
-      return function(items) {
+    this.kfs = kfs != null ? kfs : [];
+    this.kfviews = kfviews != null ? kfviews : [];
+    this.mode = mode != null ? mode : 'auto';
+    this.color = color != null ? color : {};
+    chrome.runtime.sendMessage({
+      type: 'init_options'
+    }, (function(_this) {
+      return function(resp) {
         var kf, _i, _len, _ref, _results;
-        items.keyframes.sort(function(a, b) {
-          if (a.option !== b.option) {
-            return _this.prio[b.option] - _this.prio[a.option];
-          } else {
-            return a.key_value - b.key_value;
-          }
+        _this.mode = resp.mode;
+        _this.color = resp.color;
+        $('#color').value = C.rgb_to_hex(resp.color);
+        _ref = resp.kfs.sort(function(a, b) {
+          return a.altitude - b.altitude;
         });
-        _ref = items.keyframes;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           kf = _ref[_i];
@@ -481,18 +495,55 @@ Options = (function() {
     self = this;
     $('#save').addEventListener('click', function(event) {
       event.preventDefault();
-      return chrome.storage.local.set({
-        'keyframes': self.models
+      return chrome.runtime.sendMessage({
+        type: 'set',
+        kfs: self.kfs
       }, (function(_this) {
-        return function() {
+        return function(resp) {
+          var html, state;
           _this.classList.remove('pure-button-primary');
-          _this.classList.add('button-success');
-          _this.innerHTML = 'saved!';
+          if (resp) {
+            state('button-success');
+            html = 'saved!';
+          } else {
+            state = 'button-failure';
+            html = 'failed!';
+          }
+          _this.classList.add(state);
+          _this.innerHTML = html;
           return window.setTimeout((function() {
             _this.classList.add('pure-button-primary');
-            _this.classList.remove('button-success');
+            _this.classList.remove(state);
             return _this.innerHTML = 'save';
           }), 1000);
+        };
+      })(this));
+    });
+    $('#color').addEventListener('input', function(event) {
+      event.preventDefault();
+      self.color = C.hex_to_rgb(this.value);
+      return chrome.runtime.sendMessage({
+        type: 'set',
+        color: self.color
+      });
+    });
+    $('#mode').addEventListener('click', function(event) {
+      event.preventDefault();
+      self.mode = self.mode === 'manual' ? 'auto' : 'manual';
+      return chrome.runtime.sendMessage({
+        type: 'set',
+        mode: self.mode
+      }, (function(_this) {
+        return function(resp) {
+          if (chrome.runtime.lastError == null) {
+            _this.classList.toggle('auto', self.mode === 'auto');
+            _this.classList.toggle('manual', self.mode === 'manual');
+            $('#auto').classList.toggle('active', self.mode === 'auto');
+            return $('#manual').classList.toggle('active', self.mode === 'manual');
+          } else {
+            console.log('ERROR when setting mode!');
+            return console.log(chrome.runtime.lastError);
+          }
         };
       })(this));
     });
@@ -502,15 +553,15 @@ Options = (function() {
     if (model == null) {
       model = new M.Keyframe();
     }
-    this.models.push(model);
-    this.views.push(new M.KeyframeView(model, this.parent));
-    return last(this.views).create().render()["delete"].addEventListener('click', (function(_this) {
+    this.kfs.push(model);
+    this.kfviews.push(new M.KeyframeView(model, $('#keyframes')));
+    return last(this.kfviews).create().render()["delete"].addEventListener('click', (function(_this) {
       return function(event) {
         var index;
         event.preventDefault();
-        index = _this.models.indexOf(model);
-        _this.models.splice(index, 1);
-        return last(_this.views.splice(index, 1)).erase();
+        index = _this.kfs.indexOf(model);
+        _this.kfs.splice(index, 1);
+        return last(_this.kfviews.splice(index, 1)).erase();
       };
     })(this));
   };
@@ -519,7 +570,7 @@ Options = (function() {
 
 })();
 
-app = new Options($('#keyframes'));
+module.exports = Options;
 
 
-},{"./keyframes.coffee":3}]},{},[4])
+},{"./color_helpers.coffee":1,"./keyframes.coffee":3}]},{},[4])

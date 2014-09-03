@@ -119,6 +119,9 @@ obj =
         last = @_get_last_kf kfs, alt, dir
         next = @_get_next_kf kfs, alt, dir
 
+        if next is last
+            return last.value
+
         H.interpolate alt, dir, last, next, min, max
 
     _get_last_kf: (kfs, alt, dir) ->
@@ -129,7 +132,7 @@ obj =
             return if dir is 1 then H.last(cands) else cands[0]
 
         # keyframes of opposite direction, thus before last direction change
-        cands = kfs.filter (kf) -> kf.direction is -dir
+        cands = kfs.filter (kf) -> kf.direction*dir <= 0
 
         return if dir is 1 then cands[0] else H.last cands
 
@@ -141,7 +144,7 @@ obj =
             return if dir is 1 then cands[0] else H.last cands
 
         # keyframes of opposite dir, thus after next dir change
-        cands = kfs.filter (kf) -> kf.direction is -dir
+        cands = kfs.filter (kf) -> kf.direction*dir <= 0
 
         return if dir is 1 then H.last(cands) else cands[0]
 

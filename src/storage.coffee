@@ -43,8 +43,7 @@ class Storage
         chrome.storage.onChanged.addListener (changes, namespace) =>
             for own k, v of changes
                 do (k, v) ->
-                    if k is 'altitude'
-                        chrome.runtime.sendMessage type: 'new_altitude',
-                                                   value: v.newValue
+                    if H.contains k, ['alt', 'kfs', 'mode', 'color']
+                        chrome.runtime.sendMessage type: 'refresh_all'
 
 module.exports = Storage
