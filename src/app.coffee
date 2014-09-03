@@ -10,51 +10,85 @@ class App
     constructor: (config) ->
         @storage = new Storage config
 
+        chrome.runtime.onStartup.addListener => @update_storage()
+
         # events
         chrome.alarms.create 'update_altitude', periodInMinutes: 15
-        chrome.alarms.onAlarm.addListener @update_altitude
+        chrome.alarms.onAlarm.addListener => @update_storage()
 
-        chrome.tabs.onUpdated.addListener (_, __, tab) -> B.refresh_overlay tab
+        chrome.tabs.onUpdated.addListener (_, __, tab) => @refresh_overlay tab, null
 
-        chrome.runtime.onMessage.addListener (req, sender, resp) ->
+        chrome.runtime.onMessage.addListener (req, sender, resp) =>
             if req.type is 'new_altitude'
                 @refresh_all_overlays()
             else if req.type is 'init_popup'
                 @storage.get ['opac', 'lat', 'long'], resp
+                true # return true for async resp
             else if req.type is 'init_tab'
-                @storage.get [
-                    'mode'
-                    'alt' 
-                    'min'
-                    'max'
-                    'color'
-                    'kfs'
-                    'opac'
-                    'dir'
-                ], (it) =>
-                    if it.mode is 'manual'
-                        resp color: it.color, opac: it.opac
-                    else
-                        res opac: it.opac, color: H.get_color it.kfs, it.alt, it.dir, it.min, it.max
+                @refresh_overlay null, resp
+                true
             else if req.type is 'set_opac'
                 chrome.tabs.query {}, (tabs) ->
-                    chrome.tabs.sendMessage tab.id, type: 'set', opac: req.opac for tab in tabs
+                    chrome.tabs.sendMessage tab.id, {
+                        type: 'set',
+                        opac: req.opac
+                    } for tab in tabs
                 @storage.set 'opac': req.opac
 
     errHandler: (err) ->
         console.log err.stack or err
 
+    refresh_overlay: (tab, resp) ->
+        @storage.get [
+            'mode'
+            'alt' 
+            'min'
+            'max'
+            'color'
+            'kfs'
+            'opac'
+            'dir'
+        ], (it) ->
+            color = K.choose_color it
+            if tab?
+                chrome.tabs.sendMessage tab.id, {
+                    type: 'set',
+                    color: color,
+                    opac: it.opac
+                }
+            else if resp?
+                resp color: color, opac: it.opac
+
     refresh_all_overlays: ->
-        @storage.get ['mode', 'alt', 'opac', 'kfs', 'dir'], (it) =>
-            false
+        @storage.get [
+            'mode'
+            'alt' 
+            'min'
+            'max'
+            'color'
+            'kfs'
+            'opac'
+            'dir'
+        ], (it) ->
+            color = K.choose_color it
+            chrome.tabs.query {}, (tabs) ->
+                chrome.tabs.sendMessage tab.id, {
+                    type: 'set',
+                    color: color,
+                    opac: it.opac
+                } for tab in tabs
 
-    update_altitude: ->
-        @get_altitude (alt, min, max) => @storage.set 'alt': alt, 'min': min, 'max': max
-
-    get_altitude: (cb) ->
+    update_storage: ->
         @_get_position (lat, long) =>
             d = new Date()
-            cb A.get_altitude(d, lat, long), A.get_lowest_altitude(d, lat, long), A.get_highest_altitude(d, lat, long)
+            @storage.set {
+                lat: lat,
+                long: long,
+                alt: A.get_altitude(d, lat, long),
+                dir: A.get_direction(d, lat, long),
+                min: A.get_midnight_altitude(d, lat, long),
+                max: A.get_noon_altitude(d, lat, long)
+            }, => @refresh_all_overlays()
 
     _get_position: (cb) ->
         if navigator.geolocation?

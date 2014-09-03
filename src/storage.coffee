@@ -7,7 +7,7 @@ C = require './color_helpers.coffee'
 class Storage
     constructor: (config) ->
         @get null, (it) =>
-            if not it.version? or it.version < '0.3.0'
+            if not it.ver? or it.ver < '0.3.0'
                 @clear =>
                     @set config, =>
                         @print()

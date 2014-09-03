@@ -1,95 +1,4 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var H, J, obj;
-
-J = require('./julian_date.coffee');
-
-H = require('./helpers.coffee');
-
-obj = {
-  axial_tilt: 23.439,
-  get_ecliptic_long: function(l, g) {
-    return l + 1.915 * H.angle_sin(g) + 0.02 * H.angle_sin(2 * g);
-  },
-  get_right_ascension: function(ecliptic_long) {
-    return H.angle_atan(H.angle_cos(this.axial_tilt) * H.angle_tan(ecliptic_long));
-  },
-  get_hour_angle: function(jd, longitude, right_ascension) {
-    return H.between(0, 360, this.get_gst(jd) + longitude - right_ascension);
-  },
-  get_declination: function(ecliptic_long) {
-    return H.angle_asin(H.angle_sin(this.axial_tilt) * H.angle_sin(ecliptic_long));
-  },
-  get_highest_altitude: function(date, lat, long) {
-    var i, time;
-    date = new Date(date.getTime());
-    date.setHours(6);
-    date.setMinutes(0);
-    time = date.getTime();
-    return H.max((function() {
-      var _i, _results;
-      _results = [];
-      for (i = _i = 0; _i <= 36; i = ++_i) {
-        _results.push(this.get_altitude(new Date(time + 20 * i * 1000 * 60), lat, long));
-      }
-      return _results;
-    }).call(this));
-  },
-  get_lowest_altitude: function(date, lat, long) {
-    var i, time;
-    date = new Date(date.getTime());
-    date.setHours(18);
-    date.setMinutes(0);
-    time = date.getTime();
-    return H.min((function() {
-      var _i, _results;
-      _results = [];
-      for (i = _i = 0; _i <= 36; i = ++_i) {
-        _results.push(this.get_altitude(new Date(time + 20 * i * 1000 * 60), lat, long));
-      }
-      return _results;
-    }).call(this));
-  },
-  get_altitude: function(date, latitude, longitude) {
-    var dec, ec_long, g, ha, jd, jdn, l, r_asc;
-    jd = J.get_julian_date(date);
-    jdn = J.get_jdn(jd);
-    l = H.between(0, 360, 280.460 + 0.9856474 * jdn);
-    g = H.between(0, 360, 357.528 + 0.9856003 * jdn);
-    ec_long = this.get_ecliptic_long(l, g);
-    r_asc = this.get_right_ascension(ec_long);
-    while (H.angleToQuadrant(ec_long) !== H.angleToQuadrant(r_asc)) {
-      r_asc += r_asc < ec_long ? 90 : -90;
-    }
-    dec = this.get_declination(ec_long);
-    ha = this.get_hour_angle(jd, longitude, r_asc);
-    return H.angle_asin(H.angle_sin(latitude) * H.angle_sin(dec) + H.angle_cos(latitude) * H.angle_cos(dec) * H.angle_cos(ha));
-  },
-  get_last_jd_midnight: function(jd) {
-    if (jd >= Math.floor(jd + 0.5)) {
-      return Math.floor(jd - 1) + 0.5;
-    } else {
-      return Math.floor(jd) + 0.5;
-    }
-  },
-  get_ut_hours: function(jd, last_jd_midnight) {
-    return 24 * (jd - last_jd_midnight);
-  },
-  get_gst_hours: function(jdn_midnight, ut_hours) {
-    var gmst;
-    gmst = 6.697374558 + 0.06570982441908 * jdn_midnight + 1.00273790935 * ut_hours;
-    return H.between(0, 24, gmst);
-  },
-  get_gst: function(jd) {
-    var jdm;
-    jdm = this.get_last_jd_midnight(jd);
-    return 15 * this.get_gst_hours(J.get_jdn(jdm), this.get_ut_hours(jd, jdm));
-  }
-};
-
-module.exports = obj;
-
-
-},{"./helpers.coffee":3,"./julian_date.coffee":4}],2:[function(require,module,exports){
 'use strict';
 var obj;
 
@@ -156,11 +65,9 @@ obj = {
 module.exports = obj;
 
 
-},{}],3:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 'use strict';
-var A, helpers;
-
-A = require('./altitude.coffee');
+var helpers;
 
 helpers = {
   $: function(id) {
@@ -218,7 +125,6 @@ helpers = {
   interpolate: function(alt, dir, kf1, kf2, min, max) {
     var t;
     if (kf1.direction * kf2.direction >= 0) {
-      console.log('got same dirs : %s and %s', kf1.direction, kf2.direction);
       if (dir * kf1.direction >= 0) {
         t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude);
       } else {
@@ -229,10 +135,8 @@ helpers = {
         }
       }
     } else {
-      console.log('opposites');
       if (dir * kf1.direction >= 0) {
         if (dir) {
-          console.log('same as last');
           t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
         } else {
           t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
@@ -245,7 +149,6 @@ helpers = {
         }
       }
     }
-    console.log('got t : %s', t);
     return this._interpolate_colors(kf1.value, kf2.value, t);
   },
   _interpolate_colors: function(rgb1, rgb2, t) {
@@ -304,29 +207,7 @@ helpers = {
 module.exports = helpers;
 
 
-},{"./altitude.coffee":1}],4:[function(require,module,exports){
-var jd;
-
-jd = {
-  get_julian_day: function(date) {
-    var a, m, y;
-    a = date.getUTCMonth() < 2 ? 1 : 0;
-    y = date.getUTCFullYear() + 4800 - a;
-    m = (date.getUTCMonth() + 1) + 12 * a - 3;
-    return date.getUTCDate() + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
-  },
-  get_julian_date: function(date) {
-    return this.get_julian_day(date) + (date.getUTCHours() - 12) / 24 + date.getUTCMinutes() / 1440 + date.getUTCSeconds() / 86400;
-  },
-  get_jdn: function(jd) {
-    return jd - 2451545.0;
-  }
-};
-
-module.exports = jd;
-
-
-},{}],5:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 'use strict';
 var C, H, Keyframe, KeyframeView, obj;
 
@@ -529,13 +410,20 @@ obj = {
     } else {
       return cands[0];
     }
+  },
+  choose_color: function(it) {
+    if (it.mode === 'manual') {
+      return it.color;
+    } else {
+      return this.get_color(it.kfs, it.alt, it.dir, it.min, it.max);
+    }
   }
 };
 
 module.exports = obj;
 
 
-},{"./color_helpers.coffee":2,"./helpers.coffee":3}],6:[function(require,module,exports){
+},{"./color_helpers.coffee":1,"./helpers.coffee":2}],4:[function(require,module,exports){
 'use strict';
 var $, $$, M, Options, app, last, val;
 
@@ -634,4 +522,4 @@ Options = (function() {
 app = new Options($('#keyframes'));
 
 
-},{"./keyframes.coffee":5}]},{},[6])
+},{"./keyframes.coffee":3}]},{},[4])

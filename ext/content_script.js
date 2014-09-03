@@ -112,6 +112,7 @@ Overlay = (function() {
   }
 
   Overlay.prototype.set = function(obj) {
+    console.log('got msg to set');
     if (obj.opac != null) {
       this.opac = obj.opac;
     }
