@@ -16,10 +16,10 @@ class App
         chrome.alarms.create 'update_altitude', periodInMinutes: 15
         chrome.alarms.onAlarm.addListener => @update_storage()
 
-        chrome.tabs.onUpdated.addListener (_, __, tab) => @refresh_overlay tab, null
+        chrome.tabs.onUpdated.addListener (_, __, tab) => @refresh_overlay tab
 
         chrome.runtime.onMessage.addListener (req, sender, resp) =>
-            if req.type is 'new_altitude'
+            if req.type is 'refresh_all'
                 @refresh_all_overlays()
             else if req.type is 'init_popup'
                 @storage.get ['opac', 'lat', 'long'], resp
@@ -27,13 +27,25 @@ class App
             else if req.type is 'init_tab'
                 @refresh_overlay null, resp
                 true
-            else if req.type is 'set_opac'
-                chrome.tabs.query {}, (tabs) ->
-                    chrome.tabs.sendMessage tab.id, {
-                        type: 'set',
-                        opac: req.opac
-                    } for tab in tabs
-                @storage.set 'opac': req.opac
+            else if req.type is 'init_options'
+                @storage.get ['mode', 'kfs', 'color'], resp
+                true
+            else if req.type is 'set'
+                if req.opac?
+                    chrome.tabs.query active: true, (tabs) ->
+                        chrome.tabs.sendMessage tab.id, {
+                            type: 'set',
+                            opac: req.opac
+                        } for tab in tabs
+
+                @storage.set {
+                    opac: req.opac if req.opac?,
+                    kfs: req.kfs if req.kfs?,
+                    color: req.color if req.color?,
+                    mode: req.mode if req.mode?
+                }, -> resp if not chrome.runtime.lastError? then true else false
+
+                true
 
     errHandler: (err) ->
         console.log err.stack or err

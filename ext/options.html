@@ -6,27 +6,48 @@
 </head>
 <body>
     <div class='container'>
-        <h1>Options</h1>
-        <p>Melatonin is configured through keyframes. Input you desired values
-        at given altitudes (0 for sunset and sunrise, for example) and
-        Melatonin handles everything inbetween.</p>
-        
-        <form action="" id="keyframes-form" method="post">
-            <table id="keyframes">
-                <tr>
-                    <th>altitude</th>
-                    <th>option</th>
-                    <th>value</th>
-                    <th>
-                        <button id='add' class='pure-button'>+</button>
-                    </th>
-                </tr>
+        <div class='switch'>
+            <label for='mode'>automatic color</label>
+            <input type='checkbox' id='mode' name='mode' checked>
+        </div>
+
+        <div class='opt-container active' id='auto'>
+            <div class='options'>
+            <form action="" id="keyframes-form" method="post">
+                <table id="keyframes">
+                    <tr>
+                        <th>altitude</th>
+                        <th>option</th>
+                        <th>value</th>
+                        <th>direction</th>
+                        <th>
+                            <button id='add' class='pure-button'>+</button>
+                        </th>
+                    </tr>
 
                 <!-- here keyframes are added --!>
 
-            </table>
-             <button id='save' class='pure-button pure-button-primary'>save</button>
-        </form>
+                </table>
+                <button id='save' class='pure-button pure-button-primary'>save</button>
+            </form>
+            </div>
+
+            <div class='desc'>
+                <p>Melatonin is configured through keyframes. Input you desired values
+                at given altitudes (0 for sunset and sunrise, for example) and
+                Melatonin handles everything inbetween.</p>
+            </div>
+        </div>
+
+        <div id='manual' class='opt-container'>
+        <div class='desc'>
+            <p>Choose your color.</p>
+        </div>
+
+        <div class='options'>
+            <input type='color' id='color'>
+        </div>
+        </div>
     </div>
     <script type='text/javascript' src='options.js'></script>
 </body>

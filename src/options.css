@@ -1,32 +1,22 @@
 .container {
-    width: 640px;
+    width: 840px;
     margin: 20vh auto 0;
-}
-
-h1 {
-    font-size: 18pt;
-}
-
-p {
-    width: 350px;
-    float: left;
+    font: 12pt sans-serif;
 }
 
 form {
-    float: right;
     text-align: center;
 }
 
-input,
-select {
+form input,
+form select {
     border: none;
     background: none;
 }
 
-select {
+form select {
     padding: 4px 5px;
 }
-
 
 .key-input {
     width: 40px;
@@ -43,11 +33,22 @@ select {
     padding: 1px 2px;
 }
 
+.direction-input {
+    margin: 0 5px;
+}
+
+.button-failure,
 .button-success {
     color: white;
     border-radius: 4px;
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.button-success {
     background: rgb(28, 184, 65); /* this is a green */
+}
+.button-failure {
+    background:rgb(202, 60, 60); /* this is a maroon */
 }
 
 .delete {
@@ -57,4 +58,97 @@ select {
 #save {
     width: 100%;
     margin-top: 2px;
+}
+
+#color {
+    width: 80px;
+    height: 80px;
+}
+
+/* SWITCH */
+.switch {
+    width: 300px;
+    min-height: 150px;
+    text-align: center;
+    margin: 0 auto;
+}
+#mode:empty {
+    visibility: hidden;
+    position: relative;
+}
+
+#mode:after,
+#mode:before {
+    content: '';
+    visibility: visible;
+    top: 0;
+    position: absolute;
+    border-radius: 10px;
+    height: 20px;
+    transition: all .4s ease;
+}
+
+#mode:before {
+    width: 40px;
+    border: 1px solid silver;
+    transition: all .6s ease;
+}
+
+#mode.manual:before {
+    background: black;
+}
+
+#mode.auto:before {
+    content: 'auto';
+    color: black;
+    text-align: right;
+    background: white;
+}
+
+#mode:after {
+    width: 40px;
+    border: 1px solid gray;
+    background: silver;
+}
+
+#mode.manual:after {
+    left: 70px;
+}
+
+#mode.auto:after {
+    left: 0;
+}
+
+/* options slides */
+
+.desc,
+.options {
+    max-width: 50%;
+}
+
+#manual .desc,
+#auto .options {
+    float: left;
+    text-align: right;
+}
+
+#manual .options,
+#auto .desc {
+    float: right;
+    text-align: left;
+}
+
+.opt-container {
+    display: none;
+}
+
+.opt-container.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.desc > p,
+.desc > input {
+    margin: 0 2em;
 }
