@@ -6,11 +6,16 @@
 </head>
 <body>
     <div class='container'>
-        <div class='switch'>
-            <label for='mode'>automatic color</label>
-            <input type='checkbox' id='mode' name='mode' checked>
+        <div id='switch' class='opt-container active'>
+            <div class='desc'>
+                <label for='mode'>automatic color</label>
+            </div>
+            <div class='options'>
+                <input type='checkbox' id='mode' name='mode' checked>
+            </div>
         </div>
 
+        <div class='slides'>
         <div class='opt-container active' id='auto'>
             <div class='options'>
             <form action="" id="keyframes-form" method="post">
@@ -46,6 +51,7 @@
 
         <div class='options'>
             <input type='color' id='color'>
+        </div>
         </div>
         </div>
     </div>
