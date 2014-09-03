@@ -65,58 +65,21 @@ form select {
     height: 80px;
 }
 
-/* SWITCH */
-.switch {
-    width: 300px;
-    min-height: 150px;
-    text-align: center;
-    margin: 0 auto;
-}
-#mode:empty {
-    visibility: hidden;
+/* switch */
+#switch {
     position: relative;
+    font: 14pt sans-serif;
+    min-height: 100px;
+    margin: 0 0 2em;
 }
 
-#mode:after,
-#mode:before {
-    content: '';
-    visibility: visible;
-    top: 0;
-    position: absolute;
-    border-radius: 10px;
-    height: 20px;
-    transition: all .4s ease;
+#mode {
+    height: 25px;
+    width: 25px;
 }
 
-#mode:before {
-    width: 40px;
-    border: 1px solid silver;
-    transition: all .6s ease;
-}
-
-#mode.manual:before {
-    background: black;
-}
-
-#mode.auto:before {
-    content: 'auto';
-    color: black;
-    text-align: right;
-    background: white;
-}
-
-#mode:after {
-    width: 40px;
-    border: 1px solid gray;
-    background: silver;
-}
-
-#mode.manual:after {
-    left: 70px;
-}
-
-#mode.auto:after {
-    left: 0;
+#switch > .options {
+    height: 25px;
 }
 
 /* options slides */
@@ -126,29 +89,41 @@ form select {
     max-width: 50%;
 }
 
+#switch .desc,
 #manual .desc,
 #auto .options {
     float: left;
     text-align: right;
 }
 
+#switch .options,
 #manual .options,
 #auto .desc {
     float: right;
     text-align: left;
 }
 
-.opt-container {
-    display: none;
+.slides {
+    position: relative;
+    width: 100%;
 }
 
-.opt-container.active {
+.opt-container {
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: absolute;
+    top: 0;
+    left: -400%;
+    transition: all .4s ease;
+}
+
+.opt-container.active {
+    left: 0;
 }
 
 .desc > p,
-.desc > input {
+.options > input {
     margin: 0 2em;
 }

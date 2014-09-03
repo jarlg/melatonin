@@ -20,6 +20,10 @@ class Options
             $ '#color'
                 .value = C.rgb_to_hex resp.color
 
+            $ '#mode'
+                .checked = @mode is 'auto'
+            @toggle_slides()
+
             @add kf for kf in resp.kfs.sort (a, b) -> a.altitude - b.altitude
 
         $ '#add'
@@ -39,7 +43,7 @@ class Options
                     @classList.remove 'pure-button-primary'
 
                     if resp
-                        state  'button-success'
+                        state = 'button-success'
                         html = 'saved!'
                     else
                         state = 'button-failure'
@@ -65,22 +69,22 @@ class Options
 
         $ '#mode'
             .addEventListener 'click', (event) ->
-                event.preventDefault()
-                self.mode = if self.mode is 'manual' then 'auto' else 'manual'
+                self.mode = if @checked then 'auto' else 'manual'
                 chrome.runtime.sendMessage {
                     type: 'set',
                     mode: self.mode
                 }, (resp) =>
                     if not chrome.runtime.lastError?
-                        @classList.toggle 'auto', self.mode is 'auto'
-                        @classList.toggle 'manual', self.mode is 'manual'
-                        $ '#auto'
-                            .classList.toggle 'active', self.mode is 'auto'
-                        $ '#manual'
-                            .classList.toggle 'active', self.mode is 'manual'
+                        self.toggle_slides()
                     else
                         console.log 'ERROR when setting mode!'
                         console.log chrome.runtime.lastError
+
+    toggle_slides: ->
+        $ '#auto'
+            .classList.toggle 'active', @mode is 'auto'
+        $ '#manual'
+            .classList.toggle 'active', @mode is 'manual'
 
     add: (model) ->
         model = new M.Keyframe() if not model?

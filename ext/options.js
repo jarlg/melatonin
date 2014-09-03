@@ -475,6 +475,8 @@ Options = (function() {
         _this.mode = resp.mode;
         _this.color = resp.color;
         $('#color').value = C.rgb_to_hex(resp.color);
+        $('#mode').checked = _this.mode === 'auto';
+        _this.toggle_slides();
         _ref = resp.kfs.sort(function(a, b) {
           return a.altitude - b.altitude;
         });
@@ -503,7 +505,7 @@ Options = (function() {
           var html, state;
           _this.classList.remove('pure-button-primary');
           if (resp) {
-            state('button-success');
+            state = 'button-success';
             html = 'saved!';
           } else {
             state = 'button-failure';
@@ -528,18 +530,14 @@ Options = (function() {
       });
     });
     $('#mode').addEventListener('click', function(event) {
-      event.preventDefault();
-      self.mode = self.mode === 'manual' ? 'auto' : 'manual';
+      self.mode = this.checked ? 'auto' : 'manual';
       return chrome.runtime.sendMessage({
         type: 'set',
         mode: self.mode
       }, (function(_this) {
         return function(resp) {
           if (chrome.runtime.lastError == null) {
-            _this.classList.toggle('auto', self.mode === 'auto');
-            _this.classList.toggle('manual', self.mode === 'manual');
-            $('#auto').classList.toggle('active', self.mode === 'auto');
-            return $('#manual').classList.toggle('active', self.mode === 'manual');
+            return self.toggle_slides();
           } else {
             console.log('ERROR when setting mode!');
             return console.log(chrome.runtime.lastError);
@@ -548,6 +546,11 @@ Options = (function() {
       })(this));
     });
   }
+
+  Options.prototype.toggle_slides = function() {
+    $('#auto').classList.toggle('active', this.mode === 'auto');
+    return $('#manual').classList.toggle('active', this.mode === 'manual');
+  };
 
   Options.prototype.add = function(model) {
     if (model == null) {
