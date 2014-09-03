@@ -19,7 +19,18 @@ obj = {
   get_declination: function(ecliptic_long) {
     return H.angle_asin(H.angle_sin(this.axial_tilt) * H.angle_sin(ecliptic_long));
   },
-  get_highest_altitude: function(date, lat, long) {
+  get_direction: function(date, lat, long) {
+    var alt1, alt2;
+    date = new Date(date.getTime());
+    alt1 = this.get_altitude(date, lat, long);
+    alt2 = this.get_altitude(new Date(date.getTime() + 10 * 60 * 1000), lat, long);
+    if (alt2 > alt1) {
+      return 1;
+    } else {
+      return -1;
+    }
+  },
+  get_noon_altitude: function(date, lat, long) {
     var i, time;
     date = new Date(date.getTime());
     date.setHours(6);
@@ -34,7 +45,7 @@ obj = {
       return _results;
     }).call(this));
   },
-  get_lowest_altitude: function(date, lat, long) {
+  get_midnight_altitude: function(date, lat, long) {
     var i, time;
     date = new Date(date.getTime());
     date.setHours(18);
@@ -106,84 +117,113 @@ Storage = require('./storage.coffee');
 App = (function() {
   function App(config) {
     this.storage = new Storage(config);
+    chrome.runtime.onStartup.addListener((function(_this) {
+      return function() {
+        return _this.update_storage();
+      };
+    })(this));
     chrome.alarms.create('update_altitude', {
       periodInMinutes: 15
     });
-    chrome.alarms.onAlarm.addListener(this.update_altitude);
-    chrome.tabs.onUpdated.addListener(function(_, __, tab) {
-      return B.refresh_overlay(tab);
-    });
-    chrome.runtime.onMessage.addListener(function(req, sender, resp) {
-      if (req.type === 'new_altitude') {
-        return this.refresh_all_overlays();
-      } else if (req.type === 'init_popup') {
-        return this.storage.get(['opac', 'lat', 'long'], resp);
-      } else if (req.type === 'init_tab') {
-        return this.storage.get(['mode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'], (function(_this) {
-          return function(it) {
-            if (it.mode === 'manual') {
-              return resp({
-                color: it.color,
-                opac: it.opac
-              });
-            } else {
-              return res({
-                opac: it.opac,
-                color: H.get_color(it.kfs, it.alt, it.dir, it.min, it.max)
-              });
+    chrome.alarms.onAlarm.addListener((function(_this) {
+      return function() {
+        return _this.update_storage();
+      };
+    })(this));
+    chrome.tabs.onUpdated.addListener((function(_this) {
+      return function(_, __, tab) {
+        return _this.refresh_overlay(tab, null);
+      };
+    })(this));
+    chrome.runtime.onMessage.addListener((function(_this) {
+      return function(req, sender, resp) {
+        if (req.type === 'new_altitude') {
+          return _this.refresh_all_overlays();
+        } else if (req.type === 'init_popup') {
+          _this.storage.get(['opac', 'lat', 'long'], resp);
+          return true;
+        } else if (req.type === 'init_tab') {
+          _this.refresh_overlay(null, resp);
+          return true;
+        } else if (req.type === 'set_opac') {
+          chrome.tabs.query({}, function(tabs) {
+            var tab, _i, _len, _results;
+            _results = [];
+            for (_i = 0, _len = tabs.length; _i < _len; _i++) {
+              tab = tabs[_i];
+              _results.push(chrome.tabs.sendMessage(tab.id, {
+                type: 'set',
+                opac: req.opac
+              }));
             }
-          };
-        })(this));
-      } else if (req.type === 'set_opac') {
-        chrome.tabs.query({}, function(tabs) {
-          var tab, _i, _len, _results;
-          _results = [];
-          for (_i = 0, _len = tabs.length; _i < _len; _i++) {
-            tab = tabs[_i];
-            _results.push(chrome.tabs.sendMessage(tab.id, {
-              type: 'set',
-              opac: req.opac
-            }));
-          }
-          return _results;
-        });
-        return this.storage.set({
-          'opac': req.opac
-        });
-      }
-    });
+            return _results;
+          });
+          return _this.storage.set({
+            'opac': req.opac
+          });
+        }
+      };
+    })(this));
   }
 
   App.prototype.errHandler = function(err) {
     return console.log(err.stack || err);
   };
 
-  App.prototype.refresh_all_overlays = function() {
-    return this.storage.get(['mode', 'alt', 'opac', 'kfs', 'dir'], (function(_this) {
-      return function(it) {
-        return false;
-      };
-    })(this));
-  };
-
-  App.prototype.update_altitude = function() {
-    return this.get_altitude((function(_this) {
-      return function(alt, min, max) {
-        return _this.storage.set({
-          'alt': alt,
-          'min': min,
-          'max': max
+  App.prototype.refresh_overlay = function(tab, resp) {
+    return this.storage.get(['mode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'], function(it) {
+      var color;
+      color = K.choose_color(it);
+      if (tab != null) {
+        return chrome.tabs.sendMessage(tab.id, {
+          type: 'set',
+          color: color,
+          opac: it.opac
         });
-      };
-    })(this));
+      } else if (resp != null) {
+        return resp({
+          color: color,
+          opac: it.opac
+        });
+      }
+    });
   };
 
-  App.prototype.get_altitude = function(cb) {
+  App.prototype.refresh_all_overlays = function() {
+    return this.storage.get(['mode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'], function(it) {
+      var color;
+      color = K.choose_color(it);
+      return chrome.tabs.query({}, function(tabs) {
+        var tab, _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = tabs.length; _i < _len; _i++) {
+          tab = tabs[_i];
+          _results.push(chrome.tabs.sendMessage(tab.id, {
+            type: 'set',
+            color: color,
+            opac: it.opac
+          }));
+        }
+        return _results;
+      });
+    });
+  };
+
+  App.prototype.update_storage = function() {
     return this._get_position((function(_this) {
       return function(lat, long) {
         var d;
         d = new Date();
-        return cb(A.get_altitude(d, lat, long), A.get_lowest_altitude(d, lat, long), A.get_highest_altitude(d, lat, long));
+        return _this.storage.set({
+          lat: lat,
+          long: long,
+          alt: A.get_altitude(d, lat, long),
+          dir: A.get_direction(d, lat, long),
+          min: A.get_midnight_altitude(d, lat, long),
+          max: A.get_noon_altitude(d, lat, long)
+        }, function() {
+          return _this.refresh_all_overlays();
+        });
       };
     })(this));
   };
@@ -278,9 +318,7 @@ module.exports = obj;
 
 },{}],4:[function(require,module,exports){
 'use strict';
-var A, helpers;
-
-A = require('./altitude.coffee');
+var helpers;
 
 helpers = {
   $: function(id) {
@@ -338,7 +376,6 @@ helpers = {
   interpolate: function(alt, dir, kf1, kf2, min, max) {
     var t;
     if (kf1.direction * kf2.direction >= 0) {
-      console.log('got same dirs : %s and %s', kf1.direction, kf2.direction);
       if (dir * kf1.direction >= 0) {
         t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude);
       } else {
@@ -349,10 +386,8 @@ helpers = {
         }
       }
     } else {
-      console.log('opposites');
       if (dir * kf1.direction >= 0) {
         if (dir) {
-          console.log('same as last');
           t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
         } else {
           t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
@@ -365,7 +400,6 @@ helpers = {
         }
       }
     }
-    console.log('got t : %s', t);
     return this._interpolate_colors(kf1.value, kf2.value, t);
   },
   _interpolate_colors: function(rgb1, rgb2, t) {
@@ -424,7 +458,7 @@ helpers = {
 module.exports = helpers;
 
 
-},{"./altitude.coffee":1}],5:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var jd;
 
 jd = {
@@ -649,6 +683,13 @@ obj = {
     } else {
       return cands[0];
     }
+  },
+  choose_color: function(it) {
+    if (it.mode === 'manual') {
+      return it.color;
+    } else {
+      return this.get_color(it.kfs, it.alt, it.dir, it.min, it.max);
+    }
   }
 };
 
@@ -668,6 +709,8 @@ config = {
   last_update: 0,
   mode: 'auto',
   alt: 0,
+  lat: 0,
+  long: 0,
   min: -90,
   max: 90,
   dir: 1,
@@ -695,7 +738,7 @@ Storage = (function() {
     this.get(null, (function(_this) {
       return function(it) {
         var k, obj, v, _fn;
-        if ((it.version == null) || it.version < '0.3.0') {
+        if ((it.ver == null) || it.ver < '0.3.0') {
           return _this.clear(function() {
             return _this.set(config, function() {
               _this.print();

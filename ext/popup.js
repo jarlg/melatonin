@@ -19,7 +19,18 @@ obj = {
   get_declination: function(ecliptic_long) {
     return H.angle_asin(H.angle_sin(this.axial_tilt) * H.angle_sin(ecliptic_long));
   },
-  get_highest_altitude: function(date, lat, long) {
+  get_direction: function(date, lat, long) {
+    var alt1, alt2;
+    date = new Date(date.getTime());
+    alt1 = this.get_altitude(date, lat, long);
+    alt2 = this.get_altitude(new Date(date.getTime() + 10 * 60 * 1000), lat, long);
+    if (alt2 > alt1) {
+      return 1;
+    } else {
+      return -1;
+    }
+  },
+  get_noon_altitude: function(date, lat, long) {
     var i, time;
     date = new Date(date.getTime());
     date.setHours(6);
@@ -34,7 +45,7 @@ obj = {
       return _results;
     }).call(this));
   },
-  get_lowest_altitude: function(date, lat, long) {
+  get_midnight_altitude: function(date, lat, long) {
     var i, time;
     date = new Date(date.getTime());
     date.setHours(18);
@@ -202,9 +213,7 @@ module.exports = AppAltitudeGraph;
 
 },{"./altitude.coffee":1}],3:[function(require,module,exports){
 'use strict';
-var A, helpers;
-
-A = require('./altitude.coffee');
+var helpers;
 
 helpers = {
   $: function(id) {
@@ -262,7 +271,6 @@ helpers = {
   interpolate: function(alt, dir, kf1, kf2, min, max) {
     var t;
     if (kf1.direction * kf2.direction >= 0) {
-      console.log('got same dirs : %s and %s', kf1.direction, kf2.direction);
       if (dir * kf1.direction >= 0) {
         t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude);
       } else {
@@ -273,10 +281,8 @@ helpers = {
         }
       }
     } else {
-      console.log('opposites');
       if (dir * kf1.direction >= 0) {
         if (dir) {
-          console.log('same as last');
           t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
         } else {
           t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
@@ -289,7 +295,6 @@ helpers = {
         }
       }
     }
-    console.log('got t : %s', t);
     return this._interpolate_colors(kf1.value, kf2.value, t);
   },
   _interpolate_colors: function(rgb1, rgb2, t) {
@@ -348,7 +353,7 @@ helpers = {
 module.exports = helpers;
 
 
-},{"./altitude.coffee":1}],4:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var jd;
 
 jd = {
@@ -372,26 +377,29 @@ module.exports = jd;
 
 },{}],5:[function(require,module,exports){
 'use strict';
-var $, Graph;
+var $, Graph, sent;
 
 Graph = require('./canvas.coffee');
 
 $ = document.querySelector.bind(document);
 
-chrome.runtime.sendMessage({
-  type: 'init_popup'
-}, function(resp) {
-  var canvas;
-  canvas = new Graph(resp.lat, resp.long, $('#graph'));
-  return $('#opacity').value = resp.opac;
-});
+sent = false;
 
-$('#opacity').addEventListener('input', function() {
-  return chrome.runtime.sendMessage({
-    type: 'set_opac',
-    opac: this.value
+window.onload = function() {
+  chrome.runtime.sendMessage({
+    type: 'init_popup'
+  }, function(resp) {
+    var canvas;
+    canvas = new Graph(resp.lat, resp.long, $('#graph'));
+    return $('#opacity').value = resp.opac;
   });
-});
+  return $('#opacity').addEventListener('input', function() {
+    return chrome.runtime.sendMessage({
+      type: 'set_opac',
+      opac: this.value
+    });
+  });
+};
 
 
 },{"./canvas.coffee":2}]},{},[5])

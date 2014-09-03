@@ -145,5 +145,12 @@ obj =
 
         return if dir is 1 then H.last(cands) else cands[0]
 
+    # app logic
+    choose_color: (it) ->
+        if it.mode is 'manual'
+            return it.color
+        else
+            return @get_color it.kfs, it.alt, it.dir, it.min, it.max
+
 
 module.exports = obj

@@ -8,6 +8,8 @@ config =
     last_update: 0,
     mode: 'auto', # or 'manual'
     alt: 0,
+    lat: 0,
+    long: 0,
     min: -90, 
     max: 90, # solar noon altitude
     dir: 1, # 1 -> asc, -1 -> desc

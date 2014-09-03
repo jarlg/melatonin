@@ -26,7 +26,14 @@ obj =
         H.angle_asin(H.angle_sin(@axial_tilt) * H.angle_sin(ecliptic_long))
 
     # approximations
-    get_highest_altitude: (date, lat, long) ->
+    get_direction: (date, lat, long) ->
+        date = new Date date.getTime()
+        alt1 = @get_altitude date, lat, long
+        # 10 mins in future; sun rises or lowers?
+        alt2 = @get_altitude new Date(date.getTime() + 10 * 60 * 1000), lat, long
+        return if alt2 > alt1 then 1 else -1
+
+    get_noon_altitude: (date, lat, long) ->
         date = new Date date.getTime()
         # search from morning
         date.setHours 6
@@ -35,7 +42,7 @@ obj =
 
         H.max (@get_altitude new Date(time + 20*i * 1000 * 60), lat, long for i in [0 .. 36])
 
-    get_lowest_altitude: (date, lat, long) ->
+    get_midnight_altitude: (date, lat, long) ->
         date = new Date date.getTime()
         # search in the evening
         date.setHours 18
