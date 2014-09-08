@@ -27,8 +27,8 @@ obj =
                 color: 'color'
 
             direction_map:
-                asc: 1
-                desc: -1
+                asc: 1,
+                desc: -1,
                 both: 0
 
             create: ->
@@ -43,7 +43,7 @@ obj =
                 @option = document.createElement 'select'
                 @option.classList.add 'option-input'
                 for opt in [ 'color', 'temperature']
-                    do =>
+                    do (opt) =>
                         @option
                             .appendChild document.createElement 'option'
                                 .set 'innerHTML', opt
@@ -62,7 +62,7 @@ obj =
                 @direction = document.createElement 'select'
                 @direction.classList.add 'direction-input'
                 for opt in ['asc', 'desc', 'both']
-                    do =>
+                    do (opt) =>
                         @direction
                             .appendChild document.createElement 'option'
                                 .set 'innerHTML', opt
@@ -83,7 +83,7 @@ obj =
                                 if @type is 'color'
                                     self.model[input] = C.hex_to_rgb @value
                                 else if input is 'direction'
-                                    self.model[input] = @direction_map[@value]
+                                    self.model[input] = self.direction_map[@value]
                                 else
                                     self.model[input] = @value
                 @

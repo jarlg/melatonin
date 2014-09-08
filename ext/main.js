@@ -547,13 +547,13 @@ obj = {
       this.option.classList.add('option-input');
       _ref = ['color', 'temperature'];
       _fn = (function(_this) {
-        return function() {
+        return function(opt) {
           return _this.option.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (opt === _this.model.option ? true : void 0));
         };
       })(this);
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         opt = _ref[_i];
-        _fn();
+        _fn(opt);
       }
       this.value = document.createElement('input');
       this.value.classList.add('value-input');
@@ -569,13 +569,13 @@ obj = {
       this.direction.classList.add('direction-input');
       _ref1 = ['asc', 'desc', 'both'];
       _fn1 = (function(_this) {
-        return function() {
+        return function(opt) {
           return _this.direction.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (_this.direction_map[opt] === _this.model.direction ? true : void 0));
         };
       })(this);
       for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
         opt = _ref1[_j];
-        _fn1();
+        _fn1(opt);
       }
       this["delete"] = document.createElement('button').set('innerHTML', '-');
       this["delete"].classList.add('delete', 'button');
@@ -590,7 +590,7 @@ obj = {
               if (this.type === 'color') {
                 return self.model[input] = C.hex_to_rgb(this.value);
               } else if (input === 'direction') {
-                return self.model[input] = this.direction_map[this.value];
+                return self.model[input] = self.direction_map[this.value];
               } else {
                 return self.model[input] = this.value;
               }
