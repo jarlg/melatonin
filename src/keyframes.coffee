@@ -70,7 +70,7 @@ obj =
 
                 @delete = document.createElement 'button'
                     .set 'innerHTML', '-'
-                @delete.classList.add 'delete', 'pure-button'
+                @delete.classList.add 'delete', 'button'
 
                 for input in ['altitude', 'option', 'value', 'direction', 'delete']
                     do (input) =>

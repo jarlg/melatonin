@@ -292,7 +292,7 @@ obj = {
         _fn1();
       }
       this["delete"] = document.createElement('button').set('innerHTML', '-');
-      this["delete"].classList.add('delete', 'pure-button');
+      this["delete"].classList.add('delete', 'button');
       _ref2 = ['altitude', 'option', 'value', 'direction', 'delete'];
       _fn2 = (function(_this) {
         return function(input) {
@@ -503,7 +503,6 @@ Options = (function() {
       }, (function(_this) {
         return function(resp) {
           var html, state;
-          _this.classList.remove('pure-button-primary');
           if (resp) {
             state = 'button-success';
             html = 'saved!';
@@ -514,7 +513,6 @@ Options = (function() {
           _this.classList.add(state);
           _this.innerHTML = html;
           return window.setTimeout((function() {
-            _this.classList.add('pure-button-primary');
             _this.classList.remove(state);
             return _this.innerHTML = 'save';
           }), 1000);
