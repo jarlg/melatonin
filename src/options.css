@@ -4,6 +4,8 @@
     font: 12pt sans-serif;
 }
 
+/* keyframes */
+
 form {
     text-align: center;
 }
@@ -37,28 +39,57 @@ form select {
     margin: 0 5px;
 }
 
-.button-failure,
-.button-success {
-    color: white;
-    border-radius: 4px;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+.button {
+    outline: none;
 }
 
-.button-success {
-    background: rgb(28, 184, 65); /* this is a green */
-}
-.button-failure {
-    background:rgb(202, 60, 60); /* this is a maroon */
+.button:hover {
+    cursor: pointer;
 }
 
-.delete {
-    width: 41px;
+table .button {
+    font: 16pt sans-serif;
+    border: none;
+    background: none;
+    width: 30px;
+    color: #ffad66;
+}
+
+table .button:hover {
+    color: #F10619;
+}
+
+#add:hover {
+    color: #7cdd50;
 }
 
 #save {
+    font: 14pt sans-serif;
+    background: #ffad66;
+    border: 1px solid #ffad66;
+    color: white;
     width: 100%;
-    margin-top: 2px;
+    padding: 10px;
 }
+
+#save:hover {
+    background: white;
+    color: #ffad66;
+}
+
+#save.button-success {
+    background: white;
+    color: #7cdd50;
+    border: 1px solid #7cdd50;
+}
+
+#save.button-failure {
+    background: white;
+    border: 1px solid #F10619;
+    color: #F10619;
+}
+
+/* color */
 
 #color {
     width: 80px;

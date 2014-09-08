@@ -40,8 +40,6 @@ class Options
                     type: 'set',
                     kfs: self.kfs
                 }, (resp) =>
-                    @classList.remove 'pure-button-primary'
-
                     if resp
                         state = 'button-success'
                         html = 'saved!'
@@ -53,7 +51,6 @@ class Options
                     @innerHTML = html
 
                     window.setTimeout (=>
-                        @classList.add 'pure-button-primary'
                         @classList.remove state
                         @innerHTML = 'save'
                     ), 1000

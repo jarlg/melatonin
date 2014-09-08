@@ -578,7 +578,7 @@ obj = {
         _fn1();
       }
       this["delete"] = document.createElement('button').set('innerHTML', '-');
-      this["delete"].classList.add('delete', 'pure-button');
+      this["delete"].classList.add('delete', 'button');
       _ref2 = ['altitude', 'option', 'value', 'direction', 'delete'];
       _fn2 = (function(_this) {
         return function(input) {
