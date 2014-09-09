@@ -9,14 +9,20 @@ if HTMLElement?
         @
 
 obj = 
-    Keyframe:
-        # model
-        class Keyframe
+    AKeyframe:
+        class AKeyframe
             constructor: (
                 @altitude=0,
                 @option='temperature',
                 @value=2700,
                 @direction=0) ->
+
+    TKeyframe:
+        class TKeyframe
+            constructor: (
+                @time=[0, 0], #hours, minutes
+                @option='temperature',
+                @value=2700) ->
 
     KeyframeView:
         class KeyframeView
