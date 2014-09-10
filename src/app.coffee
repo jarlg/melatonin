@@ -28,7 +28,7 @@ class App
                 @refresh_overlay null, resp
                 true
             else if req.type is 'init_options'
-                @storage.get ['mode', 'kfs', 'color'], resp
+                @storage.get ['mode', 'keymode', 'kfs', 'color'], resp
                 true
             else if req.type is 'set'
                 if req.opac?
@@ -42,7 +42,8 @@ class App
                     opac: req.opac if req.opac?,
                     kfs: req.kfs if req.kfs?,
                     color: req.color if req.color?,
-                    mode: req.mode if req.mode?
+                    mode: req.mode if req.mode?,
+                    keymode: req.keymode if req.keymode?
                 }, -> resp if not chrome.runtime.lastError? then true else false
 
                 true
@@ -53,6 +54,7 @@ class App
     refresh_overlay: (tab, resp) ->
         @storage.get [
             'mode'
+            'keymode'
             'alt' 
             'min'
             'max'
@@ -74,6 +76,7 @@ class App
     refresh_all_overlays: ->
         @storage.get [
             'mode'
+            'keymode'
             'alt' 
             'min'
             'max'

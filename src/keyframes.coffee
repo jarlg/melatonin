@@ -26,9 +26,10 @@ obj =
 
     KeyframeView:
         class KeyframeView
-            constructor: (@model, @parent) ->
+            constructor: (@model, @parent, @keymode) ->
 
             option_map:
+                opacity: 'number',
                 temperature: 'number',
                 color: 'color'
 
@@ -37,10 +38,16 @@ obj =
                 desc: -1,
                 both: 0
 
-            create: ->
-                @row = document.createElement 'tr'
-                @row.classList.add 'keyframe'
+            option_defaults:
+                opacity: 0.5,
+                temperature: 2700,
+                color: '#ffffff'
 
+            key_defaults:
+                alt: 0,
+                time: [0, 0]
+
+            create: ->
                 @altitude = document.createElement 'input'
                     .set 'type', 'number'
                     .set 'value', @model.altitude
@@ -48,7 +55,7 @@ obj =
 
                 @option = document.createElement 'select'
                 @option.classList.add 'option-input'
-                for opt in [ 'color', 'temperature']
+                for opt in [ 'color', 'temperature', 'opacity']
                     do (opt) =>
                         @option
                             .appendChild document.createElement 'option'
@@ -108,7 +115,9 @@ obj =
 
             erase:  -> @parent.removeChild @row; @
 
-    get_color: (kfs, alt, dir, min, max) ->
+    get_color: (kfs, keymode, alt, dir, min, max) ->
+        kfs.filter (kf) -> kf[keymode]?
+
         for kf in kfs
             do (kf) ->
                 if kf.option is 'temperature'
@@ -120,46 +129,71 @@ obj =
         else if kfs.length is 1
             return kfs[0].value
 
-        kfs.sort (a, b) -> a.altitude - b.altitude
+        if keymode is 'altitude'
+            kfs.sort (a, b) -> a.altitude - b.altitude
+        else
+            kfs.sort (a, b) -> a.time[0]*60+a.time[1] - b.time[0]*60+b.time[1]
 
-        last = @_get_last_kf kfs, alt, dir
-        next = @_get_next_kf kfs, alt, dir
+        last = @_get_last_kf kfs, keymode, alt, dir
+        next = @_get_next_kf kfs, keymode, alt, dir
 
         if next is last
             return last.value
 
-        H.interpolate alt, dir, last, next, min, max
+        H.interpolate keymode, alt, dir, last, next, min, max
 
-    _get_last_kf: (kfs, alt, dir) ->
-        # keyframes of same direction since last direction change
-        cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (alt - kf.altitude)*dir >= 0
+    _get_last_kf: (kfs, keymode, alt, dir) ->
+        if keymode is 'altitude'
+            # keyframes of same direction since last direction change
+            cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (alt - kf.altitude)*dir >= 0
 
-        if cands.length > 0
-            return if dir is 1 then H.last(cands) else cands[0]
+            if cands.length > 0
+                return if dir is 1 then H.last(cands) else cands[0]
 
-        # keyframes of opposite direction, thus before last direction change
-        cands = kfs.filter (kf) -> kf.direction*dir <= 0
+            # keyframes of opposite direction, thus before last direction change
+            cands = kfs.filter (kf) -> kf.direction*dir <= 0
 
-        return if dir is 1 then cands[0] else H.last cands
-
-    _get_next_kf: (kfs, alt, dir) ->
-        # keyframes of same direction before next direction change
-        cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (kf.altitude - alt)*dir > 0
-
-        if cands.length > 0
             return if dir is 1 then cands[0] else H.last cands
+        else
+            date = new Date()
+            cands = kfs.filter (kf) ->
+                kf.time[0] < date.getHours() or
+                    (kf.time[0] is date.getHours() and kf.time[1] < date.getMinutes())
 
-        # keyframes of opposite dir, thus after next dir change
-        cands = kfs.filter (kf) -> kf.direction*dir <= 0
+            if cands.length > 0
+                return last cands
 
-        return if dir is 1 then H.last(cands) else cands[0]
+            return last kfs
+
+    _get_next_kf: (kfs, keymode, alt, dir) ->
+        if keymode is 'altitude'
+            # keyframes of same direction before next direction change
+            cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (kf.altitude - alt)*dir > 0
+
+            if cands.length > 0
+                return if dir is 1 then cands[0] else H.last cands
+
+            # keyframes of opposite dir, thus after next dir change
+            cands = kfs.filter (kf) -> kf.direction*dir <= 0
+
+            return if dir is 1 then H.last(cands) else cands[0]
+        else
+            date = new Date()
+            cands = kfs.filter (kf) ->
+                kf.time[0] > date.getHours() or
+                (kf.time[0] is date.getHours and date.getMinutes() > kf.time[1])
+
+            if cands.length > 0
+                return cands[0]
+
+            return kfs[0]
 
     # app logic
     choose_color: (it) ->
         if it.mode is 'manual'
             return it.color
         else
-            return @get_color it.kfs, it.alt, it.dir, it.min, it.max
+            return @get_color it.kfs, it.keymode, it.alt, it.dir, it.min, it.max
 
 
 module.exports = obj

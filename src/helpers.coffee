@@ -31,35 +31,45 @@ helpers =
     # direction change since last kf means we passed a solar noon or midnight
     # since last kf; this means we have to calculate t (abs. difference in
     # altitude between keyframes, etc) via this wave crest / wave through
-    interpolate: (alt, dir, kf1, kf2, min, max) ->
-        # kfs in same direction
-        if kf1.direction * kf2.direction >= 0
-            # we are between kfs of same direction
-            if dir * kf1.direction >= 0
-                t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude)
-            # last kf was before previous direction change;
-            # next is after next direction change
-            else
-                # t must be calculated over the curve top (via sun noon or midnight)
-                if dir
-                    # we are ascending, both keyframes are descending
-                    t = (alt + kf1.altitude - 2*min) / (2 * (max-min) - (kf2.altitude - kf1.altitude))
+    interpolate: (keymode, alt, dir, kf1, kf2, min, max) ->
+        if keymode is 'altitude'
+            # kfs in same direction
+            if kf1.direction * kf2.direction >= 0
+                # we are between kfs of same direction
+                if dir * kf1.direction >= 0
+                    t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude)
+                # last kf was before previous direction change;
+                # next is after next direction change
                 else
-                    # we are descending, both keyframes are ascending
-                    t = (2*max - alt - kf1.altitude) / (2 * (max-min) - (kf1.altitude - kf2.altitude))
+                    # t must be calculated over the curve top (via sun noon or midnight)
+                    if dir
+                        # we are ascending, both keyframes are descending
+                        t = (alt + kf1.altitude - 2*min) / (2 * (max-min) - (kf2.altitude - kf1.altitude))
+                    else
+                        # we are descending, both keyframes are ascending
+                        t = (2*max - alt - kf1.altitude) / (2 * (max-min) - (kf1.altitude - kf2.altitude))
+            else
+                # kfs of opposite directions
+                if dir * kf1.direction >= 0
+                    # no direction change since last kf
+                    if dir
+                        t = (alt - kf1.altitude) / (2*max - kf1.altitude - kf2.altitude)
+                    else
+                        t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2*min)
+                else
+                    if dir
+                        t = (kf1.altitude + alt - 2*min) / (kf1.altitude + kf2.altitude - 2*min)
+                    else
+                        t = (2*max - kf1.altitude - alt) / (2*max - kf1.altitude - kf2.altitude)
         else
-            # kfs of opposite directions
-            if dir * kf1.direction >= 0
-                # no direction change since last kf
-                if dir
-                    t = (alt - kf1.altitude) / (2*max - kf1.altitude - kf2.altitude)
-                else
-                    t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2*min)
-            else
-                if dir
-                    t = (kf1.altitude + alt - 2*min) / (kf1.altitude + kf2.altitude - 2*min)
-                else
-                    t = (2*max - kf1.altitude - alt) / (2*max - kf1.altitude - kf2.altitude)
+            now = new Date()
+            delta_minutes = kf2.time[0]*60+kf2.time[1] - kf1.time[0]*60+kf1.time[1]
+            delta_minutes += 24*60 if delta_minutes < 0
+
+            minutes_since_last = now.getHours()*60+now.getMinutes() - kf1.time[0]*60-kf1.time[1]
+            minutes_since_last += 24*60 if minutes_since_last < 0
+
+            t = minutes_since_last / delta_minutes
 
         return @_interpolate_colors kf1.value, kf2.value, t
 
