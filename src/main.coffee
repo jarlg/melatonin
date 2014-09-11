@@ -9,7 +9,7 @@ App = require './app.coffee'
 # controlled by keyframes. 'manual' means the user-specified color is used, and
 # keyframes are disregarded.
 #
-# keymode: 'alt'/'time' means keyframes are linked to resp. altitude/time
+# keymode: 'altitude'/'time' means keyframes are linked to resp. altitude/time
 # values
 # 
 # min,max: stored values of resp. midnight/solar noon altitude values at
@@ -23,10 +23,10 @@ App = require './app.coffee'
 # overlay
 
 config = 
-    ver: '0.3.0',
+    ver: '0.3.1',
     last_update: 0,
     mode: 'auto', # or 'manual'
-    keymode: 'alt', # or 'time'
+    keymode: 'altitude', # or 'time'
     alt: 0,
     lat: 0,
     long: 0,

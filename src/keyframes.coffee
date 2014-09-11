@@ -26,7 +26,7 @@ obj =
 
     KeyframeView:
         class KeyframeView
-            constructor: (@model, @parent, @keymode) ->
+            constructor: (@model, @row, @keymode) ->
 
             option_map:
                 opacity: 'number',
@@ -48,10 +48,43 @@ obj =
                 time: [0, 0]
 
             create: ->
-                @altitude = document.createElement 'input'
-                    .set 'type', 'number'
-                    .set 'value', @model.altitude
-                @altitude.classList.add 'key-input'
+                console.log 'attempting to create %s kf', @keymode
+
+                self = this
+                if @keymode is 'altitude'
+                    @altitude = document.createElement 'input'
+                        .set 'type', 'number'
+                        .set 'value', @model.altitude
+                    @altitude.classList.add 'key-input'
+
+                    @altitude.addEventListener 'input', (event) ->
+                        self.model.altitude = @value
+
+                else if @keymode is 'time'
+                    @time_hours = document.createElement 'input'
+                        .set 'type', 'number'
+                        .set 'value', @model.time[0]
+                    @time_mins = document.createElement 'input'
+                        .set 'type', 'number'
+                        .set 'value', @model.time[1]
+
+                    @time_hours.addEventListener 'input', (event) ->
+                        if @value < 0
+                            @value = 0
+                        else if @value > 24
+                            @value = 24
+
+                        self.model.time[0] = @value
+
+                    @time_mins.addEventListener 'input', (event) ->
+                        if @value < 0
+                            @value = 0
+                        else if @value > 60
+                            @value = 60
+
+                        self.model.time[1] = @value
+
+                console.log 'done with key'
 
                 @option = document.createElement 'select'
                 @option.classList.add 'option-input'
@@ -68,37 +101,36 @@ obj =
                 @set_value_type()
                 @set_value_value()
 
-                @option.addEventListener 'input', =>
-                    @set_value_type()
-                    @set_value_value()
+                @option.addEventListener 'input', ->
+                    self.set_value_type()
+                    self.set_value_value()
+                    self.model.option = @value
 
-                @direction = document.createElement 'select'
-                @direction.classList.add 'direction-input'
-                for opt in ['asc', 'desc', 'both']
-                    do (opt) =>
-                        @direction
-                            .appendChild document.createElement 'option'
-                                .set 'innerHTML', opt
-                                .set 'selected', (true if @direction_map[opt] is @model.direction)
+                @value.addEventListener 'input', (event) ->
+                    # put limits here? 
+                    self.model.value = @value
+
+                console.log 'done with options'
+
+                if @keymode is 'altitude'
+                    @direction = document.createElement 'select'
+                    @direction.classList.add 'direction-input'
+                    for opt in ['asc', 'desc', 'both']
+                        do (opt) =>
+                            @direction
+                                .appendChild document.createElement 'option'
+                                    .set 'innerHTML', opt
+                                    .set 'selected', (true if @direction_map[opt] is @model.direction)
+
+                    @direction.addEventListener 'input', (event) ->
+                        self.model.direction = self.direction_map[@value]
+
+
 
                 @delete = document.createElement 'button'
                     .set 'innerHTML', '-'
                 @delete.classList.add 'delete', 'button'
-
-                for input in ['altitude', 'option', 'value', 'direction', 'delete']
-                    do (input) =>
-                        @row
-                            .appendChild document.createElement 'th'
-                            .appendChild @[input]
-                        if input isnt 'delete'
-                            self = this
-                            @[input].addEventListener 'input', (event) ->
-                                if @type is 'color'
-                                    self.model[input] = C.hex_to_rgb @value
-                                else if input is 'direction'
-                                    self.model[input] = self.direction_map[@value]
-                                else
-                                    self.model[input] = @value
+                # delete's event listener is created by option controller
                 @
 
             set_value_type: ->
@@ -111,9 +143,26 @@ obj =
             set_value_value: ->
                 @value.value = if @value.type is 'color' then C.rgb_to_hex(@model.value) else @model.value
 
-            render: -> @parent.appendChild @row; @
+            render: -> 
+                if @keymode is 'altitude'
+                    inputs = ['altitude', 'option', 'value', 'direction', 'delete']
+                else
+                    @row
+                        .appendChild document.createElement 'td'
+                        .appendChild @time_hours
+                        .parentNode.appendChild @time_mins
 
-            erase:  -> @parent.removeChild @row; @
+                    inputs = ['option', 'value', 'delete']
+
+                for input in inputs
+                    do (input) =>
+                        if @[input]?
+                            @row
+                                .appendChild document.createElement 'td'
+                                .appendChild @[input]
+                return @
+
+            erase:  -> @row.parentNode.removeChild @row; @
 
     get_color: (kfs, keymode, alt, dir, min, max) ->
         kfs.filter (kf) -> kf[keymode]?

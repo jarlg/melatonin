@@ -122,32 +122,45 @@ helpers = {
   angle_asin: function(x) {
     return this.to_angle(Math.asin(x));
   },
-  interpolate: function(alt, dir, kf1, kf2, min, max) {
-    var t;
-    if (kf1.direction * kf2.direction >= 0) {
-      if (dir * kf1.direction >= 0) {
-        t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude);
-      } else {
-        if (dir) {
-          t = (alt + kf1.altitude - 2 * min) / (2 * (max - min) - (kf2.altitude - kf1.altitude));
+  interpolate: function(keymode, alt, dir, kf1, kf2, min, max) {
+    var delta_minutes, minutes_since_last, now, t;
+    if (keymode === 'altitude') {
+      if (kf1.direction * kf2.direction >= 0) {
+        if (dir * kf1.direction >= 0) {
+          t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude);
         } else {
-          t = (2 * max - alt - kf1.altitude) / (2 * (max - min) - (kf1.altitude - kf2.altitude));
+          if (dir) {
+            t = (alt + kf1.altitude - 2 * min) / (2 * (max - min) - (kf2.altitude - kf1.altitude));
+          } else {
+            t = (2 * max - alt - kf1.altitude) / (2 * (max - min) - (kf1.altitude - kf2.altitude));
+          }
+        }
+      } else {
+        if (dir * kf1.direction >= 0) {
+          if (dir) {
+            t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
+          } else {
+            t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
+          }
+        } else {
+          if (dir) {
+            t = (kf1.altitude + alt - 2 * min) / (kf1.altitude + kf2.altitude - 2 * min);
+          } else {
+            t = (2 * max - kf1.altitude - alt) / (2 * max - kf1.altitude - kf2.altitude);
+          }
         }
       }
     } else {
-      if (dir * kf1.direction >= 0) {
-        if (dir) {
-          t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
-        } else {
-          t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
-        }
-      } else {
-        if (dir) {
-          t = (kf1.altitude + alt - 2 * min) / (kf1.altitude + kf2.altitude - 2 * min);
-        } else {
-          t = (2 * max - kf1.altitude - alt) / (2 * max - kf1.altitude - kf2.altitude);
-        }
+      now = new Date();
+      delta_minutes = kf2.time[0] * 60 + kf2.time[1] - kf1.time[0] * 60 + kf1.time[1];
+      if (delta_minutes < 0) {
+        delta_minutes += 24 * 60;
       }
+      minutes_since_last = now.getHours() * 60 + now.getMinutes() - kf1.time[0] * 60 - kf1.time[1];
+      if (minutes_since_last < 0) {
+        minutes_since_last += 24 * 60;
+      }
+      t = minutes_since_last / delta_minutes;
     }
     return this._interpolate_colors(kf1.value, kf2.value, t);
   },
@@ -209,7 +222,7 @@ module.exports = helpers;
 
 },{}],3:[function(require,module,exports){
 'use strict';
-var C, H, Keyframe, KeyframeView, obj;
+var AKeyframe, C, H, KeyframeView, TKeyframe, obj;
 
 C = require('./color_helpers.coffee');
 
@@ -223,24 +236,36 @@ if (typeof HTMLElement !== "undefined" && HTMLElement !== null) {
 }
 
 obj = {
-  Keyframe: Keyframe = (function() {
-    function Keyframe(altitude, option, value, direction) {
+  AKeyframe: AKeyframe = (function() {
+    function AKeyframe(altitude, option, value, direction) {
       this.altitude = altitude != null ? altitude : 0;
       this.option = option != null ? option : 'temperature';
       this.value = value != null ? value : 2700;
       this.direction = direction != null ? direction : 0;
     }
 
-    return Keyframe;
+    return AKeyframe;
+
+  })(),
+  TKeyframe: TKeyframe = (function() {
+    function TKeyframe(time, option, value) {
+      this.time = time != null ? time : [0, 0];
+      this.option = option != null ? option : 'temperature';
+      this.value = value != null ? value : 2700;
+    }
+
+    return TKeyframe;
 
   })(),
   KeyframeView: KeyframeView = (function() {
-    function KeyframeView(model, parent) {
+    function KeyframeView(model, row, keymode) {
       this.model = model;
-      this.parent = parent;
+      this.row = row;
+      this.keymode = keymode;
     }
 
     KeyframeView.prototype.option_map = {
+      opacity: 'number',
       temperature: 'number',
       color: 'color'
     };
@@ -251,15 +276,51 @@ obj = {
       both: 0
     };
 
+    KeyframeView.prototype.option_defaults = {
+      opacity: 0.5,
+      temperature: 2700,
+      color: '#ffffff'
+    };
+
+    KeyframeView.prototype.key_defaults = {
+      alt: 0,
+      time: [0, 0]
+    };
+
     KeyframeView.prototype.create = function() {
-      var input, opt, _fn, _fn1, _fn2, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
-      this.row = document.createElement('tr');
-      this.row.classList.add('keyframe');
-      this.altitude = document.createElement('input').set('type', 'number').set('value', this.model.altitude);
-      this.altitude.classList.add('key-input');
+      var opt, self, _fn, _fn1, _i, _j, _len, _len1, _ref, _ref1;
+      console.log('attempting to create %s kf', this.keymode);
+      self = this;
+      if (this.keymode === 'altitude') {
+        this.altitude = document.createElement('input').set('type', 'number').set('value', this.model.altitude);
+        this.altitude.classList.add('key-input');
+        this.altitude.addEventListener('input', function(event) {
+          return self.model.altitude = this.value;
+        });
+      } else if (this.keymode === 'time') {
+        this.time_hours = document.createElement('input').set('type', 'number').set('value', this.model.time[0]);
+        this.time_mins = document.createElement('input').set('type', 'number').set('value', this.model.time[1]);
+        this.time_hours.addEventListener('input', function(event) {
+          if (this.value < 0) {
+            this.value = 0;
+          } else if (this.value > 24) {
+            this.value = 24;
+          }
+          return self.model.time[0] = this.value;
+        });
+        this.time_mins.addEventListener('input', function(event) {
+          if (this.value < 0) {
+            this.value = 0;
+          } else if (this.value > 60) {
+            this.value = 60;
+          }
+          return self.model.time[1] = this.value;
+        });
+      }
+      console.log('done with key');
       this.option = document.createElement('select');
       this.option.classList.add('option-input');
-      _ref = ['color', 'temperature'];
+      _ref = ['color', 'temperature', 'opacity'];
       _fn = (function(_this) {
         return function(opt) {
           return _this.option.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (opt === _this.model.option ? true : void 0));
@@ -273,49 +334,34 @@ obj = {
       this.value.classList.add('value-input');
       this.set_value_type();
       this.set_value_value();
-      this.option.addEventListener('input', (function(_this) {
-        return function() {
-          _this.set_value_type();
-          return _this.set_value_value();
-        };
-      })(this));
-      this.direction = document.createElement('select');
-      this.direction.classList.add('direction-input');
-      _ref1 = ['asc', 'desc', 'both'];
-      _fn1 = (function(_this) {
-        return function(opt) {
-          return _this.direction.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (_this.direction_map[opt] === _this.model.direction ? true : void 0));
-        };
-      })(this);
-      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-        opt = _ref1[_j];
-        _fn1(opt);
+      this.option.addEventListener('input', function() {
+        self.set_value_type();
+        self.set_value_value();
+        return self.model.option = this.value;
+      });
+      this.value.addEventListener('input', function(event) {
+        return self.model.value = this.value;
+      });
+      console.log('done with options');
+      if (this.keymode === 'altitude') {
+        this.direction = document.createElement('select');
+        this.direction.classList.add('direction-input');
+        _ref1 = ['asc', 'desc', 'both'];
+        _fn1 = (function(_this) {
+          return function(opt) {
+            return _this.direction.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (_this.direction_map[opt] === _this.model.direction ? true : void 0));
+          };
+        })(this);
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          opt = _ref1[_j];
+          _fn1(opt);
+        }
+        this.direction.addEventListener('input', function(event) {
+          return self.model.direction = self.direction_map[this.value];
+        });
       }
       this["delete"] = document.createElement('button').set('innerHTML', '-');
       this["delete"].classList.add('delete', 'button');
-      _ref2 = ['altitude', 'option', 'value', 'direction', 'delete'];
-      _fn2 = (function(_this) {
-        return function(input) {
-          var self;
-          _this.row.appendChild(document.createElement('th')).appendChild(_this[input]);
-          if (input !== 'delete') {
-            self = _this;
-            return _this[input].addEventListener('input', function(event) {
-              if (this.type === 'color') {
-                return self.model[input] = C.hex_to_rgb(this.value);
-              } else if (input === 'direction') {
-                return self.model[input] = self.direction_map[this.value];
-              } else {
-                return self.model[input] = this.value;
-              }
-            });
-          }
-        };
-      })(this);
-      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-        input = _ref2[_k];
-        _fn2(input);
-      }
       return this;
     };
 
@@ -333,20 +379,40 @@ obj = {
     };
 
     KeyframeView.prototype.render = function() {
-      this.parent.appendChild(this.row);
+      var input, inputs, _fn, _i, _len;
+      if (this.keymode === 'altitude') {
+        inputs = ['altitude', 'option', 'value', 'direction', 'delete'];
+      } else {
+        this.row.appendChild(document.createElement('td')).appendChild(this.time_hours).parentNode.appendChild(this.time_mins);
+        inputs = ['option', 'value', 'delete'];
+      }
+      _fn = (function(_this) {
+        return function(input) {
+          if (_this[input] != null) {
+            return _this.row.appendChild(document.createElement('td')).appendChild(_this[input]);
+          }
+        };
+      })(this);
+      for (_i = 0, _len = inputs.length; _i < _len; _i++) {
+        input = inputs[_i];
+        _fn(input);
+      }
       return this;
     };
 
     KeyframeView.prototype.erase = function() {
-      this.parent.removeChild(this.row);
+      this.row.parentNode.removeChild(this.row);
       return this;
     };
 
     return KeyframeView;
 
   })(),
-  get_color: function(kfs, alt, dir, min, max) {
+  get_color: function(kfs, keymode, alt, dir, min, max) {
     var kf, last, next, _fn, _i, _len;
+    kfs.filter(function(kf) {
+      return kf[keymode] != null;
+    });
     _fn = function(kf) {
       if (kf.option === 'temperature') {
         kf.option = 'color';
@@ -362,63 +428,91 @@ obj = {
     } else if (kfs.length === 1) {
       return kfs[0].value;
     }
-    kfs.sort(function(a, b) {
-      return a.altitude - b.altitude;
-    });
-    last = this._get_last_kf(kfs, alt, dir);
-    next = this._get_next_kf(kfs, alt, dir);
+    if (keymode === 'altitude') {
+      kfs.sort(function(a, b) {
+        return a.altitude - b.altitude;
+      });
+    } else {
+      kfs.sort(function(a, b) {
+        return a.time[0] * 60 + a.time[1] - b.time[0] * 60 + b.time[1];
+      });
+    }
+    last = this._get_last_kf(kfs, keymode, alt, dir);
+    next = this._get_next_kf(kfs, keymode, alt, dir);
     if (next === last) {
       return last.value;
     }
-    return H.interpolate(alt, dir, last, next, min, max);
+    return H.interpolate(keymode, alt, dir, last, next, min, max);
   },
-  _get_last_kf: function(kfs, alt, dir) {
-    var cands;
-    cands = kfs.filter(function(kf) {
-      return kf.direction * dir >= 0 && (alt - kf.altitude) * dir >= 0;
-    });
-    if (cands.length > 0) {
-      if (dir === 1) {
-        return H.last(cands);
-      } else {
-        return cands[0];
+  _get_last_kf: function(kfs, keymode, alt, dir) {
+    var cands, date;
+    if (keymode === 'altitude') {
+      cands = kfs.filter(function(kf) {
+        return kf.direction * dir >= 0 && (alt - kf.altitude) * dir >= 0;
+      });
+      if (cands.length > 0) {
+        if (dir === 1) {
+          return H.last(cands);
+        } else {
+          return cands[0];
+        }
       }
-    }
-    cands = kfs.filter(function(kf) {
-      return kf.direction * dir <= 0;
-    });
-    if (dir === 1) {
-      return cands[0];
-    } else {
-      return H.last(cands);
-    }
-  },
-  _get_next_kf: function(kfs, alt, dir) {
-    var cands;
-    cands = kfs.filter(function(kf) {
-      return kf.direction * dir >= 0 && (kf.altitude - alt) * dir > 0;
-    });
-    if (cands.length > 0) {
+      cands = kfs.filter(function(kf) {
+        return kf.direction * dir <= 0;
+      });
       if (dir === 1) {
         return cands[0];
       } else {
         return H.last(cands);
       }
-    }
-    cands = kfs.filter(function(kf) {
-      return kf.direction * dir <= 0;
-    });
-    if (dir === 1) {
-      return H.last(cands);
     } else {
-      return cands[0];
+      date = new Date();
+      cands = kfs.filter(function(kf) {
+        return kf.time[0] < date.getHours() || (kf.time[0] === date.getHours() && kf.time[1] < date.getMinutes());
+      });
+      if (cands.length > 0) {
+        return last(cands);
+      }
+      return last(kfs);
+    }
+  },
+  _get_next_kf: function(kfs, keymode, alt, dir) {
+    var cands, date;
+    if (keymode === 'altitude') {
+      cands = kfs.filter(function(kf) {
+        return kf.direction * dir >= 0 && (kf.altitude - alt) * dir > 0;
+      });
+      if (cands.length > 0) {
+        if (dir === 1) {
+          return cands[0];
+        } else {
+          return H.last(cands);
+        }
+      }
+      cands = kfs.filter(function(kf) {
+        return kf.direction * dir <= 0;
+      });
+      if (dir === 1) {
+        return H.last(cands);
+      } else {
+        return cands[0];
+      }
+    } else {
+      date = new Date();
+      cands = kfs.filter(function(kf) {
+        return kf.time[0] > date.getHours() || (kf.time[0] === date.getHours && date.getMinutes() > kf.time[1]);
+      });
+      if (cands.length > 0) {
+        return cands[0];
+      }
+      return kfs[0];
     }
   },
   choose_color: function(it) {
     if (it.mode === 'manual') {
       return it.color;
     } else {
-      return this.get_color(it.kfs, it.alt, it.dir, it.min, it.max);
+      return this.get_color(it.kfs, it.keymode, it.alt, it.dir, it.min, it.max);
     }
   }
 };
@@ -440,7 +534,7 @@ window.onload = function() {
 
 },{"./options_model.coffee":5}],5:[function(require,module,exports){
 'use strict';
-var $, $$, C, M, Options, last, val;
+var $, $$, C, K, KFTable, Options, last, val;
 
 $ = document.querySelector.bind(document);
 
@@ -456,53 +550,134 @@ last = function(arr) {
   }
 };
 
-M = require('./keyframes.coffee');
+K = require('./keyframes.coffee');
 
 C = require('./color_helpers.coffee');
 
-Options = (function() {
-  function Options(kfs, kfviews, mode, color) {
-    var self;
-    this.kfs = kfs != null ? kfs : [];
-    this.kfviews = kfviews != null ? kfviews : [];
-    this.mode = mode != null ? mode : 'auto';
-    this.color = color != null ? color : {};
-    chrome.runtime.sendMessage({
-      type: 'init_options'
-    }, (function(_this) {
-      return function(resp) {
-        var kf, _i, _len, _ref, _results;
-        _this.mode = resp.mode;
-        _this.color = resp.color;
-        $('#color').value = C.rgb_to_hex(resp.color);
-        $('#mode').checked = _this.mode === 'auto';
-        _this.toggle_slides();
-        _ref = resp.kfs.sort(function(a, b) {
-          return a.altitude - b.altitude;
-        });
-        _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          kf = _ref[_i];
-          _results.push(_this.add(kf));
-        }
-        return _results;
-      };
-    })(this));
-    $('#add').addEventListener('click', (function(_this) {
+KFTable = (function() {
+  function KFTable(table, keymode) {
+    this.table = table;
+    this.keymode = keymode;
+    console.log('created KFTable');
+    this;
+  }
+
+  KFTable.prototype.kfs = [];
+
+  KFTable.prototype.views = [];
+
+  KFTable.prototype.add = function(kf) {
+    if (kf == null) {
+      if (this.keymode === 'altitude') {
+        kf = new K.AKeyframe();
+      } else {
+        kf = new K.TKeyframe();
+      }
+    }
+    console.log('added alt kf: %s', kf.altitude != null);
+    this.kfs.push(kf);
+    if (kf[this.keymode] != null) {
+      return this.createView(kf);
+    }
+  };
+
+  KFTable.prototype.createView = function(kf) {
+    var idx, row;
+    row = document.createElement('tr');
+    row.classList.add('keyframe');
+    this.views.push(new K.KeyframeView(kf, row, this.keymode));
+    idx = this.views.length - 1;
+    return this.views[idx].create()["delete"].addEventListener('click', (function(_this) {
       return function(event) {
         event.preventDefault();
-        return _this.add();
+        _this.views[idx].erase();
+        return _this.kfs.splice(_this.kfs.indexOf(_this.views[idx].model));
       };
     })(this));
+  };
+
+  KFTable.prototype.clear = function() {
+    var view, _i, _len, _ref;
+    _ref = this.views;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      view = _ref[_i];
+      view.erase();
+    }
+    return this.views.length = 0;
+  };
+
+  KFTable.prototype.create = function() {
+    var opt, self, title, _fn, _fn1, _i, _j, _len, _len1, _ref, _ref1;
+    console.log('creating KFTable');
+    this.head_tr = document.createElement('tr');
+    this.keymode_input = document.createElement('select');
+    _ref = ['altitude', 'time'];
+    _fn = (function(_this) {
+      return function() {
+        return _this.keymode_input.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (opt === _this.keymode ? true : void 0));
+      };
+    })(this);
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      opt = _ref[_i];
+      _fn();
+    }
     self = this;
-    $('#save').addEventListener('click', function(event) {
-      console.log(self.kfs);
+    this.keymode_input.addEventListener('input', function(event) {
+      var kf, _fn1, _j, _len1, _ref1;
       event.preventDefault();
-      return chrome.runtime.sendMessage({
-        type: 'set',
-        kfs: self.kfs
-      }, (function(_this) {
-        return function(resp) {
+      self.keymode = this.value;
+      console.log('clearing');
+      self.clear();
+      console.log(self.views);
+      _ref1 = self.kfs;
+      _fn1 = (function(_this) {
+        return function(kf) {
+          console.log(kf);
+          console.log(kf[_this.value] != null);
+          if (kf[_this.value] != null) {
+            return self.createView(kf);
+          }
+        };
+      })(this);
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        kf = _ref1[_j];
+        _fn1(kf);
+      }
+      return self.render();
+    });
+    this.head_tr.appendChild(document.createElement('th')).appendChild(this.keymode_input);
+    _ref1 = ['option', 'value', 'direction'];
+    _fn1 = (function(_this) {
+      return function() {
+        if (title !== 'direction' || _this.keymode !== 'time') {
+          return _this.head_tr.appendChild(document.createElement('th')).set('innerHTML', title);
+        }
+      };
+    })(this);
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      title = _ref1[_j];
+      _fn1();
+    }
+    this.add_button = document.createElement('button').set('id', 'add').set('innerHTML', '+');
+    this.add_button.classList.add('button');
+    this.add_button.addEventListener('click', (function(_this) {
+      return function(event) {
+        event.preventDefault();
+        _this.add();
+        return _this.table.insertBefore(last(_this.views).render().row, _this.save_button);
+      };
+    })(this));
+    this.head_tr.appendChild(document.createElement('th')).appendChild(this.add_button);
+    this.save_button = document.createElement('button').set('id', 'save').set('innerHTML', 'save');
+    this.save_button.classList.add('button');
+    this.save_button.addEventListener('click', (function(_this) {
+      return function(event) {
+        event.preventDefault();
+        return chrome.runtime.sendMessage({
+          type: 'set',
+          kfs: self.kfs,
+          keymode: self.keymode
+        }, function(resp) {
           var html, state;
           if (resp) {
             state = 'button-success';
@@ -517,9 +692,86 @@ Options = (function() {
             _this.classList.remove(state);
             return _this.innerHTML = 'save';
           }), 1000);
+        });
+      };
+    })(this));
+    console.log('added EventListeners');
+    return this;
+  };
+
+  KFTable.prototype.render = function() {
+    var kf, _fn, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+    console.log('rendering KFTable');
+    if (this.head_tr.parentNode === this.table) {
+      this.table.removeChild(this.head_tr);
+    }
+    console.log('removed head_tr');
+    if (this.views.length > 0) {
+      console.log(this.views.length);
+      console.log(this.views);
+      _ref = this.views;
+      _fn = (function(_this) {
+        return function() {
+          if (kf.row.parentNode === _this.table) {
+            return _this.table.removeChild(kf.row);
+          }
         };
-      })(this));
-    });
+      })(this);
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        kf = _ref[_i];
+        _fn();
+      }
+    }
+    console.log('removed views');
+    if (this.save_button.parentNode === this.table.parentNode) {
+      this.table.parentNode.removeChild(this.save_button);
+    }
+    console.log('removed save button');
+    console.log('cleared parent..');
+    this.table.appendChild(this.head_tr);
+    console.log('rendered tr');
+    _ref1 = this.views;
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      kf = _ref1[_j];
+      kf.render();
+    }
+    _ref2 = this.views;
+    for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+      kf = _ref2[_k];
+      this.table.appendChild(kf.row);
+    }
+    this.table.parentNode.appendChild(this.save_button);
+    return this;
+  };
+
+  return KFTable;
+
+})();
+
+Options = (function() {
+  function Options() {
+    var self;
+    chrome.runtime.sendMessage({
+      type: 'init_options'
+    }, (function(_this) {
+      return function(resp) {
+        var kf, _i, _len, _ref;
+        _this.mode = resp.mode;
+        _this.color = resp.color;
+        console.log('got keymode %s', resp.keymode);
+        _this.table = new KFTable($('#keyframes'), resp.keymode);
+        _ref = resp.kfs;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          kf = _ref[_i];
+          _this.table.add(kf);
+        }
+        _this.table.create().render();
+        $('#color').value = C.rgb_to_hex(resp.color);
+        $('#mode').checked = _this.mode === 'auto';
+        return _this.toggle_slides();
+      };
+    })(this));
+    self = this;
     $('#color').addEventListener('input', function(event) {
       event.preventDefault();
       self.color = C.hex_to_rgb(this.value);
@@ -546,26 +798,13 @@ Options = (function() {
     });
   }
 
+  Options.prototype.mode = 'auto';
+
+  Options.prototype.color = {};
+
   Options.prototype.toggle_slides = function() {
     $('#auto').classList.toggle('active', this.mode === 'auto');
     return $('#manual').classList.toggle('active', this.mode === 'manual');
-  };
-
-  Options.prototype.add = function(model) {
-    if (model == null) {
-      model = new M.Keyframe();
-    }
-    this.kfs.push(model);
-    this.kfviews.push(new M.KeyframeView(model, $('#keyframes')));
-    return last(this.kfviews).create().render()["delete"].addEventListener('click', (function(_this) {
-      return function(event) {
-        var index;
-        event.preventDefault();
-        index = _this.kfs.indexOf(model);
-        _this.kfs.splice(index, 1);
-        return last(_this.kfviews.splice(index, 1)).erase();
-      };
-    })(this));
   };
 
   return Options;
