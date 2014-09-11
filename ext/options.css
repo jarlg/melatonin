@@ -20,6 +20,11 @@ form select {
     padding: 4px 5px;
 }
 
+th select {
+    font-weight: bold;
+    font-size: 12pt;
+}
+
 .key-input {
     width: 40px;
     padding: 5px;

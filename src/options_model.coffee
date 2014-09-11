@@ -13,11 +13,12 @@ C = require './color_helpers.coffee'
 
 class KFTable
     constructor: (@table, @keymode) ->
+        console.log 'created KFTable'
+        @
 
     kfs: [],
     views: [],
 
-    # takes a model
     add: (kf) ->
         if not kf?
             if @keymode is 'altitude'
@@ -25,6 +26,7 @@ class KFTable
             else
                 kf = new K.TKeyframe()
 
+        console.log 'added alt kf: %s', kf.altitude?
         @kfs.push kf
         if kf[@keymode]?
             @createView kf
@@ -37,13 +39,16 @@ class KFTable
         @views[idx]
             .create()
             .delete.addEventListener 'click', (event) =>
-                @views[idx].parent.parendNode.removeChild @views[idx].parent
+                event.preventDefault()
+                @views[idx].erase()
                 @kfs.splice @kfs.indexOf @views[idx].model
 
     clear: ->
+        view.erase() for view in @views
         @views.length = 0
 
     create: ->
+        console.log 'creating KFTable'
         @head_tr = document.createElement 'tr'
 
         @keymode_input = document.createElement 'select'
@@ -56,9 +61,19 @@ class KFTable
 
         self = this
         @keymode_input.addEventListener 'input', (event) ->
+            event.preventDefault()
             self.keymode = @value
+            console.log 'clearing'
             self.clear()
-            self.createView kf for kf in self.kfs if kf[@value]?
+            console.log self.views
+            for kf in self.kfs
+                do (kf) =>
+                    console.log kf
+                    console.log kf[@value]?
+                    if kf[@value]?
+                        self.createView kf
+
+            self.render()
 
         @head_tr.appendChild document.createElement 'th'
             .appendChild @keymode_input
@@ -75,18 +90,20 @@ class KFTable
         @add_button.classList.add 'button'
 
         @add_button.addEventListener 'click', (event) =>
+            event.preventDefault()
             @add()
-            last @views
-                .render()
+            @table.insertBefore last(@views).render().row, @save_button
 
         @head_tr.appendChild document.createElement 'th'
             .appendChild @add_button
 
         @save_button = document.createElement 'button'
             .set 'id', 'save'
+            .set 'innerHTML', 'save'
         @save_button.classList.add 'button'
 
         @save_button.addEventListener 'click', (event) =>
+            event.preventDefault()
             chrome.runtime.sendMessage {
                 type: 'set',
                 kfs: self.kfs,
@@ -107,16 +124,37 @@ class KFTable
                     @innerHTML = 'save'
                 ), 1000
 
+        console.log 'added EventListeners'
+        @
+
     render: ->
+        console.log 'rendering KFTable'
         # clear table
-        @table.removeChild @head_tr
-        @table.removeChild kf.parent for kf in @views
-        @table.removeChild @save_button
+        @table.removeChild @head_tr if @head_tr.parentNode is @table
+        console.log 'removed head_tr'
+
+        if @views.length > 0
+            console.log @views.length
+            console.log @views
+            for kf in @views
+                do =>
+                    if kf.row.parentNode is @table
+                        @table.removeChild kf.row
+
+        console.log 'removed views'
+        @table.parentNode.removeChild @save_button if @save_button.parentNode is @table.parentNode
+        console.log 'removed save button'
+
+        console.log 'cleared parent..'
 
         @table.appendChild @head_tr
+        console.log 'rendered tr'
         kf.render() for kf in @views
 
-        @table.appendChild @save_button
+        @table.appendChild kf.row for kf in @views
+
+        @table.parentNode.appendChild @save_button
+        @
 
 
 class Options
@@ -124,7 +162,12 @@ class Options
         chrome.runtime.sendMessage type: 'init_options', (resp) =>
             @mode = resp.mode
             @color = resp.color
+            console.log 'got keymode %s', resp.keymode
             @table = new KFTable $('#keyframes'), resp.keymode
+
+            @table.add kf for kf in resp.kfs
+            @table.create()
+                .render()
 
             $ '#color'
                 .value = C.rgb_to_hex resp.color
@@ -132,8 +175,6 @@ class Options
             $ '#mode'
                 .checked = @mode is 'auto'
             @toggle_slides()
-
-            @table.add kf for kf in resp.kfs.sort (a, b) -> a.altitude - b.altitude
 
         self = this
         $ '#color'

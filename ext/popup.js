@@ -268,32 +268,45 @@ helpers = {
   angle_asin: function(x) {
     return this.to_angle(Math.asin(x));
   },
-  interpolate: function(alt, dir, kf1, kf2, min, max) {
-    var t;
-    if (kf1.direction * kf2.direction >= 0) {
-      if (dir * kf1.direction >= 0) {
-        t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude);
-      } else {
-        if (dir) {
-          t = (alt + kf1.altitude - 2 * min) / (2 * (max - min) - (kf2.altitude - kf1.altitude));
+  interpolate: function(keymode, alt, dir, kf1, kf2, min, max) {
+    var delta_minutes, minutes_since_last, now, t;
+    if (keymode === 'altitude') {
+      if (kf1.direction * kf2.direction >= 0) {
+        if (dir * kf1.direction >= 0) {
+          t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude);
         } else {
-          t = (2 * max - alt - kf1.altitude) / (2 * (max - min) - (kf1.altitude - kf2.altitude));
+          if (dir) {
+            t = (alt + kf1.altitude - 2 * min) / (2 * (max - min) - (kf2.altitude - kf1.altitude));
+          } else {
+            t = (2 * max - alt - kf1.altitude) / (2 * (max - min) - (kf1.altitude - kf2.altitude));
+          }
+        }
+      } else {
+        if (dir * kf1.direction >= 0) {
+          if (dir) {
+            t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
+          } else {
+            t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
+          }
+        } else {
+          if (dir) {
+            t = (kf1.altitude + alt - 2 * min) / (kf1.altitude + kf2.altitude - 2 * min);
+          } else {
+            t = (2 * max - kf1.altitude - alt) / (2 * max - kf1.altitude - kf2.altitude);
+          }
         }
       }
     } else {
-      if (dir * kf1.direction >= 0) {
-        if (dir) {
-          t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
-        } else {
-          t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
-        }
-      } else {
-        if (dir) {
-          t = (kf1.altitude + alt - 2 * min) / (kf1.altitude + kf2.altitude - 2 * min);
-        } else {
-          t = (2 * max - kf1.altitude - alt) / (2 * max - kf1.altitude - kf2.altitude);
-        }
+      now = new Date();
+      delta_minutes = kf2.time[0] * 60 + kf2.time[1] - kf1.time[0] * 60 + kf1.time[1];
+      if (delta_minutes < 0) {
+        delta_minutes += 24 * 60;
       }
+      minutes_since_last = now.getHours() * 60 + now.getMinutes() - kf1.time[0] * 60 - kf1.time[1];
+      if (minutes_since_last < 0) {
+        minutes_since_last += 24 * 60;
+      }
+      t = minutes_since_last / delta_minutes;
     }
     return this._interpolate_colors(kf1.value, kf2.value, t);
   },

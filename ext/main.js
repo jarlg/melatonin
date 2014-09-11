@@ -146,7 +146,7 @@ App = (function() {
           _this.refresh_overlay(null, resp);
           return true;
         } else if (req.type === 'init_options') {
-          _this.storage.get(['mode', 'kfs', 'color'], resp);
+          _this.storage.get(['mode', 'keymode', 'kfs', 'color'], resp);
           return true;
         } else if (req.type === 'set') {
           if (req.opac != null) {
@@ -169,7 +169,8 @@ App = (function() {
             opac: req.opac != null ? req.opac : void 0,
             kfs: req.kfs != null ? req.kfs : void 0,
             color: req.color != null ? req.color : void 0,
-            mode: req.mode != null ? req.mode : void 0
+            mode: req.mode != null ? req.mode : void 0,
+            keymode: req.keymode != null ? req.keymode : void 0
           }, function() {
             return resp(chrome.runtime.lastError == null ? true : false);
           });
@@ -184,7 +185,7 @@ App = (function() {
   };
 
   App.prototype.refresh_overlay = function(tab, resp) {
-    return this.storage.get(['mode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'], function(it) {
+    return this.storage.get(['mode', 'keymode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'], function(it) {
       var color;
       color = K.choose_color(it);
       if (tab != null) {
@@ -203,7 +204,7 @@ App = (function() {
   };
 
   App.prototype.refresh_all_overlays = function() {
-    return this.storage.get(['mode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'], function(it) {
+    return this.storage.get(['mode', 'keymode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'], function(it) {
       var color;
       color = K.choose_color(it);
       return chrome.tabs.query({}, function(tabs) {
@@ -386,32 +387,45 @@ helpers = {
   angle_asin: function(x) {
     return this.to_angle(Math.asin(x));
   },
-  interpolate: function(alt, dir, kf1, kf2, min, max) {
-    var t;
-    if (kf1.direction * kf2.direction >= 0) {
-      if (dir * kf1.direction >= 0) {
-        t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude);
-      } else {
-        if (dir) {
-          t = (alt + kf1.altitude - 2 * min) / (2 * (max - min) - (kf2.altitude - kf1.altitude));
+  interpolate: function(keymode, alt, dir, kf1, kf2, min, max) {
+    var delta_minutes, minutes_since_last, now, t;
+    if (keymode === 'altitude') {
+      if (kf1.direction * kf2.direction >= 0) {
+        if (dir * kf1.direction >= 0) {
+          t = (alt - kf1.altitude) / (kf2.altitude - kf1.altitude);
         } else {
-          t = (2 * max - alt - kf1.altitude) / (2 * (max - min) - (kf1.altitude - kf2.altitude));
+          if (dir) {
+            t = (alt + kf1.altitude - 2 * min) / (2 * (max - min) - (kf2.altitude - kf1.altitude));
+          } else {
+            t = (2 * max - alt - kf1.altitude) / (2 * (max - min) - (kf1.altitude - kf2.altitude));
+          }
+        }
+      } else {
+        if (dir * kf1.direction >= 0) {
+          if (dir) {
+            t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
+          } else {
+            t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
+          }
+        } else {
+          if (dir) {
+            t = (kf1.altitude + alt - 2 * min) / (kf1.altitude + kf2.altitude - 2 * min);
+          } else {
+            t = (2 * max - kf1.altitude - alt) / (2 * max - kf1.altitude - kf2.altitude);
+          }
         }
       }
     } else {
-      if (dir * kf1.direction >= 0) {
-        if (dir) {
-          t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
-        } else {
-          t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
-        }
-      } else {
-        if (dir) {
-          t = (kf1.altitude + alt - 2 * min) / (kf1.altitude + kf2.altitude - 2 * min);
-        } else {
-          t = (2 * max - kf1.altitude - alt) / (2 * max - kf1.altitude - kf2.altitude);
-        }
+      now = new Date();
+      delta_minutes = kf2.time[0] * 60 + kf2.time[1] - kf1.time[0] * 60 + kf1.time[1];
+      if (delta_minutes < 0) {
+        delta_minutes += 24 * 60;
       }
+      minutes_since_last = now.getHours() * 60 + now.getMinutes() - kf1.time[0] * 60 - kf1.time[1];
+      if (minutes_since_last < 0) {
+        minutes_since_last += 24 * 60;
+      }
+      t = minutes_since_last / delta_minutes;
     }
     return this._interpolate_colors(kf1.value, kf2.value, t);
   },
@@ -495,7 +509,7 @@ module.exports = jd;
 
 },{}],6:[function(require,module,exports){
 'use strict';
-var C, H, Keyframe, KeyframeView, obj;
+var AKeyframe, C, H, KeyframeView, TKeyframe, obj;
 
 C = require('./color_helpers.coffee');
 
@@ -509,24 +523,36 @@ if (typeof HTMLElement !== "undefined" && HTMLElement !== null) {
 }
 
 obj = {
-  Keyframe: Keyframe = (function() {
-    function Keyframe(altitude, option, value, direction) {
+  AKeyframe: AKeyframe = (function() {
+    function AKeyframe(altitude, option, value, direction) {
       this.altitude = altitude != null ? altitude : 0;
       this.option = option != null ? option : 'temperature';
       this.value = value != null ? value : 2700;
       this.direction = direction != null ? direction : 0;
     }
 
-    return Keyframe;
+    return AKeyframe;
+
+  })(),
+  TKeyframe: TKeyframe = (function() {
+    function TKeyframe(time, option, value) {
+      this.time = time != null ? time : [0, 0];
+      this.option = option != null ? option : 'temperature';
+      this.value = value != null ? value : 2700;
+    }
+
+    return TKeyframe;
 
   })(),
   KeyframeView: KeyframeView = (function() {
-    function KeyframeView(model, parent) {
+    function KeyframeView(model, row, keymode) {
       this.model = model;
-      this.parent = parent;
+      this.row = row;
+      this.keymode = keymode;
     }
 
     KeyframeView.prototype.option_map = {
+      opacity: 'number',
       temperature: 'number',
       color: 'color'
     };
@@ -537,15 +563,51 @@ obj = {
       both: 0
     };
 
+    KeyframeView.prototype.option_defaults = {
+      opacity: 0.5,
+      temperature: 2700,
+      color: '#ffffff'
+    };
+
+    KeyframeView.prototype.key_defaults = {
+      alt: 0,
+      time: [0, 0]
+    };
+
     KeyframeView.prototype.create = function() {
-      var input, opt, _fn, _fn1, _fn2, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
-      this.row = document.createElement('tr');
-      this.row.classList.add('keyframe');
-      this.altitude = document.createElement('input').set('type', 'number').set('value', this.model.altitude);
-      this.altitude.classList.add('key-input');
+      var opt, self, _fn, _fn1, _i, _j, _len, _len1, _ref, _ref1;
+      console.log('attempting to create %s kf', this.keymode);
+      self = this;
+      if (this.keymode === 'altitude') {
+        this.altitude = document.createElement('input').set('type', 'number').set('value', this.model.altitude);
+        this.altitude.classList.add('key-input');
+        this.altitude.addEventListener('input', function(event) {
+          return self.model.altitude = this.value;
+        });
+      } else if (this.keymode === 'time') {
+        this.time_hours = document.createElement('input').set('type', 'number').set('value', this.model.time[0]);
+        this.time_mins = document.createElement('input').set('type', 'number').set('value', this.model.time[1]);
+        this.time_hours.addEventListener('input', function(event) {
+          if (this.value < 0) {
+            this.value = 0;
+          } else if (this.value > 24) {
+            this.value = 24;
+          }
+          return self.model.time[0] = this.value;
+        });
+        this.time_mins.addEventListener('input', function(event) {
+          if (this.value < 0) {
+            this.value = 0;
+          } else if (this.value > 60) {
+            this.value = 60;
+          }
+          return self.model.time[1] = this.value;
+        });
+      }
+      console.log('done with key');
       this.option = document.createElement('select');
       this.option.classList.add('option-input');
-      _ref = ['color', 'temperature'];
+      _ref = ['color', 'temperature', 'opacity'];
       _fn = (function(_this) {
         return function(opt) {
           return _this.option.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (opt === _this.model.option ? true : void 0));
@@ -559,49 +621,34 @@ obj = {
       this.value.classList.add('value-input');
       this.set_value_type();
       this.set_value_value();
-      this.option.addEventListener('input', (function(_this) {
-        return function() {
-          _this.set_value_type();
-          return _this.set_value_value();
-        };
-      })(this));
-      this.direction = document.createElement('select');
-      this.direction.classList.add('direction-input');
-      _ref1 = ['asc', 'desc', 'both'];
-      _fn1 = (function(_this) {
-        return function(opt) {
-          return _this.direction.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (_this.direction_map[opt] === _this.model.direction ? true : void 0));
-        };
-      })(this);
-      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-        opt = _ref1[_j];
-        _fn1(opt);
+      this.option.addEventListener('input', function() {
+        self.set_value_type();
+        self.set_value_value();
+        return self.model.option = this.value;
+      });
+      this.value.addEventListener('input', function(event) {
+        return self.model.value = this.value;
+      });
+      console.log('done with options');
+      if (this.keymode === 'altitude') {
+        this.direction = document.createElement('select');
+        this.direction.classList.add('direction-input');
+        _ref1 = ['asc', 'desc', 'both'];
+        _fn1 = (function(_this) {
+          return function(opt) {
+            return _this.direction.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (_this.direction_map[opt] === _this.model.direction ? true : void 0));
+          };
+        })(this);
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          opt = _ref1[_j];
+          _fn1(opt);
+        }
+        this.direction.addEventListener('input', function(event) {
+          return self.model.direction = self.direction_map[this.value];
+        });
       }
       this["delete"] = document.createElement('button').set('innerHTML', '-');
       this["delete"].classList.add('delete', 'button');
-      _ref2 = ['altitude', 'option', 'value', 'direction', 'delete'];
-      _fn2 = (function(_this) {
-        return function(input) {
-          var self;
-          _this.row.appendChild(document.createElement('th')).appendChild(_this[input]);
-          if (input !== 'delete') {
-            self = _this;
-            return _this[input].addEventListener('input', function(event) {
-              if (this.type === 'color') {
-                return self.model[input] = C.hex_to_rgb(this.value);
-              } else if (input === 'direction') {
-                return self.model[input] = self.direction_map[this.value];
-              } else {
-                return self.model[input] = this.value;
-              }
-            });
-          }
-        };
-      })(this);
-      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-        input = _ref2[_k];
-        _fn2(input);
-      }
       return this;
     };
 
@@ -619,20 +666,40 @@ obj = {
     };
 
     KeyframeView.prototype.render = function() {
-      this.parent.appendChild(this.row);
+      var input, inputs, _fn, _i, _len;
+      if (this.keymode === 'altitude') {
+        inputs = ['altitude', 'option', 'value', 'direction', 'delete'];
+      } else {
+        this.row.appendChild(document.createElement('td')).appendChild(this.time_hours).parentNode.appendChild(this.time_mins);
+        inputs = ['option', 'value', 'delete'];
+      }
+      _fn = (function(_this) {
+        return function(input) {
+          if (_this[input] != null) {
+            return _this.row.appendChild(document.createElement('td')).appendChild(_this[input]);
+          }
+        };
+      })(this);
+      for (_i = 0, _len = inputs.length; _i < _len; _i++) {
+        input = inputs[_i];
+        _fn(input);
+      }
       return this;
     };
 
     KeyframeView.prototype.erase = function() {
-      this.parent.removeChild(this.row);
+      this.row.parentNode.removeChild(this.row);
       return this;
     };
 
     return KeyframeView;
 
   })(),
-  get_color: function(kfs, alt, dir, min, max) {
+  get_color: function(kfs, keymode, alt, dir, min, max) {
     var kf, last, next, _fn, _i, _len;
+    kfs.filter(function(kf) {
+      return kf[keymode] != null;
+    });
     _fn = function(kf) {
       if (kf.option === 'temperature') {
         kf.option = 'color';
@@ -648,63 +715,91 @@ obj = {
     } else if (kfs.length === 1) {
       return kfs[0].value;
     }
-    kfs.sort(function(a, b) {
-      return a.altitude - b.altitude;
-    });
-    last = this._get_last_kf(kfs, alt, dir);
-    next = this._get_next_kf(kfs, alt, dir);
+    if (keymode === 'altitude') {
+      kfs.sort(function(a, b) {
+        return a.altitude - b.altitude;
+      });
+    } else {
+      kfs.sort(function(a, b) {
+        return a.time[0] * 60 + a.time[1] - b.time[0] * 60 + b.time[1];
+      });
+    }
+    last = this._get_last_kf(kfs, keymode, alt, dir);
+    next = this._get_next_kf(kfs, keymode, alt, dir);
     if (next === last) {
       return last.value;
     }
-    return H.interpolate(alt, dir, last, next, min, max);
+    return H.interpolate(keymode, alt, dir, last, next, min, max);
   },
-  _get_last_kf: function(kfs, alt, dir) {
-    var cands;
-    cands = kfs.filter(function(kf) {
-      return kf.direction * dir >= 0 && (alt - kf.altitude) * dir >= 0;
-    });
-    if (cands.length > 0) {
-      if (dir === 1) {
-        return H.last(cands);
-      } else {
-        return cands[0];
+  _get_last_kf: function(kfs, keymode, alt, dir) {
+    var cands, date;
+    if (keymode === 'altitude') {
+      cands = kfs.filter(function(kf) {
+        return kf.direction * dir >= 0 && (alt - kf.altitude) * dir >= 0;
+      });
+      if (cands.length > 0) {
+        if (dir === 1) {
+          return H.last(cands);
+        } else {
+          return cands[0];
+        }
       }
-    }
-    cands = kfs.filter(function(kf) {
-      return kf.direction * dir <= 0;
-    });
-    if (dir === 1) {
-      return cands[0];
-    } else {
-      return H.last(cands);
-    }
-  },
-  _get_next_kf: function(kfs, alt, dir) {
-    var cands;
-    cands = kfs.filter(function(kf) {
-      return kf.direction * dir >= 0 && (kf.altitude - alt) * dir > 0;
-    });
-    if (cands.length > 0) {
+      cands = kfs.filter(function(kf) {
+        return kf.direction * dir <= 0;
+      });
       if (dir === 1) {
         return cands[0];
       } else {
         return H.last(cands);
       }
-    }
-    cands = kfs.filter(function(kf) {
-      return kf.direction * dir <= 0;
-    });
-    if (dir === 1) {
-      return H.last(cands);
     } else {
-      return cands[0];
+      date = new Date();
+      cands = kfs.filter(function(kf) {
+        return kf.time[0] < date.getHours() || (kf.time[0] === date.getHours() && kf.time[1] < date.getMinutes());
+      });
+      if (cands.length > 0) {
+        return last(cands);
+      }
+      return last(kfs);
+    }
+  },
+  _get_next_kf: function(kfs, keymode, alt, dir) {
+    var cands, date;
+    if (keymode === 'altitude') {
+      cands = kfs.filter(function(kf) {
+        return kf.direction * dir >= 0 && (kf.altitude - alt) * dir > 0;
+      });
+      if (cands.length > 0) {
+        if (dir === 1) {
+          return cands[0];
+        } else {
+          return H.last(cands);
+        }
+      }
+      cands = kfs.filter(function(kf) {
+        return kf.direction * dir <= 0;
+      });
+      if (dir === 1) {
+        return H.last(cands);
+      } else {
+        return cands[0];
+      }
+    } else {
+      date = new Date();
+      cands = kfs.filter(function(kf) {
+        return kf.time[0] > date.getHours() || (kf.time[0] === date.getHours && date.getMinutes() > kf.time[1]);
+      });
+      if (cands.length > 0) {
+        return cands[0];
+      }
+      return kfs[0];
     }
   },
   choose_color: function(it) {
     if (it.mode === 'manual') {
       return it.color;
     } else {
-      return this.get_color(it.kfs, it.alt, it.dir, it.min, it.max);
+      return this.get_color(it.kfs, it.keymode, it.alt, it.dir, it.min, it.max);
     }
   }
 };
@@ -721,9 +816,10 @@ K = require('./keyframes.coffee');
 App = require('./app.coffee');
 
 config = {
-  ver: '0.3.0',
+  ver: '0.3.1',
   last_update: 0,
   mode: 'auto',
+  keymode: 'altitude',
   alt: 0,
   lat: 0,
   long: 0,
@@ -731,8 +827,9 @@ config = {
   max: 90,
   dir: 1,
   color: null,
+  auto_opac: true,
   opac: 0.5,
-  kfs: [new K.Keyframe(0, 'temperature', 2700, 0), new K.Keyframe(90, 'temperature', 6300, 0)]
+  kfs: [new K.AKeyframe(0, 'temperature', 4500, 1), new K.AKeyframe('n', 'temperature', 6300, 0), new K.AKeyframe(0, 'temperature', 2700, -1)]
 };
 
 app = new App(config);
@@ -754,7 +851,7 @@ Storage = (function() {
     this.get(null, (function(_this) {
       return function(it) {
         var k, obj, v, _fn;
-        if ((it.ver == null) || it.ver < '0.3.0') {
+        if ((it.ver == null) || it.ver <= config.ver) {
           return _this.clear(function() {
             return _this.set(config, function() {
               _this.print();
