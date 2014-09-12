@@ -92,7 +92,7 @@ class KFTable
         @add_button.addEventListener 'click', (event) =>
             event.preventDefault()
             @add()
-            @table.insertBefore last(@views).render().row, @save_button
+            @table.appendChild last(@views).render().row
 
         @head_tr.appendChild document.createElement 'th'
             .appendChild @add_button

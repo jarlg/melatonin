@@ -64,9 +64,11 @@ obj =
                     @time_hours = document.createElement 'input'
                         .set 'type', 'number'
                         .set 'value', @model.time[0]
+                    @time_hours.classList.add 'hours'
                     @time_mins = document.createElement 'input'
                         .set 'type', 'number'
                         .set 'value', @model.time[1]
+                    @time_mins.classList.add 'minutes'
 
                     @time_hours.addEventListener 'input', (event) ->
                         if @value < 0
@@ -150,7 +152,11 @@ obj =
                     @row
                         .appendChild document.createElement 'td'
                         .appendChild @time_hours
+                        .parentNode.appendChild document.createElement 'label'
+                            .set 'innerHTML', 'h'
                         .parentNode.appendChild @time_mins
+                        .parentNode.appendChild document.createElement 'label'
+                            .set 'innerHTML', 'min'
 
                     inputs = ['option', 'value', 'delete']
 
