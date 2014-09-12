@@ -299,7 +299,9 @@ obj = {
         });
       } else if (this.keymode === 'time') {
         this.time_hours = document.createElement('input').set('type', 'number').set('value', this.model.time[0]);
+        this.time_hours.classList.add('hours');
         this.time_mins = document.createElement('input').set('type', 'number').set('value', this.model.time[1]);
+        this.time_mins.classList.add('minutes');
         this.time_hours.addEventListener('input', function(event) {
           if (this.value < 0) {
             this.value = 0;
@@ -383,7 +385,7 @@ obj = {
       if (this.keymode === 'altitude') {
         inputs = ['altitude', 'option', 'value', 'direction', 'delete'];
       } else {
-        this.row.appendChild(document.createElement('td')).appendChild(this.time_hours).parentNode.appendChild(this.time_mins);
+        this.row.appendChild(document.createElement('td')).appendChild(this.time_hours).parentNode.appendChild(document.createElement('label')).set('innerHTML', 'h').parentNode.appendChild(this.time_mins).parentNode.appendChild(document.createElement('label')).set('innerHTML', 'min');
         inputs = ['option', 'value', 'delete'];
       }
       _fn = (function(_this) {
@@ -664,7 +666,7 @@ KFTable = (function() {
       return function(event) {
         event.preventDefault();
         _this.add();
-        return _this.table.insertBefore(last(_this.views).render().row, _this.save_button);
+        return _this.table.appendChild(last(_this.views).render().row);
       };
     })(this));
     this.head_tr.appendChild(document.createElement('th')).appendChild(this.add_button);
