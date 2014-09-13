@@ -41,39 +41,21 @@ class KFTable
             .delete.addEventListener 'click', (event) =>
                 event.preventDefault()
                 @views[idx].erase()
-                @kfs.splice @kfs.indexOf @views[idx].model
+                @views.splice idx, 1
+                @kfs.splice @kfs.indexOf(@views[idx].model), 1
 
-    clear: ->
-        view.erase() for view in @views
-        @views.length = 0
+    clear_header: ->
+        @head_tr.parentNode.removeChild @head_tr if @head_tr.parentNode?
+        @
 
-    create: ->
-        console.log 'creating KFTable'
+    clear_views: ->
+        if @views.length > 0
+            view.erase() for view in @views
+            @views.length = 0
+        @
+
+    create_header: ->
         @head_tr = document.createElement 'tr'
-
-        @keymode_input = document.createElement 'select'
-
-        for opt in ['altitude', 'time']
-            do =>
-                @keymode_input.appendChild document.createElement 'option'
-                    .set 'innerHTML', opt
-                    .set 'selected', (true if opt is @keymode)
-
-        self = this
-        @keymode_input.addEventListener 'input', (event) ->
-            event.preventDefault()
-            self.keymode = @value
-            console.log 'clearing'
-            self.clear()
-            console.log self.views
-            for kf in self.kfs
-                do (kf) =>
-                    console.log kf
-                    console.log kf[@value]?
-                    if kf[@value]?
-                        self.createView kf
-
-            self.render()
 
         @head_tr.appendChild document.createElement 'th'
             .appendChild @keymode_input
@@ -84,6 +66,43 @@ class KFTable
                     @head_tr.appendChild document.createElement 'th'
                         .set 'innerHTML', title
 
+        @head_tr.appendChild document.createElement 'th'
+            .appendChild @add_button
+
+        @
+
+    create: ->
+        console.log 'creating KFTable'
+
+        @keymode_input = document.createElement 'select'
+
+        for opt in ['altitude', 'time']
+            do =>
+                @keymode_input.appendChild document.createElement 'option'
+                    .set 'innerHTML', opt
+                    .set 'selected', (true if opt is @keymode)
+
+        console.log 'made keymode input'
+
+        self = this
+        @keymode_input.addEventListener 'input', (event) ->
+            event.preventDefault()
+            self.keymode = @value
+            console.log 'clearing'
+            self.clear_views()
+            console.log self.views
+            for kf in self.kfs
+                do (kf) =>
+                    console.log kf
+                    console.log kf[@value]?
+                    if kf[@value]?
+                        self.createView kf
+            self.clear_header()
+            self.create_header()
+            self.render()
+
+        console.log 'bound keymode input'
+
         @add_button = document.createElement 'button'
             .set 'id', 'add'
             .set 'innerHTML', '+'
@@ -93,9 +112,6 @@ class KFTable
             event.preventDefault()
             @add()
             @table.appendChild last(@views).render().row
-
-        @head_tr.appendChild document.createElement 'th'
-            .appendChild @add_button
 
         @save_button = document.createElement 'button'
             .set 'id', 'save'
@@ -125,35 +141,19 @@ class KFTable
                 ), 1000
 
         console.log 'added EventListeners'
+        @create_header()
         @
 
     render: ->
         console.log 'rendering KFTable'
-        # clear table
-        @table.removeChild @head_tr if @head_tr.parentNode is @table
-        console.log 'removed head_tr'
-
-        if @views.length > 0
-            console.log @views.length
-            console.log @views
-            for kf in @views
-                do =>
-                    if kf.row.parentNode is @table
-                        @table.removeChild kf.row
-
-        console.log 'removed views'
-        @table.parentNode.removeChild @save_button if @save_button.parentNode is @table.parentNode
-        console.log 'removed save button'
-
-        console.log 'cleared parent..'
 
         @table.appendChild @head_tr
         console.log 'rendered tr'
-        kf.render() for kf in @views
+        view.render() for view in @views
 
-        @table.appendChild kf.row for kf in @views
-
-        @table.parentNode.appendChild @save_button
+        @table.appendChild view.row for view in @views
+        if not @save_button.parentNode?
+            @table.parentNode.appendChild @save_button
         @
 
 

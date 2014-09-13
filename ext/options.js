@@ -593,25 +593,55 @@ KFTable = (function() {
       return function(event) {
         event.preventDefault();
         _this.views[idx].erase();
-        return _this.kfs.splice(_this.kfs.indexOf(_this.views[idx].model));
+        _this.views.splice(idx, 1);
+        return _this.kfs.splice(_this.kfs.indexOf(_this.views[idx].model), 1);
       };
     })(this));
   };
 
-  KFTable.prototype.clear = function() {
-    var view, _i, _len, _ref;
-    _ref = this.views;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      view = _ref[_i];
-      view.erase();
+  KFTable.prototype.clear_header = function() {
+    if (this.head_tr.parentNode != null) {
+      this.head_tr.parentNode.removeChild(this.head_tr);
     }
-    return this.views.length = 0;
+    return this;
+  };
+
+  KFTable.prototype.clear_views = function() {
+    var view, _i, _len, _ref;
+    if (this.views.length > 0) {
+      _ref = this.views;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        view = _ref[_i];
+        view.erase();
+      }
+      this.views.length = 0;
+    }
+    return this;
+  };
+
+  KFTable.prototype.create_header = function() {
+    var title, _fn, _i, _len, _ref;
+    this.head_tr = document.createElement('tr');
+    this.head_tr.appendChild(document.createElement('th')).appendChild(this.keymode_input);
+    _ref = ['option', 'value', 'direction'];
+    _fn = (function(_this) {
+      return function() {
+        if (title !== 'direction' || _this.keymode !== 'time') {
+          return _this.head_tr.appendChild(document.createElement('th')).set('innerHTML', title);
+        }
+      };
+    })(this);
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      title = _ref[_i];
+      _fn();
+    }
+    this.head_tr.appendChild(document.createElement('th')).appendChild(this.add_button);
+    return this;
   };
 
   KFTable.prototype.create = function() {
-    var opt, self, title, _fn, _fn1, _i, _j, _len, _len1, _ref, _ref1;
+    var opt, self, _fn, _i, _len, _ref;
     console.log('creating KFTable');
-    this.head_tr = document.createElement('tr');
     this.keymode_input = document.createElement('select');
     _ref = ['altitude', 'time'];
     _fn = (function(_this) {
@@ -623,13 +653,14 @@ KFTable = (function() {
       opt = _ref[_i];
       _fn();
     }
+    console.log('made keymode input');
     self = this;
     this.keymode_input.addEventListener('input', function(event) {
       var kf, _fn1, _j, _len1, _ref1;
       event.preventDefault();
       self.keymode = this.value;
       console.log('clearing');
-      self.clear();
+      self.clear_views();
       console.log(self.views);
       _ref1 = self.kfs;
       _fn1 = (function(_this) {
@@ -645,21 +676,11 @@ KFTable = (function() {
         kf = _ref1[_j];
         _fn1(kf);
       }
+      self.clear_header();
+      self.create_header();
       return self.render();
     });
-    this.head_tr.appendChild(document.createElement('th')).appendChild(this.keymode_input);
-    _ref1 = ['option', 'value', 'direction'];
-    _fn1 = (function(_this) {
-      return function() {
-        if (title !== 'direction' || _this.keymode !== 'time') {
-          return _this.head_tr.appendChild(document.createElement('th')).set('innerHTML', title);
-        }
-      };
-    })(this);
-    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-      title = _ref1[_j];
-      _fn1();
-    }
+    console.log('bound keymode input');
     this.add_button = document.createElement('button').set('id', 'add').set('innerHTML', '+');
     this.add_button.classList.add('button');
     this.add_button.addEventListener('click', (function(_this) {
@@ -669,7 +690,6 @@ KFTable = (function() {
         return _this.table.appendChild(last(_this.views).render().row);
       };
     })(this));
-    this.head_tr.appendChild(document.createElement('th')).appendChild(this.add_button);
     this.save_button = document.createElement('button').set('id', 'save').set('innerHTML', 'save');
     this.save_button.classList.add('button');
     this.save_button.addEventListener('click', (function(_this) {
@@ -698,51 +718,28 @@ KFTable = (function() {
       };
     })(this));
     console.log('added EventListeners');
+    this.create_header();
     return this;
   };
 
   KFTable.prototype.render = function() {
-    var kf, _fn, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+    var view, _i, _j, _len, _len1, _ref, _ref1;
     console.log('rendering KFTable');
-    if (this.head_tr.parentNode === this.table) {
-      this.table.removeChild(this.head_tr);
-    }
-    console.log('removed head_tr');
-    if (this.views.length > 0) {
-      console.log(this.views.length);
-      console.log(this.views);
-      _ref = this.views;
-      _fn = (function(_this) {
-        return function() {
-          if (kf.row.parentNode === _this.table) {
-            return _this.table.removeChild(kf.row);
-          }
-        };
-      })(this);
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        kf = _ref[_i];
-        _fn();
-      }
-    }
-    console.log('removed views');
-    if (this.save_button.parentNode === this.table.parentNode) {
-      this.table.parentNode.removeChild(this.save_button);
-    }
-    console.log('removed save button');
-    console.log('cleared parent..');
     this.table.appendChild(this.head_tr);
     console.log('rendered tr');
+    _ref = this.views;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      view = _ref[_i];
+      view.render();
+    }
     _ref1 = this.views;
     for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-      kf = _ref1[_j];
-      kf.render();
+      view = _ref1[_j];
+      this.table.appendChild(view.row);
     }
-    _ref2 = this.views;
-    for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-      kf = _ref2[_k];
-      this.table.appendChild(kf.row);
+    if (this.save_button.parentNode == null) {
+      this.table.parentNode.appendChild(this.save_button);
     }
-    this.table.parentNode.appendChild(this.save_button);
     return this;
   };
 
