@@ -27,6 +27,14 @@ obj =
     KeyframeView:
         class KeyframeView
             constructor: (@model, @row, @keymode) ->
+                if @model.option is 'color'
+                    @color = C.rgb_to_hex @model.value
+                else
+                    @color = null
+                    for opt in ['temperature', 'opacity']
+                        do =>
+                            @[opt] = if opt is @model.option then @model.value else null
+                @
 
             option_map:
                 opacity: 'number',
@@ -39,7 +47,7 @@ obj =
                 both: 0
 
             option_defaults:
-                opacity: 0.5,
+                opacity: 50,
                 temperature: 2700,
                 color: '#ffffff'
 
@@ -58,6 +66,10 @@ obj =
                     @altitude.classList.add 'key-input'
 
                     @altitude.addEventListener 'input', (event) ->
+                        if @value > 99
+                            @value = 99
+                        else if @value < -99
+                            @value = -99
                         self.model.altitude = @value
 
                 else if @keymode is 'time'
@@ -73,16 +85,16 @@ obj =
                     @time_hours.addEventListener 'input', (event) ->
                         if @value < 0
                             @value = 0
-                        else if @value > 24
-                            @value = 24
+                        else if @value > 23
+                            @value = 23
 
                         self.model.time[0] = @value
 
                     @time_mins.addEventListener 'input', (event) ->
                         if @value < 0
                             @value = 0
-                        else if @value > 60
-                            @value = 60
+                        else if @value > 59
+                            @value = 59
 
                         self.model.time[1] = @value
 
@@ -109,8 +121,8 @@ obj =
                     self.model.option = @value
 
                 @value.addEventListener 'input', (event) ->
-                    # put limits here? 
-                    self.model.value = @value
+                    self.model.value = C.hex_to_rgb @value
+                    self[self.option.value] = @value
 
                 console.log 'done with options'
 
@@ -137,13 +149,24 @@ obj =
 
             set_value_type: ->
                 @value.type = @option_map[@option.value]
-                if @value.type is 'color'
-                    @value.classList.add 'color-input'
-                else
-                    @value.classList.remove 'color-input'
+                for opt in ['color', 'opacity', 'temperature']
+                    do =>
+                        @value.classList.toggle opt + '-input', @option.value is opt
 
             set_value_value: ->
-                @value.value = if @value.type is 'color' then C.rgb_to_hex(@model.value) else @model.value
+                if @option.value is 'color'
+                    if @color?
+                        @value.value = @color
+                    else
+                        @value.value = @option_defaults['color']
+                else
+                    for opt in ['temperature', 'opacity']
+                        do =>
+                            if @option.value is opt
+                                if @[opt]?
+                                    @value.value = @[opt]
+                                else
+                                    @value.value = @option_defaults[opt]
 
             render: -> 
                 if @keymode is 'altitude'
@@ -170,8 +193,35 @@ obj =
 
             erase:  -> @row.parentNode.removeChild @row; @
 
+    get_opac: (it) ->
+        it.kfs = it.kfs.filter (kf) -> kf[it.keymode]? and kf.option is 'opacity'
+
+        if kfs.length is 0
+            return 0
+        else if kfs.length is 1
+            return kfs[0].value / 100
+
+        if it.keymode is 'altitude'
+            for kf in it.kfs
+                do ->
+                    if kf.altitude > 90
+                        kf.altitude = it.max
+                    else if kf.altitude < -90
+                        kf.altitude = it.min
+            it.kfs.sort (a, b) -> a.altitude - b.altitude
+        else
+            it.kfs.sort (a, b) -> a.time[0]*60+a.time[1] - b.time[0]*60+b.time[1]
+
+        last = @_get_last_kf kfs, keymode, alt, dir
+        next = @_get_next_kf kfs, keymode, alt, dir
+
+        if next is last
+            return last.value / 100
+
+        0.01 * H.interpolate keymode, alt, dir, last, next, min, max
+
     get_color: (kfs, keymode, alt, dir, min, max) ->
-        kfs.filter (kf) -> kf[keymode]?
+        kfs = kfs.filter (kf) -> kf[keymode]? and H.contains kf.option, ['temperature', 'color']
 
         for kf in kfs
             do (kf) ->
@@ -185,6 +235,12 @@ obj =
             return kfs[0].value
 
         if keymode is 'altitude'
+            for kf in kfs
+                do ->
+                    if kf.altitude > 90
+                        kf.altitude = max
+                    else if kf.altitude < -90
+                        kf.altitude = min
             kfs.sort (a, b) -> a.altitude - b.altitude
         else
             kfs.sort (a, b) -> a.time[0]*60+a.time[1] - b.time[0]*60+b.time[1]
@@ -194,6 +250,8 @@ obj =
 
         if next is last
             return last.value
+
+        console.log [last, next]
 
         H.interpolate keymode, alt, dir, last, next, min, max
 

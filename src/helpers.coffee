@@ -71,7 +71,10 @@ helpers =
 
             t = minutes_since_last / delta_minutes
 
-        return @_interpolate_colors kf1.value, kf2.value, t
+        if kf1.option is 'color'
+            return @_interpolate_colors kf1.value, kf2.value, t
+        else if kf1.option is 'opacity'
+            return (t * kf2.value + (1-t) * kf1.value).toFixed 0
 
      # t as in parametrics: t*rgb1 + (1-t)rgb2 -> result
     _interpolate_colors: (rgb1, rgb2, t) -> 

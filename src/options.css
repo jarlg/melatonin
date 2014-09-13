@@ -85,6 +85,7 @@ table .button:hover {
     color: white;
     width: 100%;
     padding: 10px;
+    transition: all .2s ease-in;
 }
 
 #save:hover {
@@ -93,14 +94,24 @@ table .button:hover {
 }
 
 #save.button-success {
-    background: white;
-    color: #7cdd50;
+    color: white;
+    background: #7cdd50;
     border: 1px solid #7cdd50;
 }
 
-#save.button-failure {
+#save.button-success:hover {
     background: white;
+    color: #7cdd50;
+}
+
+#save.button-failure {
+    color: white;
+    background: #F10619;
     border: 1px solid #F10619;
+}
+
+#save.button-failure:hover {
+    background: white;
     color: #F10619;
 }
 

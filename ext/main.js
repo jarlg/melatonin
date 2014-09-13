@@ -127,7 +127,8 @@ App = (function() {
     });
     chrome.alarms.onAlarm.addListener((function(_this) {
       return function() {
-        return _this.update_storage();
+        _this.update_storage();
+        return _this.update_opacity();
       };
     })(this));
     chrome.tabs.onUpdated.addListener((function(_this) {
@@ -170,7 +171,8 @@ App = (function() {
             kfs: req.kfs != null ? req.kfs : void 0,
             color: req.color != null ? req.color : void 0,
             mode: req.mode != null ? req.mode : void 0,
-            keymode: req.keymode != null ? req.keymode : void 0
+            keymode: req.keymode != null ? req.keymode : void 0,
+            auto_opac: req.auto_opac != null ? req.auto_opac : void 0
           }, function() {
             return resp(chrome.runtime.lastError == null ? true : false);
           });
@@ -180,12 +182,14 @@ App = (function() {
     })(this));
   }
 
+  App.prototype.essentials = ['mode', 'keymode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'];
+
   App.prototype.errHandler = function(err) {
     return console.log(err.stack || err);
   };
 
   App.prototype.refresh_overlay = function(tab, resp) {
-    return this.storage.get(['mode', 'keymode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'], function(it) {
+    return this.storage.get(this.essentials, function(it) {
       var color;
       color = K.choose_color(it);
       if (tab != null) {
@@ -204,7 +208,7 @@ App = (function() {
   };
 
   App.prototype.refresh_all_overlays = function() {
-    return this.storage.get(['mode', 'keymode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'], function(it) {
+    return this.storage.get(this.essentials, function(it) {
       var color;
       color = K.choose_color(it);
       return chrome.tabs.query({}, function(tabs) {
@@ -220,6 +224,16 @@ App = (function() {
         }
         return _results;
       });
+    });
+  };
+
+  App.prototype.update_opacity = function() {
+    return this.storage.get(this.essentials, function(it) {
+      if (it.mode === 'auto' && it.auto_opac) {
+        return this.storage.set({
+          opac: K.get_opac(it)
+        });
+      }
     });
   };
 
@@ -427,7 +441,11 @@ helpers = {
       }
       t = minutes_since_last / delta_minutes;
     }
-    return this._interpolate_colors(kf1.value, kf2.value, t);
+    if (kf1.option === 'color') {
+      return this._interpolate_colors(kf1.value, kf2.value, t);
+    } else if (kf1.option === 'opacity') {
+      return (t * kf2.value + (1 - t) * kf1.value).toFixed(0);
+    }
   },
   _interpolate_colors: function(rgb1, rgb2, t) {
     var attr, rgb, _fn, _i, _len, _ref;
@@ -546,9 +564,26 @@ obj = {
   })(),
   KeyframeView: KeyframeView = (function() {
     function KeyframeView(model, row, keymode) {
+      var opt, _fn, _i, _len, _ref;
       this.model = model;
       this.row = row;
       this.keymode = keymode;
+      if (this.model.option === 'color') {
+        this.color = C.rgb_to_hex(this.model.value);
+      } else {
+        this.color = null;
+        _ref = ['temperature', 'opacity'];
+        _fn = (function(_this) {
+          return function() {
+            return _this[opt] = opt === _this.model.option ? _this.model.value : null;
+          };
+        })(this);
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          opt = _ref[_i];
+          _fn();
+        }
+      }
+      this;
     }
 
     KeyframeView.prototype.option_map = {
@@ -564,7 +599,7 @@ obj = {
     };
 
     KeyframeView.prototype.option_defaults = {
-      opacity: 0.5,
+      opacity: 50,
       temperature: 2700,
       color: '#ffffff'
     };
@@ -582,6 +617,11 @@ obj = {
         this.altitude = document.createElement('input').set('type', 'number').set('value', this.model.altitude);
         this.altitude.classList.add('key-input');
         this.altitude.addEventListener('input', function(event) {
+          if (this.value > 99) {
+            this.value = 99;
+          } else if (this.value < -99) {
+            this.value = -99;
+          }
           return self.model.altitude = this.value;
         });
       } else if (this.keymode === 'time') {
@@ -592,16 +632,16 @@ obj = {
         this.time_hours.addEventListener('input', function(event) {
           if (this.value < 0) {
             this.value = 0;
-          } else if (this.value > 24) {
-            this.value = 24;
+          } else if (this.value > 23) {
+            this.value = 23;
           }
           return self.model.time[0] = this.value;
         });
         this.time_mins.addEventListener('input', function(event) {
           if (this.value < 0) {
             this.value = 0;
-          } else if (this.value > 60) {
-            this.value = 60;
+          } else if (this.value > 59) {
+            this.value = 59;
           }
           return self.model.time[1] = this.value;
         });
@@ -629,7 +669,8 @@ obj = {
         return self.model.option = this.value;
       });
       this.value.addEventListener('input', function(event) {
-        return self.model.value = this.value;
+        self.model.value = C.hex_to_rgb(this.value);
+        return self[self.option.value] = this.value;
       });
       console.log('done with options');
       if (this.keymode === 'altitude') {
@@ -655,16 +696,48 @@ obj = {
     };
 
     KeyframeView.prototype.set_value_type = function() {
+      var opt, _i, _len, _ref, _results;
       this.value.type = this.option_map[this.option.value];
-      if (this.value.type === 'color') {
-        return this.value.classList.add('color-input');
-      } else {
-        return this.value.classList.remove('color-input');
+      _ref = ['color', 'opacity', 'temperature'];
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        opt = _ref[_i];
+        _results.push((function(_this) {
+          return function() {
+            return _this.value.classList.toggle(opt + '-input', _this.option.value === opt);
+          };
+        })(this)());
       }
+      return _results;
     };
 
     KeyframeView.prototype.set_value_value = function() {
-      return this.value.value = this.value.type === 'color' ? C.rgb_to_hex(this.model.value) : this.model.value;
+      var opt, _i, _len, _ref, _results;
+      if (this.option.value === 'color') {
+        if (this.color != null) {
+          return this.value.value = this.color;
+        } else {
+          return this.value.value = this.option_defaults['color'];
+        }
+      } else {
+        _ref = ['temperature', 'opacity'];
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          opt = _ref[_i];
+          _results.push((function(_this) {
+            return function() {
+              if (_this.option.value === opt) {
+                if (_this[opt] != null) {
+                  return _this.value.value = _this[opt];
+                } else {
+                  return _this.value.value = _this.option_defaults[opt];
+                }
+              }
+            };
+          })(this)());
+        }
+        return _results;
+      }
     };
 
     KeyframeView.prototype.render = function() {
@@ -697,10 +770,48 @@ obj = {
     return KeyframeView;
 
   })(),
+  get_opac: function(it) {
+    var kf, last, next, _fn, _i, _len, _ref;
+    it.kfs = it.kfs.filter(function(kf) {
+      return (kf[it.keymode] != null) && kf.option === 'opacity';
+    });
+    if (kfs.length === 0) {
+      return 0;
+    } else if (kfs.length === 1) {
+      return kfs[0].value / 100;
+    }
+    if (it.keymode === 'altitude') {
+      _ref = it.kfs;
+      _fn = function() {
+        if (kf.altitude > 90) {
+          return kf.altitude = it.max;
+        } else if (kf.altitude < -90) {
+          return kf.altitude = it.min;
+        }
+      };
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        kf = _ref[_i];
+        _fn();
+      }
+      it.kfs.sort(function(a, b) {
+        return a.altitude - b.altitude;
+      });
+    } else {
+      it.kfs.sort(function(a, b) {
+        return a.time[0] * 60 + a.time[1] - b.time[0] * 60 + b.time[1];
+      });
+    }
+    last = this._get_last_kf(kfs, keymode, alt, dir);
+    next = this._get_next_kf(kfs, keymode, alt, dir);
+    if (next === last) {
+      return last.value / 100;
+    }
+    return 0.01 * H.interpolate(keymode, alt, dir, last, next, min, max);
+  },
   get_color: function(kfs, keymode, alt, dir, min, max) {
-    var kf, last, next, _fn, _i, _len;
-    kfs.filter(function(kf) {
-      return kf[keymode] != null;
+    var kf, last, next, _fn, _fn1, _i, _j, _len, _len1;
+    kfs = kfs.filter(function(kf) {
+      return (kf[keymode] != null) && H.contains(kf.option, ['temperature', 'color']);
     });
     _fn = function(kf) {
       if (kf.option === 'temperature') {
@@ -718,6 +829,17 @@ obj = {
       return kfs[0].value;
     }
     if (keymode === 'altitude') {
+      _fn1 = function() {
+        if (kf.altitude > 90) {
+          return kf.altitude = max;
+        } else if (kf.altitude < -90) {
+          return kf.altitude = min;
+        }
+      };
+      for (_j = 0, _len1 = kfs.length; _j < _len1; _j++) {
+        kf = kfs[_j];
+        _fn1();
+      }
       kfs.sort(function(a, b) {
         return a.altitude - b.altitude;
       });
@@ -731,6 +853,7 @@ obj = {
     if (next === last) {
       return last.value;
     }
+    console.log([last, next]);
     return H.interpolate(keymode, alt, dir, last, next, min, max);
   },
   _get_last_kf: function(kfs, keymode, alt, dir) {
@@ -853,7 +976,7 @@ Storage = (function() {
     this.get(null, (function(_this) {
       return function(it) {
         var k, obj, v, _fn;
-        if ((it.ver == null) || it.ver <= config.ver) {
+        if ((it.ver == null) || it.ver < config.ver) {
           return _this.clear(function() {
             return _this.set(config, function() {
               _this.print();
@@ -931,7 +1054,7 @@ Storage = (function() {
           if (!__hasProp.call(changes, k)) continue;
           v = changes[k];
           _results.push((function(k, v) {
-            if (H.contains(k, ['alt', 'kfs', 'mode', 'color'])) {
+            if (H.contains(k, ['alt', 'kfs', 'mode', 'keymode', 'auto_opac', 'color'])) {
               return chrome.runtime.sendMessage({
                 type: 'refresh_all'
               });

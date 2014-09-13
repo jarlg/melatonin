@@ -308,7 +308,11 @@ helpers = {
       }
       t = minutes_since_last / delta_minutes;
     }
-    return this._interpolate_colors(kf1.value, kf2.value, t);
+    if (kf1.option === 'color') {
+      return this._interpolate_colors(kf1.value, kf2.value, t);
+    } else if (kf1.option === 'opacity') {
+      return (t * kf2.value + (1 - t) * kf1.value).toFixed(0);
+    }
   },
   _interpolate_colors: function(rgb1, rgb2, t) {
     var attr, rgb, _fn, _i, _len, _ref;
