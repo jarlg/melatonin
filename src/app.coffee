@@ -14,7 +14,9 @@ class App
 
         # events
         chrome.alarms.create 'update_altitude', periodInMinutes: 15
-        chrome.alarms.onAlarm.addListener => @update_storage()
+        chrome.alarms.onAlarm.addListener =>
+            @update_storage()
+            @update_opacity()
 
         chrome.tabs.onUpdated.addListener (_, __, tab) => @refresh_overlay tab
 
@@ -43,26 +45,29 @@ class App
                     kfs: req.kfs if req.kfs?,
                     color: req.color if req.color?,
                     mode: req.mode if req.mode?,
-                    keymode: req.keymode if req.keymode?
+                    keymode: req.keymode if req.keymode?,
+                    auto_opac: req.auto_opac if req.auto_opac?
                 }, -> resp if not chrome.runtime.lastError? then true else false
-
                 true
+
+
+    essentials: [
+        'mode'
+        'keymode'
+        'alt' 
+        'min'
+        'max'
+        'color'
+        'kfs'
+        'opac'
+        'dir'
+    ],
 
     errHandler: (err) ->
         console.log err.stack or err
 
     refresh_overlay: (tab, resp) ->
-        @storage.get [
-            'mode'
-            'keymode'
-            'alt' 
-            'min'
-            'max'
-            'color'
-            'kfs'
-            'opac'
-            'dir'
-        ], (it) ->
+        @storage.get @essentials, (it) ->
             color = K.choose_color it
             if tab?
                 chrome.tabs.sendMessage tab.id, {
@@ -74,17 +79,7 @@ class App
                 resp color: color, opac: it.opac
 
     refresh_all_overlays: ->
-        @storage.get [
-            'mode'
-            'keymode'
-            'alt' 
-            'min'
-            'max'
-            'color'
-            'kfs'
-            'opac'
-            'dir'
-        ], (it) ->
+        @storage.get @essentials, (it) ->
             color = K.choose_color it
             chrome.tabs.query {}, (tabs) ->
                 chrome.tabs.sendMessage tab.id, {
@@ -92,6 +87,11 @@ class App
                     color: color,
                     opac: it.opac
                 } for tab in tabs
+
+    update_opacity: ->
+        @storage.get @essentials, (it) ->
+            if it.mode is 'auto' and it.auto_opac
+                @storage.set opac: K.get_opac it
 
     update_storage: ->
         @_get_position (lat, long) =>

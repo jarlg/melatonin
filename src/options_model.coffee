@@ -34,15 +34,15 @@ class KFTable
     createView: (kf) ->
         row = document.createElement 'tr'
         row.classList.add 'keyframe'
-        @views.push new K.KeyframeView kf, row, @keymode
-        idx = @views.length - 1
-        @views[idx]
-            .create()
+        view = new K.KeyframeView kf, row, @keymode
+        @views.push view
+        view.create()
             .delete.addEventListener 'click', (event) =>
                 event.preventDefault()
-                @views[idx].erase()
-                @views.splice idx, 1
-                @kfs.splice @kfs.indexOf(@views[idx].model), 1
+                v_idx = @views.indexOf view
+                @kfs.splice @kfs.indexOf(@views[v_idx].model), 1
+                @views[v_idx].erase()
+                @views.splice v_idx, 1
 
     clear_header: ->
         @head_tr.parentNode.removeChild @head_tr if @head_tr.parentNode?
@@ -118,7 +118,7 @@ class KFTable
             .set 'innerHTML', 'save'
         @save_button.classList.add 'button'
 
-        @save_button.addEventListener 'click', (event) =>
+        @save_button.addEventListener 'click', (event) ->
             event.preventDefault()
             chrome.runtime.sendMessage {
                 type: 'set',

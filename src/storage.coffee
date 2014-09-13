@@ -7,7 +7,7 @@ C = require './color_helpers.coffee'
 class Storage
     constructor: (config) ->
         @get null, (it) =>
-            if not it.ver? or it.ver <= config.ver
+            if not it.ver? or it.ver < config.ver
                 @clear =>
                     @set config, =>
                         @print()
@@ -43,7 +43,7 @@ class Storage
         chrome.storage.onChanged.addListener (changes, namespace) =>
             for own k, v of changes
                 do (k, v) ->
-                    if H.contains k, ['alt', 'kfs', 'mode', 'color']
+                    if H.contains k, ['alt', 'kfs', 'mode', 'keymode', 'auto_opac', 'color']
                         chrome.runtime.sendMessage type: 'refresh_all'
 
 module.exports = Storage
