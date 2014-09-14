@@ -54,10 +54,6 @@ obj =
                 temperature: 2700,
                 color: '#ffffff'
 
-            key_defaults:
-                alt: 0,
-                time: [0, 0]
-
             create: ->
                 console.log 'attempting to create %s kf', @keymode
 
@@ -76,30 +72,14 @@ obj =
                         self.model.altitude = @value
 
                 else if @keymode is 'time'
-                    @time_hours = document.createElement 'input'
-                        .set 'type', 'number'
-                        .set 'value', @model.time[0]
-                    @time_hours.classList.add 'hours'
-                    @time_mins = document.createElement 'input'
-                        .set 'type', 'number'
-                        .set 'value', @model.time[1]
-                    @time_mins.classList.add 'minutes'
-
-                    @time_hours.addEventListener 'input', (event) ->
-                        if @value < 0
-                            @value = 0
-                        else if @value > 23
-                            @value = 23
-
-                        self.model.time[0] = @value
-
-                    @time_mins.addEventListener 'input', (event) ->
-                        if @value < 0
-                            @value = 0
-                        else if @value > 59
-                            @value = 59
-
-                        self.model.time[1] = @value
+                    hours = if @model.time[0] > 9 then @model.time[0] else '0' + @model.time[0]
+                    minutes = if @model.time[1] > 9 then @model.time[1] else '0' + @model.time[1]
+                    @time = document.createElement 'input'
+                        .set 'type', 'time'
+                        .set 'value', hours + ":" + minutes
+                    @time.addEventListener 'input', (event) ->
+                        self.model.time = (parseInt(v, 10) for v in @value.split ':')
+                        console.log self.model.time
 
                 console.log 'done with key'
 
@@ -180,13 +160,7 @@ obj =
                 else
                     @row
                         .appendChild document.createElement 'td'
-                        .appendChild @time_hours
-                        .parentNode.appendChild document.createElement 'label'
-                            .set 'innerHTML', 'h'
-                        .parentNode.appendChild @time_mins
-                        .parentNode.appendChild document.createElement 'label'
-                            .set 'innerHTML', 'min'
-
+                        .appendChild @time
                     inputs = ['option', 'value', 'delete']
 
                 for input in inputs
