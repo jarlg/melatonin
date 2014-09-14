@@ -13,8 +13,6 @@ C = require './color_helpers.coffee'
 
 class KFTable
     constructor: (@table, @keymode) ->
-        console.log 'created KFTable'
-        @
 
     kfs: [],
     views: [],
@@ -26,7 +24,6 @@ class KFTable
             else
                 kf = new K.TKeyframe()
 
-        console.log 'added alt kf: %s', kf.altitude?
         @kfs.push kf
         if kf[@keymode]?
             @createView kf
@@ -72,8 +69,6 @@ class KFTable
         @
 
     create: ->
-        console.log 'creating KFTable'
-
         @keymode_input = document.createElement 'select'
 
         for opt in ['altitude', 'time']
@@ -82,26 +77,18 @@ class KFTable
                     .set 'innerHTML', opt
                     .set 'selected', (true if opt is @keymode)
 
-        console.log 'made keymode input'
-
         self = this
         @keymode_input.addEventListener 'input', (event) ->
             event.preventDefault()
             self.keymode = @value
-            console.log 'clearing'
             self.clear_views()
-            console.log self.views
             for kf in self.kfs
                 do (kf) =>
-                    console.log kf
-                    console.log kf[@value]?
                     if kf[@value]?
                         self.createView kf
             self.clear_header()
             self.create_header()
             self.render()
-
-        console.log 'bound keymode input'
 
         @add_button = document.createElement 'button'
             .set 'id', 'add'
@@ -140,15 +127,11 @@ class KFTable
                     @innerHTML = 'save'
                 ), 1000
 
-        console.log 'added EventListeners'
         @create_header()
         @
 
     render: ->
-        console.log 'rendering KFTable'
-
         @table.appendChild @head_tr
-        console.log 'rendered tr'
         view.render() for view in @views
 
         @table.appendChild view.row for view in @views
@@ -162,7 +145,6 @@ class Options
         chrome.runtime.sendMessage type: 'init_options', (resp) =>
             @mode = resp.mode
             @color = resp.color
-            console.log 'got keymode %s', resp.keymode
             @table = new KFTable $('#keyframes'), resp.keymode
 
             @table.add kf for kf in resp.kfs

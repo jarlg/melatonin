@@ -641,7 +641,6 @@ obj = {
 
     KeyframeView.prototype.create = function() {
       var hours, minutes, opt, self, _fn, _fn1, _i, _j, _len, _len1, _ref, _ref1;
-      console.log('attempting to create %s kf', this.keymode);
       self = this;
       if (this.keymode === 'altitude') {
         this.altitude = document.createElement('input').set('type', 'number').set('value', this.model.altitude);
@@ -660,7 +659,7 @@ obj = {
         this.time = document.createElement('input').set('type', 'time').set('value', hours + ":" + minutes);
         this.time.addEventListener('input', function(event) {
           var v;
-          self.model.time = (function() {
+          return self.model.time = (function() {
             var _i, _len, _ref, _results;
             _ref = this.value.split(':');
             _results = [];
@@ -670,10 +669,8 @@ obj = {
             }
             return _results;
           }).call(this);
-          return console.log(self.model.time);
         });
       }
-      console.log('done with key');
       this.option = document.createElement('select');
       this.option.classList.add('option-input');
       _ref = ['color', 'temperature', 'opacity'];
@@ -703,7 +700,6 @@ obj = {
         }
         return self[self.option.value] = this.value;
       });
-      console.log('done with options');
       if (this.keymode === 'altitude') {
         this.direction = document.createElement('select');
         this.direction.classList.add('direction-input');
