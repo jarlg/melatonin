@@ -967,7 +967,7 @@ K = require('./keyframes.coffee');
 App = require('./app.coffee');
 
 config = {
-  ver: '0.3.1',
+  ver: '0.3.0',
   last_update: 0,
   mode: 'auto',
   keymode: 'altitude',
