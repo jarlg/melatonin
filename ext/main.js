@@ -117,9 +117,17 @@ Storage = require('./storage.coffee');
 App = (function() {
   function App(config) {
     this.storage = new Storage(config);
+    this.options_port = null;
     chrome.runtime.onStartup.addListener((function(_this) {
       return function() {
-        return _this.update_storage();
+        return _this.update();
+      };
+    })(this));
+    chrome.idle.onStateChanged.addListener((function(_this) {
+      return function(newstate) {
+        if (newstate === 'active') {
+          return _this.update();
+        }
       };
     })(this));
     chrome.alarms.create('update_altitude', {
@@ -127,13 +135,21 @@ App = (function() {
     });
     chrome.alarms.onAlarm.addListener((function(_this) {
       return function() {
-        _this.update_storage();
-        return _this.update_opacity();
+        return _this.update();
       };
     })(this));
     chrome.tabs.onUpdated.addListener((function(_this) {
       return function(_, __, tab) {
         return _this.refresh_overlay(tab);
+      };
+    })(this));
+    chrome.runtime.onConnect.addListener((function(_this) {
+      return function(port) {
+        console.assert(port.name === 'options');
+        _this.options_port = port;
+        return _this.options_port.onDisconnect.addListener(function() {
+          return _this.options_port = null;
+        });
       };
     })(this));
     chrome.runtime.onMessage.addListener((function(_this) {
@@ -147,8 +163,10 @@ App = (function() {
           _this.refresh_overlay(null, resp);
           return true;
         } else if (req.type === 'init_options') {
-          _this.storage.get(['mode', 'keymode', 'kfs', 'color'], resp);
+          _this.storage.get(['mode', 'keymode', 'kfs', 'auto_opac', 'color'], resp);
           return true;
+        } else if (req.type === 'update_opacity') {
+          return _this.update_opacity();
         } else if (req.type === 'set') {
           if (req.opac != null) {
             chrome.tabs.query({
@@ -164,6 +182,12 @@ App = (function() {
                 }));
               }
               return _results;
+            });
+          }
+          if ((req.auto_opac != null) && (_this.options_port != null)) {
+            _this.options_port.postMessage({
+              type: 'set auto_opac',
+              value: req.auto_opac
             });
           }
           _this.storage.set({
@@ -182,7 +206,7 @@ App = (function() {
     })(this));
   }
 
-  App.prototype.essentials = ['mode', 'keymode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir'];
+  App.prototype.essentials = ['mode', 'keymode', 'alt', 'min', 'max', 'color', 'kfs', 'opac', 'dir', 'auto_opac'];
 
   App.prototype.errHandler = function(err) {
     return console.log(err.stack || err);
@@ -227,14 +251,21 @@ App = (function() {
     });
   };
 
+  App.prototype.update = function() {
+    this.update_storage();
+    return this.update_opacity();
+  };
+
   App.prototype.update_opacity = function() {
-    return this.storage.get(this.essentials, function(it) {
-      if (it.mode === 'auto' && it.auto_opac) {
-        return this.storage.set({
-          opac: K.get_opac(it)
-        });
-      }
-    });
+    return this.storage.get(this.essentials, (function(_this) {
+      return function(it) {
+        if (it.mode === 'auto' && it.auto_opac) {
+          return _this.storage.set({
+            opac: K.get_opac(it)
+          });
+        }
+      };
+    })(this));
   };
 
   App.prototype.update_storage = function() {
@@ -574,13 +605,17 @@ obj = {
         this.color = null;
         _ref = ['temperature', 'opacity'];
         _fn = (function(_this) {
-          return function() {
-            return _this[opt] = opt === _this.model.option ? _this.model.value : null;
+          return function(opt) {
+            if (opt === _this.model.option) {
+              return _this[opt] = _this.model.value;
+            } else {
+              return _this[opt] = null;
+            }
           };
         })(this);
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           opt = _ref[_i];
-          _fn();
+          _fn(opt);
         }
       }
       this;
@@ -664,12 +699,16 @@ obj = {
       this.set_value_type();
       this.set_value_value();
       this.option.addEventListener('input', function() {
+        self.model.option = this.value;
         self.set_value_type();
-        self.set_value_value();
-        return self.model.option = this.value;
+        return self.set_value_value();
       });
       this.value.addEventListener('input', function(event) {
-        self.model.value = C.hex_to_rgb(this.value);
+        if (self.option.value === 'color') {
+          self.model.value = C.hex_to_rgb(this.value);
+        } else {
+          self.model.value = this.value;
+        }
         return self[self.option.value] = this.value;
       });
       console.log('done with options');
@@ -725,7 +764,7 @@ obj = {
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           opt = _ref[_i];
           _results.push((function(_this) {
-            return function() {
+            return function(opt) {
               if (_this.option.value === opt) {
                 if (_this[opt] != null) {
                   return _this.value.value = _this[opt];
@@ -734,7 +773,7 @@ obj = {
                 }
               }
             };
-          })(this)());
+          })(this)(opt));
         }
         return _results;
       }
@@ -775,10 +814,10 @@ obj = {
     it.kfs = it.kfs.filter(function(kf) {
       return (kf[it.keymode] != null) && kf.option === 'opacity';
     });
-    if (kfs.length === 0) {
+    if (it.kfs.length === 0) {
       return 0;
-    } else if (kfs.length === 1) {
-      return kfs[0].value / 100;
+    } else if (it.kfs.length === 1) {
+      return it.kfs[0].value / 100;
     }
     if (it.keymode === 'altitude') {
       _ref = it.kfs;
@@ -801,12 +840,12 @@ obj = {
         return a.time[0] * 60 + a.time[1] - b.time[0] * 60 + b.time[1];
       });
     }
-    last = this._get_last_kf(kfs, keymode, alt, dir);
-    next = this._get_next_kf(kfs, keymode, alt, dir);
+    last = this._get_last_kf(it.kfs, it.keymode, it.alt, it.dir);
+    next = this._get_next_kf(it.kfs, it.keymode, it.alt, it.dir);
     if (next === last) {
       return last.value / 100;
     }
-    return 0.01 * H.interpolate(keymode, alt, dir, last, next, min, max);
+    return 0.01 * H.interpolate(it.keymode, it.alt, it.dir, last, next, it.min, it.max);
   },
   get_color: function(kfs, keymode, alt, dir, min, max) {
     var kf, last, next, _fn, _fn1, _i, _j, _len, _len1;
@@ -1054,9 +1093,13 @@ Storage = (function() {
           if (!__hasProp.call(changes, k)) continue;
           v = changes[k];
           _results.push((function(k, v) {
-            if (H.contains(k, ['alt', 'kfs', 'mode', 'keymode', 'auto_opac', 'color'])) {
+            if (H.contains(k, ['alt', 'kfs', 'mode', 'keymode', 'color'])) {
               return chrome.runtime.sendMessage({
                 type: 'refresh_all'
+              });
+            } else if (k === 'auto_opac' && v.newValue) {
+              return chrome.runtime.sendMessage({
+                type: 'update_opacity'
               });
             }
           })(k, v));

@@ -174,7 +174,17 @@ class Options
 
             $ '#mode'
                 .checked = @mode is 'auto'
+
+            $ '#auto_opac-toggle'
+                .checked = resp.auto_opac
+
             @toggle_slides()
+
+        @port = chrome.runtime.connect name: 'options'
+        @port.onMessage.addListener (msg) ->
+            if msg.type is 'set auto_opac'
+                $ '#auto_opac-toggle'
+                    .checked = msg.value
 
         self = this
         $ '#color'
@@ -197,6 +207,16 @@ class Options
                         self.toggle_slides()
                     else
                         console.log 'ERROR when setting mode!'
+                        console.log chrome.runtime.lastError
+
+        $ '#auto_opac-toggle'
+            .addEventListener 'click', (event) ->
+                chrome.runtime.sendMessage {
+                    type: 'set', 
+                    auto_opac: @checked
+                }, (resp) =>
+                    if chrome.runtime.lastError?
+                        console.log 'ERROR when setting auto_opac!!'
                         console.log chrome.runtime.lastError
 
     mode: 'auto',

@@ -25,9 +25,12 @@
             </div>
 
             <div class='desc'>
-                <p>Melatonin is configured through keyframes. Input you desired values
-                at given altitudes (0 for sunset and sunrise, for example) and
-                Melatonin handles everything inbetween.</p>
+            <p>Keyframes control how Melatonin changes throughout the day. Altitudes above/under 90/-90 are interpreted respectively as local solar noon/midnight.</p>
+            <div id='auto-opac-wrapper'>
+                <label for="auto_opac-toggle">Keyframes control opacity: </label>
+                <input type='checkbox' id='auto_opac-toggle' name='auto_opac-toggle' checked>
+            </div>
+            <p>If you manually change opacity through the overlay, this will be unchecked automatically.</p>
             </div>
         </div>
 

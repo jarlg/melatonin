@@ -115,6 +115,19 @@ table .button:hover {
     color: #F10619;
 }
 
+#auto-opac-wrapper {
+    margin: 1.5em 0;
+    display: flex;
+    vertical-align: middle;
+    justify-content: center;
+}
+
+#auto_opac-toggle {
+    width: 22px;
+    height: 22px;
+    margin: 0 0 0 10px;
+}
+
 /* color */
 
 #color {
