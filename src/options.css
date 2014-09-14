@@ -25,14 +25,8 @@ th select {
     font-size: 12pt;
 }
 
-input.hours {
-    width: 2.5em;
-    position:relative;
-}
-
-input.minutes {
-    margin-left: 1em;
-    width: 2.5em;
+input[type=time] {
+    width: 78px;
 }
 
 .key-input {

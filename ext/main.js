@@ -639,13 +639,8 @@ obj = {
       color: '#ffffff'
     };
 
-    KeyframeView.prototype.key_defaults = {
-      alt: 0,
-      time: [0, 0]
-    };
-
     KeyframeView.prototype.create = function() {
-      var opt, self, _fn, _fn1, _i, _j, _len, _len1, _ref, _ref1;
+      var hours, minutes, opt, self, _fn, _fn1, _i, _j, _len, _len1, _ref, _ref1;
       console.log('attempting to create %s kf', this.keymode);
       self = this;
       if (this.keymode === 'altitude') {
@@ -660,25 +655,22 @@ obj = {
           return self.model.altitude = this.value;
         });
       } else if (this.keymode === 'time') {
-        this.time_hours = document.createElement('input').set('type', 'number').set('value', this.model.time[0]);
-        this.time_hours.classList.add('hours');
-        this.time_mins = document.createElement('input').set('type', 'number').set('value', this.model.time[1]);
-        this.time_mins.classList.add('minutes');
-        this.time_hours.addEventListener('input', function(event) {
-          if (this.value < 0) {
-            this.value = 0;
-          } else if (this.value > 23) {
-            this.value = 23;
-          }
-          return self.model.time[0] = this.value;
-        });
-        this.time_mins.addEventListener('input', function(event) {
-          if (this.value < 0) {
-            this.value = 0;
-          } else if (this.value > 59) {
-            this.value = 59;
-          }
-          return self.model.time[1] = this.value;
+        hours = this.model.time[0] > 9 ? this.model.time[0] : '0' + this.model.time[0];
+        minutes = this.model.time[1] > 9 ? this.model.time[1] : '0' + this.model.time[1];
+        this.time = document.createElement('input').set('type', 'time').set('value', hours + ":" + minutes);
+        this.time.addEventListener('input', function(event) {
+          var v;
+          self.model.time = (function() {
+            var _i, _len, _ref, _results;
+            _ref = this.value.split(':');
+            _results = [];
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              v = _ref[_i];
+              _results.push(parseInt(v, 10));
+            }
+            return _results;
+          }).call(this);
+          return console.log(self.model.time);
         });
       }
       console.log('done with key');
@@ -784,7 +776,7 @@ obj = {
       if (this.keymode === 'altitude') {
         inputs = ['altitude', 'option', 'value', 'direction', 'delete'];
       } else {
-        this.row.appendChild(document.createElement('td')).appendChild(this.time_hours).parentNode.appendChild(document.createElement('label')).set('innerHTML', 'h').parentNode.appendChild(this.time_mins).parentNode.appendChild(document.createElement('label')).set('innerHTML', 'min');
+        this.row.appendChild(document.createElement('td')).appendChild(this.time);
         inputs = ['option', 'value', 'delete'];
       }
       _fn = (function(_this) {
