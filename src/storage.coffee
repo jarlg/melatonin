@@ -43,7 +43,9 @@ class Storage
         chrome.storage.onChanged.addListener (changes, namespace) =>
             for own k, v of changes
                 do (k, v) ->
-                    if H.contains k, ['alt', 'kfs', 'mode', 'keymode', 'auto_opac', 'color']
+                    if H.contains k, ['alt', 'kfs', 'mode', 'keymode', 'color']
                         chrome.runtime.sendMessage type: 'refresh_all'
+                    else if k is 'auto_opac' and v.newValue
+                        chrome.runtime.sendMessage type: 'update_opacity'
 
 module.exports = Storage

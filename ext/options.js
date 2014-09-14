@@ -273,13 +273,17 @@ obj = {
         this.color = null;
         _ref = ['temperature', 'opacity'];
         _fn = (function(_this) {
-          return function() {
-            return _this[opt] = opt === _this.model.option ? _this.model.value : null;
+          return function(opt) {
+            if (opt === _this.model.option) {
+              return _this[opt] = _this.model.value;
+            } else {
+              return _this[opt] = null;
+            }
           };
         })(this);
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           opt = _ref[_i];
-          _fn();
+          _fn(opt);
         }
       }
       this;
@@ -363,12 +367,16 @@ obj = {
       this.set_value_type();
       this.set_value_value();
       this.option.addEventListener('input', function() {
+        self.model.option = this.value;
         self.set_value_type();
-        self.set_value_value();
-        return self.model.option = this.value;
+        return self.set_value_value();
       });
       this.value.addEventListener('input', function(event) {
-        self.model.value = C.hex_to_rgb(this.value);
+        if (self.option.value === 'color') {
+          self.model.value = C.hex_to_rgb(this.value);
+        } else {
+          self.model.value = this.value;
+        }
         return self[self.option.value] = this.value;
       });
       console.log('done with options');
@@ -424,7 +432,7 @@ obj = {
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           opt = _ref[_i];
           _results.push((function(_this) {
-            return function() {
+            return function(opt) {
               if (_this.option.value === opt) {
                 if (_this[opt] != null) {
                   return _this.value.value = _this[opt];
@@ -433,7 +441,7 @@ obj = {
                 }
               }
             };
-          })(this)());
+          })(this)(opt));
         }
         return _results;
       }
@@ -474,10 +482,10 @@ obj = {
     it.kfs = it.kfs.filter(function(kf) {
       return (kf[it.keymode] != null) && kf.option === 'opacity';
     });
-    if (kfs.length === 0) {
+    if (it.kfs.length === 0) {
       return 0;
-    } else if (kfs.length === 1) {
-      return kfs[0].value / 100;
+    } else if (it.kfs.length === 1) {
+      return it.kfs[0].value / 100;
     }
     if (it.keymode === 'altitude') {
       _ref = it.kfs;
@@ -500,12 +508,12 @@ obj = {
         return a.time[0] * 60 + a.time[1] - b.time[0] * 60 + b.time[1];
       });
     }
-    last = this._get_last_kf(kfs, keymode, alt, dir);
-    next = this._get_next_kf(kfs, keymode, alt, dir);
+    last = this._get_last_kf(it.kfs, it.keymode, it.alt, it.dir);
+    next = this._get_next_kf(it.kfs, it.keymode, it.alt, it.dir);
     if (next === last) {
       return last.value / 100;
     }
-    return 0.01 * H.interpolate(keymode, alt, dir, last, next, min, max);
+    return 0.01 * H.interpolate(it.keymode, it.alt, it.dir, last, next, it.min, it.max);
   },
   get_color: function(kfs, keymode, alt, dir, min, max) {
     var kf, last, next, _fn, _fn1, _i, _j, _len, _len1;
@@ -878,9 +886,18 @@ Options = (function() {
         _this.table.create().render();
         $('#color').value = C.rgb_to_hex(resp.color);
         $('#mode').checked = _this.mode === 'auto';
+        $('#auto_opac-toggle').checked = resp.auto_opac;
         return _this.toggle_slides();
       };
     })(this));
+    this.port = chrome.runtime.connect({
+      name: 'options'
+    });
+    this.port.onMessage.addListener(function(msg) {
+      if (msg.type === 'set auto_opac') {
+        return $('#auto_opac-toggle').checked = msg.value;
+      }
+    });
     self = this;
     $('#color').addEventListener('input', function(event) {
       event.preventDefault();
@@ -901,6 +918,19 @@ Options = (function() {
             return self.toggle_slides();
           } else {
             console.log('ERROR when setting mode!');
+            return console.log(chrome.runtime.lastError);
+          }
+        };
+      })(this));
+    });
+    $('#auto_opac-toggle').addEventListener('click', function(event) {
+      return chrome.runtime.sendMessage({
+        type: 'set',
+        auto_opac: this.checked
+      }, (function(_this) {
+        return function(resp) {
+          if (chrome.runtime.lastError != null) {
+            console.log('ERROR when setting auto_opac!!');
             return console.log(chrome.runtime.lastError);
           }
         };

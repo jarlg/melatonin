@@ -32,8 +32,11 @@ obj =
                 else
                     @color = null
                     for opt in ['temperature', 'opacity']
-                        do =>
-                            @[opt] = if opt is @model.option then @model.value else null
+                        do (opt) =>
+                            if opt is @model.option
+                                @[opt] = @model.value
+                            else
+                                @[opt] = null
                 @
 
             option_map:
@@ -116,12 +119,15 @@ obj =
                 @set_value_value()
 
                 @option.addEventListener 'input', ->
+                    self.model.option = @value
                     self.set_value_type()
                     self.set_value_value()
-                    self.model.option = @value
 
                 @value.addEventListener 'input', (event) ->
-                    self.model.value = C.hex_to_rgb @value
+                    if self.option.value is 'color'
+                        self.model.value = C.hex_to_rgb @value
+                    else
+                        self.model.value = @value
                     self[self.option.value] = @value
 
                 console.log 'done with options'
@@ -161,7 +167,7 @@ obj =
                         @value.value = @option_defaults['color']
                 else
                     for opt in ['temperature', 'opacity']
-                        do =>
+                        do (opt) =>
                             if @option.value is opt
                                 if @[opt]?
                                     @value.value = @[opt]
@@ -196,10 +202,10 @@ obj =
     get_opac: (it) ->
         it.kfs = it.kfs.filter (kf) -> kf[it.keymode]? and kf.option is 'opacity'
 
-        if kfs.length is 0
+        if it.kfs.length is 0
             return 0
-        else if kfs.length is 1
-            return kfs[0].value / 100
+        else if it.kfs.length is 1
+            return it.kfs[0].value / 100
 
         if it.keymode is 'altitude'
             for kf in it.kfs
@@ -212,13 +218,13 @@ obj =
         else
             it.kfs.sort (a, b) -> a.time[0]*60+a.time[1] - b.time[0]*60+b.time[1]
 
-        last = @_get_last_kf kfs, keymode, alt, dir
-        next = @_get_next_kf kfs, keymode, alt, dir
+        last = @_get_last_kf it.kfs, it.keymode, it.alt, it.dir
+        next = @_get_next_kf it.kfs, it.keymode, it.alt, it.dir
 
         if next is last
             return last.value / 100
 
-        0.01 * H.interpolate keymode, alt, dir, last, next, min, max
+        0.01 * H.interpolate it.keymode, it.alt, it.dir, last, next, it.min, it.max
 
     get_color: (kfs, keymode, alt, dir, min, max) ->
         kfs = kfs.filter (kf) -> kf[keymode]? and H.contains kf.option, ['temperature', 'color']

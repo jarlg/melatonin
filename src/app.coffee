@@ -9,16 +9,23 @@ Storage = require './storage.coffee'
 class App
     constructor: (config) ->
         @storage = new Storage config
+        @options_port = null
 
-        chrome.runtime.onStartup.addListener => @update_storage()
+        chrome.runtime.onStartup.addListener => @update()
+        chrome.idle.onStateChanged.addListener (newstate) =>
+            @update() if newstate is 'active'
 
         # events
         chrome.alarms.create 'update_altitude', periodInMinutes: 15
-        chrome.alarms.onAlarm.addListener =>
-            @update_storage()
-            @update_opacity()
+        chrome.alarms.onAlarm.addListener => @update()
 
         chrome.tabs.onUpdated.addListener (_, __, tab) => @refresh_overlay tab
+
+        chrome.runtime.onConnect.addListener (port) =>
+            console.assert port.name is 'options'
+            @options_port = port
+            @options_port.onDisconnect.addListener =>
+                @options_port = null
 
         chrome.runtime.onMessage.addListener (req, sender, resp) =>
             if req.type is 'refresh_all'
@@ -30,8 +37,10 @@ class App
                 @refresh_overlay null, resp
                 true
             else if req.type is 'init_options'
-                @storage.get ['mode', 'keymode', 'kfs', 'color'], resp
+                @storage.get ['mode', 'keymode', 'kfs', 'auto_opac', 'color'], resp
                 true
+            else if req.type is 'update_opacity'
+                @update_opacity()
             else if req.type is 'set'
                 if req.opac?
                     chrome.tabs.query active: true, (tabs) ->
@@ -39,6 +48,9 @@ class App
                             type: 'set',
                             opac: req.opac
                         } for tab in tabs
+
+                if req.auto_opac? and @options_port?
+                    @options_port.postMessage type: 'set auto_opac', value: req.auto_opac
 
                 @storage.set {
                     opac: req.opac if req.opac?,
@@ -61,6 +73,7 @@ class App
         'kfs'
         'opac'
         'dir'
+        'auto_opac'
     ],
 
     errHandler: (err) ->
@@ -88,8 +101,12 @@ class App
                     opac: it.opac
                 } for tab in tabs
 
+    update: ->
+        @update_storage()
+        @update_opacity()
+
     update_opacity: ->
-        @storage.get @essentials, (it) ->
+        @storage.get @essentials, (it) =>
             if it.mode is 'auto' and it.auto_opac
                 @storage.set opac: K.get_opac it
 

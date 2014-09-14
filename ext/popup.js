@@ -413,7 +413,8 @@ window.onload = function() {
   return $('#opacity').addEventListener('input', function() {
     return chrome.runtime.sendMessage({
       type: 'set',
-      opac: this.value
+      opac: this.value,
+      auto_opac: false
     });
   });
 };
