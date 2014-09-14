@@ -257,8 +257,6 @@ obj =
         if next is last
             return last.value
 
-        console.log [last, next]
-
         H.interpolate keymode, alt, dir, last, next, min, max
 
     _get_last_kf: (kfs, keymode, alt, dir) ->
@@ -280,7 +278,7 @@ obj =
                     (kf.time[0] is date.getHours() and kf.time[1] < date.getMinutes())
 
             if cands.length > 0
-                return last cands
+                return H.last cands
 
             return last kfs
 

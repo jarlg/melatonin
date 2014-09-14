@@ -560,7 +560,6 @@ obj = {
     if (next === last) {
       return last.value;
     }
-    console.log([last, next]);
     return H.interpolate(keymode, alt, dir, last, next, min, max);
   },
   _get_last_kf: function(kfs, keymode, alt, dir) {
@@ -590,7 +589,7 @@ obj = {
         return kf.time[0] < date.getHours() || (kf.time[0] === date.getHours() && kf.time[1] < date.getMinutes());
       });
       if (cands.length > 0) {
-        return last(cands);
+        return H.last(cands);
       }
       return last(kfs);
     }
