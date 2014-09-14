@@ -55,8 +55,6 @@ obj =
                 color: '#ffffff'
 
             create: ->
-                console.log 'attempting to create %s kf', @keymode
-
                 self = this
                 if @keymode is 'altitude'
                     @altitude = document.createElement 'input'
@@ -79,9 +77,6 @@ obj =
                         .set 'value', hours + ":" + minutes
                     @time.addEventListener 'input', (event) ->
                         self.model.time = (parseInt(v, 10) for v in @value.split ':')
-                        console.log self.model.time
-
-                console.log 'done with key'
 
                 @option = document.createElement 'select'
                 @option.classList.add 'option-input'
@@ -109,8 +104,6 @@ obj =
                     else
                         self.model.value = @value
                     self[self.option.value] = @value
-
-                console.log 'done with options'
 
                 if @keymode is 'altitude'
                     @direction = document.createElement 'select'

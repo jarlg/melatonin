@@ -309,7 +309,6 @@ obj = {
 
     KeyframeView.prototype.create = function() {
       var hours, minutes, opt, self, _fn, _fn1, _i, _j, _len, _len1, _ref, _ref1;
-      console.log('attempting to create %s kf', this.keymode);
       self = this;
       if (this.keymode === 'altitude') {
         this.altitude = document.createElement('input').set('type', 'number').set('value', this.model.altitude);
@@ -328,7 +327,7 @@ obj = {
         this.time = document.createElement('input').set('type', 'time').set('value', hours + ":" + minutes);
         this.time.addEventListener('input', function(event) {
           var v;
-          self.model.time = (function() {
+          return self.model.time = (function() {
             var _i, _len, _ref, _results;
             _ref = this.value.split(':');
             _results = [];
@@ -338,10 +337,8 @@ obj = {
             }
             return _results;
           }).call(this);
-          return console.log(self.model.time);
         });
       }
-      console.log('done with key');
       this.option = document.createElement('select');
       this.option.classList.add('option-input');
       _ref = ['color', 'temperature', 'opacity'];
@@ -371,7 +368,6 @@ obj = {
         }
         return self[self.option.value] = this.value;
       });
-      console.log('done with options');
       if (this.keymode === 'altitude') {
         this.direction = document.createElement('select');
         this.direction.classList.add('direction-input');
@@ -668,8 +664,6 @@ KFTable = (function() {
   function KFTable(table, keymode) {
     this.table = table;
     this.keymode = keymode;
-    console.log('created KFTable');
-    this;
   }
 
   KFTable.prototype.kfs = [];
@@ -684,7 +678,6 @@ KFTable = (function() {
         kf = new K.TKeyframe();
       }
     }
-    console.log('added alt kf: %s', kf.altitude != null);
     this.kfs.push(kf);
     if (kf[this.keymode] != null) {
       return this.createView(kf);
@@ -751,7 +744,6 @@ KFTable = (function() {
 
   KFTable.prototype.create = function() {
     var opt, self, _fn, _i, _len, _ref;
-    console.log('creating KFTable');
     this.keymode_input = document.createElement('select');
     _ref = ['altitude', 'time'];
     _fn = (function(_this) {
@@ -763,20 +755,15 @@ KFTable = (function() {
       opt = _ref[_i];
       _fn();
     }
-    console.log('made keymode input');
     self = this;
     this.keymode_input.addEventListener('input', function(event) {
       var kf, _fn1, _j, _len1, _ref1;
       event.preventDefault();
       self.keymode = this.value;
-      console.log('clearing');
       self.clear_views();
-      console.log(self.views);
       _ref1 = self.kfs;
       _fn1 = (function(_this) {
         return function(kf) {
-          console.log(kf);
-          console.log(kf[_this.value] != null);
           if (kf[_this.value] != null) {
             return self.createView(kf);
           }
@@ -790,7 +777,6 @@ KFTable = (function() {
       self.create_header();
       return self.render();
     });
-    console.log('bound keymode input');
     this.add_button = document.createElement('button').set('id', 'add').set('innerHTML', '+');
     this.add_button.classList.add('button');
     this.add_button.addEventListener('click', (function(_this) {
@@ -827,16 +813,13 @@ KFTable = (function() {
         };
       })(this));
     });
-    console.log('added EventListeners');
     this.create_header();
     return this;
   };
 
   KFTable.prototype.render = function() {
     var view, _i, _j, _len, _len1, _ref, _ref1;
-    console.log('rendering KFTable');
     this.table.appendChild(this.head_tr);
-    console.log('rendered tr');
     _ref = this.views;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       view = _ref[_i];
@@ -867,7 +850,6 @@ Options = (function() {
         var kf, _i, _len, _ref;
         _this.mode = resp.mode;
         _this.color = resp.color;
-        console.log('got keymode %s', resp.keymode);
         _this.table = new KFTable($('#keyframes'), resp.keymode);
         _ref = resp.kfs;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {

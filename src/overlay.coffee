@@ -18,8 +18,6 @@ class Overlay
         document.body.appendChild @el
 
     set: (obj) ->
-        console.log 'got msg to set'
-        console.log obj
         @opac = obj.opac if obj.opac?
         @color = obj.color if obj.color?
         @render()
