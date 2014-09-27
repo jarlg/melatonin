@@ -43,11 +43,7 @@ class App
                 @update_opacity()
             else if req.type is 'set'
                 if req.opac?
-                    chrome.tabs.query active: true, (tabs) ->
-                        chrome.tabs.sendMessage tab.id, {
-                            type: 'set',
-                            opac: req.opac
-                        } for tab in tabs
+                    @set_active_overlay_opacity req.opac
 
                 if req.auto_opac? and @options_port?
                     @options_port.postMessage type: 'set auto_opac', value: req.auto_opac
@@ -108,7 +104,23 @@ class App
     update_opacity: ->
         @storage.get @essentials, (it) =>
             if it.mode is 'auto' and it.auto_opac
-                @storage.set opac: K.get_opac it
+                opac = K.get_opac it
+                @set_all_overlay_opacity opac
+                @storage.set opac: opac
+
+    set_active_overlay_opacity: (opac) ->
+        chrome.tabs.query active: true, (tabs) ->
+            chrome.tabs.sendMessage tab.id, {
+                type: 'set',
+                opac: opac
+            } for tab in tabs
+
+    set_all_overlay_opacity: (opac) ->
+        chrome.tabs.query {}, (tabs) ->
+            chrome.tabs.sendMessage tab.id, {
+                type: 'set',
+                opac: opac
+            } for tab in tabs
 
     update_storage: ->
         @_get_position (lat, long) =>
