@@ -23,7 +23,7 @@ App = require './app.coffee'
 # overlay
 
 config = 
-    ver: '0.3.1',
+    ver: '0.3.0',
     last_update: 0,
     mode: 'auto', # or 'manual'
     keymode: 'altitude', # or 'time'

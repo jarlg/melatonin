@@ -169,20 +169,7 @@ App = (function() {
           return _this.update_opacity();
         } else if (req.type === 'set') {
           if (req.opac != null) {
-            chrome.tabs.query({
-              active: true
-            }, function(tabs) {
-              var tab, _i, _len, _results;
-              _results = [];
-              for (_i = 0, _len = tabs.length; _i < _len; _i++) {
-                tab = tabs[_i];
-                _results.push(chrome.tabs.sendMessage(tab.id, {
-                  type: 'set',
-                  opac: req.opac
-                }));
-              }
-              return _results;
-            });
+            _this.set_active_overlay_opacity(req.opac);
           }
           if ((req.auto_opac != null) && (_this.options_port != null)) {
             _this.options_port.postMessage({
@@ -259,13 +246,49 @@ App = (function() {
   App.prototype.update_opacity = function() {
     return this.storage.get(this.essentials, (function(_this) {
       return function(it) {
+        var opac;
         if (it.mode === 'auto' && it.auto_opac) {
+          opac = K.get_opac(it);
+          console.log("got update opacity to opac %s", opac);
+          _this.set_all_overlay_opacity(opac);
           return _this.storage.set({
-            opac: K.get_opac(it)
+            opac: opac
           });
         }
       };
     })(this));
+  };
+
+  App.prototype.set_active_overlay_opacity = function(opac) {
+    return chrome.tabs.query({
+      active: true
+    }, function(tabs) {
+      var tab, _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = tabs.length; _i < _len; _i++) {
+        tab = tabs[_i];
+        _results.push(chrome.tabs.sendMessage(tab.id, {
+          type: 'set',
+          opac: opac
+        }));
+      }
+      return _results;
+    });
+  };
+
+  App.prototype.set_all_overlay_opacity = function(opac) {
+    return chrome.tabs.query({}, function(tabs) {
+      var tab, _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = tabs.length; _i < _len; _i++) {
+        tab = tabs[_i];
+        _results.push(chrome.tabs.sendMessage(tab.id, {
+          type: 'set',
+          opac: opac
+        }));
+      }
+      return _results;
+    });
   };
 
   App.prototype.update_storage = function() {
@@ -967,7 +990,7 @@ K = require('./keyframes.coffee');
 App = require('./app.coffee');
 
 config = {
-  ver: '0.3.1',
+  ver: '0.3.0',
   last_update: 0,
   mode: 'auto',
   keymode: 'altitude',
