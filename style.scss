@@ -203,6 +203,13 @@ img {
     padding-bottom: 1em;
 }
 
+.posts > .post-link h3 {
+    font-weight: 300;
+    .date {
+        font-size: 12pt;
+    }
+}
+
 .post { 
     header {
         text-align: center;
