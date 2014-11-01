@@ -101,11 +101,11 @@ Overlay = (function() {
     this.color = null;
     this.el = document.createElement('div');
     this.el.style["transition"] = "background-color 0.2s";
-    this.el.style.width = "100vw";
-    this.el.style.height = "100vh";
     this.el.style.position = "fixed";
     this.el.style.top = 0;
     this.el.style.left = 0;
+    this.el.style.right = 0;
+    this.el.style.bottom = 0;
     this.el.style["z-index"] = 9999999999;
     this.el.style["pointer-events"] = "none";
     document.body.appendChild(this.el);
@@ -122,7 +122,8 @@ Overlay = (function() {
   };
 
   Overlay.prototype.render = function() {
-    return this.el.style["background-color"] = "rgba(" + C.rgb_to_string(this.color) + ", " + this.opac + ")";
+    this.el.style["background-color"] = "rgb(" + C.rgb_to_string(this.color) + ")";
+    return this.el.style.opacity = this.opac;
   };
 
   return Overlay;
