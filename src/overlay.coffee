@@ -7,7 +7,7 @@ class Overlay
         @opac = 0
         @color = null
 
-        @el = document.createElement 'div'
+        @el = document.createElement 'melatonin-overlay'
 
         @el.style["transition"] = "background-color 0.2s" # reduce the flashing
         

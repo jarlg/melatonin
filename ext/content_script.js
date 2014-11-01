@@ -99,7 +99,7 @@ Overlay = (function() {
   function Overlay() {
     this.opac = 0;
     this.color = null;
-    this.el = document.createElement('div');
+    this.el = document.createElement('melatonin-overlay');
     this.el.style["transition"] = "background-color 0.2s";
     this.el.style.position = "fixed";
     this.el.style.top = 0;
