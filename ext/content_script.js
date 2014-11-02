@@ -108,6 +108,7 @@ Overlay = (function() {
     this.el.style.bottom = 0;
     this.el.style["z-index"] = 9999999999;
     this.el.style["pointer-events"] = "none";
+    this.el.style["mix-blend-mode"] = "hard-light";
     document.body.appendChild(this.el);
   }
 

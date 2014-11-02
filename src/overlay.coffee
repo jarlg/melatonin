@@ -22,6 +22,8 @@ class Overlay
         @el.style["z-index"] = 9999999999
         @el.style["pointer-events"] = "none"
 
+        @el.style["mix-blend-mode"] = "hard-light"
+
         document.body.appendChild @el
 
     set: (obj) ->

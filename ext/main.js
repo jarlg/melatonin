@@ -249,7 +249,6 @@ App = (function() {
         var opac;
         if (it.mode === 'auto' && it.auto_opac) {
           opac = K.get_opac(it);
-          console.log("got update opacity to opac %s", opac);
           _this.set_all_overlay_opacity(opac);
           return _this.storage.set({
             opac: opac
