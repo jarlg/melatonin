@@ -24,7 +24,12 @@ class Overlay
 
         @el.style["mix-blend-mode"] = "hard-light"
 
-        document.body.appendChild @el
+        add_overlay = =>
+          if document.body
+            document.body.appendChild @el
+            document.removeEventListener 'DOMNodeInsterted', add_overlay
+
+        document.addEventListener 'DOMNodeInserted', => add_overlay()
 
     set: (obj) ->
         @opac = obj.opac if obj.opac?

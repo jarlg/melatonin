@@ -97,6 +97,7 @@ C = require('./color_helpers.coffee');
 
 Overlay = (function() {
   function Overlay() {
+    var add_overlay;
     this.opac = 0;
     this.color = null;
     this.el = document.createElement('melatonin-overlay');
@@ -109,7 +110,19 @@ Overlay = (function() {
     this.el.style["z-index"] = 9999999999;
     this.el.style["pointer-events"] = "none";
     this.el.style["mix-blend-mode"] = "hard-light";
-    document.body.appendChild(this.el);
+    add_overlay = (function(_this) {
+      return function() {
+        if (document.body) {
+          document.body.appendChild(_this.el);
+          return document.removeEventListener('DOMNodeInsterted', add_overlay);
+        }
+      };
+    })(this);
+    document.addEventListener('DOMNodeInserted', (function(_this) {
+      return function() {
+        return add_overlay();
+      };
+    })(this));
   }
 
   Overlay.prototype.set = function(obj) {
