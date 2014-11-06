@@ -29,7 +29,7 @@ class Overlay
             document.body.appendChild @el
             document.removeEventListener 'DOMNodeInsterted', add_overlay
 
-        document.addEventListener 'DOMNodeInserted', => add_overlay()
+        document.addEventListener 'DOMNodeInserted', add_overlay.bind @
 
     set: (obj) ->
         @opac = obj.opac if obj.opac?
