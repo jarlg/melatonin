@@ -26,9 +26,9 @@ class KFTable
 
         @kfs.push kf
         if kf[@keymode]?
-            @createView kf
+            @create_view kf
 
-    createView: (kf) ->
+    create_view: (kf) ->
         row = document.createElement 'tr'
         row.classList.add 'keyframe'
         view = new K.KeyframeView kf, row, @keymode
@@ -85,7 +85,7 @@ class KFTable
             for kf in self.kfs
                 do (kf) =>
                     if kf[@value]?
-                        self.createView kf
+                        self.create_view kf
             self.clear_header()
             self.create_header()
             self.render()
