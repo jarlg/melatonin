@@ -22,9 +22,9 @@ obj =
 
     rgb_to_string: (rgb) ->
         if rgb?
-            return String(rgb.r) + ", " + String(rgb.g) + ", " + String(rgb.b)
+            String(rgb.r) + ", " + String(rgb.g) + ", " + String(rgb.b)
         else
-            return "255, 255, 255"
+            "255, 255, 255"
 
     temp_to_rgb: (temperature) ->
         temp = temperature / 100
@@ -41,9 +41,9 @@ obj =
                 blue = 138.5177312231 * Math.log(blue) - 305.0447927307
         else 
             red = temp - 60
-            red = 329.698727446 * Math.pow(red, -0.1332047592)
+            red = 329.698727446 * Math.pow red, -0.1332047592
             green = temp - 60
-            green = 288.1221695283 * Math.pow(green, -0.0755148492)
+            green = 288.1221695283 * Math.pow green, -0.0755148492
             blue = 255
     
         r : if red   < 0 then 0 else if red   > 255 then 255 else red.toFixed(0),
