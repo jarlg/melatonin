@@ -279,5 +279,10 @@ obj =
         else
             return @get_color it.kfs, it.keymode, it.alt, it.dir, it.min, it.max
 
+    choose_opac: (it) ->
+        if it.mode is 'manual' or not it.auto_opac
+            it.opac
+        else
+            @get_opac it
 
 module.exports = obj

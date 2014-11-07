@@ -13,7 +13,7 @@ class App
 
         chrome.runtime.onStartup.addListener => @update()
         chrome.idle.onStateChanged.addListener (newstate) =>
-            @update() if newstate is 'active'
+          @update() if newstate is 'active'
 
         # events
         chrome.alarms.create 'update_altitude', periodInMinutes: 15
@@ -27,12 +27,13 @@ class App
             @options_port.onDisconnect.addListener =>
                 @options_port = null
 
+        #methods return true for async responding using resp
         chrome.runtime.onMessage.addListener (req, sender, resp) =>
             if req.type is 'refresh_all'
                 @refresh_all_overlays()
             else if req.type is 'init_popup'
                 @storage.get ['opac', 'lat', 'long'], resp
-                true # return true for async resp
+                true
             else if req.type is 'init_tab'
                 @refresh_overlay null, resp
                 true
@@ -55,7 +56,7 @@ class App
                     mode: req.mode if req.mode?,
                     keymode: req.keymode if req.keymode?,
                     auto_opac: req.auto_opac if req.auto_opac?
-                }, -> resp if not chrome.runtime.lastError? then true else false
+                }, -> resp not chrome.runtime.lastError?
                 true
 
 
@@ -88,13 +89,16 @@ class App
                 resp color: color, opac: it.opac
 
     refresh_all_overlays: ->
-        @storage.get @essentials, (it) ->
+        @storage.get @essentials, (it) =>
             color = K.choose_color it
+            opac = K.choose_opac it
+            if it.auto_opac 
+                @storage.set opac: opac
             chrome.tabs.query {}, (tabs) ->
                 chrome.tabs.sendMessage tab.id, {
                     type: 'set',
                     color: color,
-                    opac: it.opac
+                    opac: opac
                 } for tab in tabs
 
     update: ->

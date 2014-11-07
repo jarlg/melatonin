@@ -44,9 +44,10 @@ class Storage
             refresh_requested = false
             for own k, v of changes
                 do (k, v) ->
-                    if H.contains k, ['alt', 'kfs', 'mode', 'keymode', 'color'] and not refresh_requested
-                        refresh_requested = true
-                        chrome.runtime.sendMessage type: 'refresh_all'
+                    if H.contains k, ['alt', 'kfs', 'mode', 'keymode', 'color']
+                        if not refresh_requested
+                          refresh_requested = true
+                          chrome.runtime.sendMessage type: 'refresh_all'
                     else if k is 'auto_opac' and v.newValue
                         chrome.runtime.sendMessage type: 'update_opacity'
 
