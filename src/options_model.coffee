@@ -4,7 +4,6 @@
 # helpers
 #
 $ = document.querySelector.bind document
-$$ = document.querySelectorAll.bind document
 val = (obj) -> obj.value
 last = (arr) -> arr[arr.length-1] if arr.length > 0
 
