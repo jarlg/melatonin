@@ -47,8 +47,10 @@ class Storage
                     if H.contains k, ['alt', 'kfs', 'mode', 'keymode', 'color']
                         if not refresh_requested
                           refresh_requested = true
-                          chrome.runtime.sendMessage type: 'refresh_all'
                     else if k is 'auto_opac' and v.newValue
                         chrome.runtime.sendMessage type: 'update_opacity'
+
+            if refresh_requested
+                chrome.runtime.sendMessage type: 'update_all'
 
 module.exports = Storage

@@ -13,9 +13,8 @@ class App
 
         chrome.runtime.onStartup.addListener => @update()
         chrome.idle.onStateChanged.addListener (newstate) =>
-          @update() if newstate is 'active'
+            @update() if newstate is 'active'
 
-        # events
         chrome.alarms.create 'update_altitude', periodInMinutes: 15
         chrome.alarms.onAlarm.addListener => @update()
 
@@ -27,10 +26,10 @@ class App
             @options_port.onDisconnect.addListener =>
                 @options_port = null
 
-        #methods return true for async responding using resp
+        #return true for asynchroneous responding to sender using resp
         chrome.runtime.onMessage.addListener (req, sender, resp) =>
-            if req.type is 'refresh_all'
-                @refresh_all_overlays()
+            if req.type is 'update_all' or req.type is 'update_opacity'
+                @update_opacity @refresh_all_overlays.bind @
             else if req.type is 'init_popup'
                 @storage.get ['opac', 'lat', 'long'], resp
                 true
@@ -40,11 +39,9 @@ class App
             else if req.type is 'init_options'
                 @storage.get ['mode', 'keymode', 'kfs', 'auto_opac', 'color'], resp
                 true
-            else if req.type is 'update_opacity'
-                @update_opacity()
             else if req.type is 'set'
                 if req.opac?
-                    @set_active_overlay_opacity req.opac
+                    @set_overlay_opacity req.opac
 
                 if req.auto_opac? and @options_port?
                     @options_port.postMessage type: 'set auto_opac', value: req.auto_opac
@@ -91,42 +88,29 @@ class App
     refresh_all_overlays: ->
         @storage.get @essentials, (it) =>
             color = K.choose_color it
-            opac = K.choose_opac it
-            if it.auto_opac 
-                @storage.set opac: opac
             chrome.tabs.query {}, (tabs) ->
                 chrome.tabs.sendMessage tab.id, {
                     type: 'set',
                     color: color,
-                    opac: opac
+                    opac: it.opac
                 } for tab in tabs
 
-    update: ->
-        @update_storage()
-        @update_opacity()
-
-    update_opacity: ->
-        @storage.get @essentials, (it) =>
-            if it.mode is 'auto' and it.auto_opac
-                opac = K.get_opac it
-                @set_all_overlay_opacity opac
-                @storage.set opac: opac
-
-    set_active_overlay_opacity: (opac) ->
-        chrome.tabs.query active: true, (tabs) ->
-            chrome.tabs.sendMessage tab.id, {
-                type: 'set',
-                opac: opac
-            } for tab in tabs
-
-    set_all_overlay_opacity: (opac) ->
+    set_overlay_opacity: (opac) ->
         chrome.tabs.query {}, (tabs) ->
             chrome.tabs.sendMessage tab.id, {
                 type: 'set',
                 opac: opac
             } for tab in tabs
 
-    update_storage: ->
+    # recalculates altitude and opacity, and stores them
+    update: ->
+        @update_storage @update_opacity.bind @
+
+    update_opacity: (cb) ->
+        @storage.get @essentials, (it) =>
+            @storage.set opac: K.choose_opac(it), cb
+
+    update_storage: (cb) ->
         @_get_position (lat, long) =>
             d = new Date()
             @storage.set {
@@ -136,7 +120,7 @@ class App
                 dir: A.get_direction(d, lat, long),
                 min: A.get_midnight_altitude(d, lat, long),
                 max: A.get_noon_altitude(d, lat, long)
-            }, => @refresh_all_overlays()
+            }, cb
 
     _get_position: (cb) ->
         if navigator.geolocation?
