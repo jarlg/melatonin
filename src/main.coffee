@@ -9,13 +9,15 @@ App = require './app.coffee'
 # controlled by keyframes. 'manual' means the user-specified color is used, and
 # keyframes are disregarded.
 #
+# color: user specified color (otherwise color is calculated from keyframes)
+#
 # keymode: 'altitude'/'time' means keyframes are linked to resp. altitude/time
 # values
 # 
 # min,max: stored values of resp. midnight/solar noon altitude values at
 # geolocation of stored lat, long values
 #
-# dir: 1 for rising sun, 0 for descending
+# dir: 1 for rising sun, -1 for descending
 #
 # auto_opac: opacity controlled by slider in the popup or keyframes (auto)
 #
