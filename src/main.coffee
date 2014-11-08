@@ -23,6 +23,10 @@ App = require './app.coffee'
 #
 # kfs: keyframes that specify color/temperature/opacity progression of the
 # overlay
+#
+# blendmode_notified keeps track of wheter or not we've notified the user that
+# experimental web features isn't enabled (required for mix-blend-mode: "hard-light"
+# which improves overlay contrast)
 
 config = 
     ver: '0.3.2',
@@ -42,6 +46,7 @@ config =
         new K.AKeyframe 0, 'temperature', 4500, 1   # morning
         new K.AKeyframe 'n', 'temperature', 6300, 0 # noon
         new K.AKeyframe 0, 'temperature', 2700, -1  # evening
-    ]
+    ],
+    blendmode_notified: false
 
 app = new App config
