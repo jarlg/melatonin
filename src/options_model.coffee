@@ -99,31 +99,27 @@ class KFTable
             @add()
             @table.appendChild last(@views).render().row
 
-        @save_button = document.createElement 'button'
-            .set 'id', 'save'
-            .set 'innerHTML', 'save'
-        @save_button.classList.add 'button'
-
-        @save_button.addEventListener 'click', (event) ->
+        $ '#save'
+          .addEventListener 'click', (event) ->
             event.preventDefault()
             chrome.runtime.sendMessage {
-                type: 'set',
-                kfs: self.kfs,
-                keymode: self.keymode
+              type: 'set',
+              kfs: self.kfs,
+              keymode: self.keymode
             }, =>
-                if not chrome.runtime.lastError?
-                    state = 'button-success'
-                    html = 'saved!'
-                else
-                    state = 'button-failure'
-                    html = 'failed!'
+              if not chrome.runtime.lastError?
+                state = 'button-success'
+                html = 'saved!'
+              else
+                state = 'button-failure'
+                html = 'failed!'
 
                 @classList.add state
                 @innerHTML = html
 
                 window.setTimeout (=>
-                    @classList.remove state
-                    @innerHTML = 'save'
+                  @classList.remove state
+                  @innerHTML = 'save'
                 ), 1000
 
         @create_header()
@@ -134,8 +130,6 @@ class KFTable
         view.render() for view in @views
 
         @table.appendChild view.row for view in @views
-        if not @save_button.parentNode?
-            @table.parentNode.appendChild @save_button
         @
 
 
