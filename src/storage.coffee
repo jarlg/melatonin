@@ -8,18 +8,25 @@ class Storage
     constructor: (config) ->
         @get null, (it) =>
             if not it.ver? or it.ver < config.ver
+              
+                # if the previous version is sufficiently recent,
+                # we keep some user specified values
+                if '0.3.0' <= it.ver
+                    keep = [
+                      'kfs'
+                      'keymode'
+                      'mode'
+                      'color'
+                      'auto_opac'
+                    ]
+
+                    for key in keep
+                        do -> config[key] = it[key] if it[key]?
+
                 @clear =>
                     @set config, =>
                         @print()
                         @bind_events()
-            else
-                obj = {}
-                for own k, v of config
-                    do ->
-                        obj[k] = v if not it[k]?
-                @set obj, =>
-                    @print()
-                    @bind_events()
 
     set: (obj, cb) ->
         if H.contains 'altitude', (k for own k, _ of obj)
