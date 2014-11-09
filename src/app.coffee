@@ -58,7 +58,7 @@ class App
                     mode: req.mode if req.mode?,
                     keymode: req.keymode if req.keymode?,
                     auto_opac: req.auto_opac if req.auto_opac?
-                }, -> resp not chrome.runtime.lastError?
+                }, resp
                 true
 
 

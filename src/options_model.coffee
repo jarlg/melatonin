@@ -110,8 +110,8 @@ class KFTable
                 type: 'set',
                 kfs: self.kfs,
                 keymode: self.keymode
-            }, (resp) =>
-                if resp
+            }, =>
+                if not chrome.runtime.lastError?
                     state = 'button-success'
                     html = 'saved!'
                 else
@@ -175,7 +175,11 @@ class Options
                 chrome.runtime.sendMessage {
                     type: 'set',
                     color: self.color
-                }
+                }, ->
+                    if chrome.runtime.lastError?
+                        console.log 'ERROR when setting color!!'
+                        console.log chrome.runtime.lastError
+
 
         $ '#mode'
             .addEventListener 'click', (event) ->
@@ -183,7 +187,7 @@ class Options
                 chrome.runtime.sendMessage {
                     type: 'set',
                     mode: self.mode
-                }, (resp) =>
+                }, ->
                     if not chrome.runtime.lastError?
                         self.toggle_slides()
                     else
@@ -195,7 +199,7 @@ class Options
                 chrome.runtime.sendMessage {
                     type: 'set', 
                     auto_opac: @checked
-                }, (resp) =>
+                }, ->
                     if chrome.runtime.lastError?
                         console.log 'ERROR when setting auto_opac!!'
                         console.log chrome.runtime.lastError
