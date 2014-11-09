@@ -28,6 +28,9 @@ class Storage
                         @print()
                         @bind_events()
 
+            @print()
+            @bind_events()
+
     set: (obj, cb) ->
         if H.contains 'altitude', (k for own k, _ of obj)
             obj.last_update = Date.now()
