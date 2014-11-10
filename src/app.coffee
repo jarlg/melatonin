@@ -23,6 +23,7 @@ class App
 
         chrome.runtime.onConnect.addListener (port) =>
             console.assert port.name is 'options'
+            @update()
             @options_port = port
             @options_port.onDisconnect.addListener =>
                 @options_port = null

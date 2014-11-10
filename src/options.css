@@ -33,6 +33,10 @@ body {
   visibility: hidden;
 }
 
+#dialog a {
+  color: black;
+}
+
 a {
   color: #ffad66;
   cursor: pointer;
@@ -49,8 +53,8 @@ form > div {
 .container {
     position: relative;
     width: 840px;
-    height: 60vh;
-    margin: 20vh auto 0;
+    height: 70vh;
+    margin: 10vh auto 0;
     font: 12pt sans-serif;
 }
 
