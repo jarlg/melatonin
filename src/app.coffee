@@ -40,10 +40,10 @@ class App
             else if req.type is 'init_options'
                 @storage.get ['mode', 'keymode', 'kfs', 'auto_opac', 'color'], resp
                 true
-            else if req.type is 'mixblend_notify'
-                @storage.get 'mixblend_notified', (it) =>
-                    if not it.mixblend_notified
-                        @storage.set mixblend_notified: true, -> notification = new Notification()
+            else if req.type is 'blendmode_notify'
+                @storage.get 'blendmode_notified', (it) =>
+                    if not it.blendmode_notified
+                        @storage.set blendmode_notified: true, -> notification = new Notification()
             else if req.type is 'set'
                 if req.opac?
                     @set_overlay_opacity req.opac
