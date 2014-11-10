@@ -34,7 +34,7 @@ body {
 }
 
 a {
-  color: blue;
+  color: #ffad66;
   cursor: pointer;
 }
 
@@ -47,7 +47,9 @@ form > div {
 }
 
 .container {
+    position: relative;
     width: 840px;
+    height: 60vh;
     margin: 20vh auto 0;
     font: 12pt sans-serif;
 }
@@ -238,4 +240,27 @@ table .button:hover {
 .desc > p,
 .options > input {
     margin: 0 2em;
+}
+
+.notification {
+  display: none;
+}
+
+.notification a {
+  color: black;
+}
+
+.notification a:hover {
+  color:white;
+}
+
+@supports not (mix-blend-mode: hard-light) {
+  .notification {
+    width: 100%;
+    position: absolute;;
+    padding: 1em;
+    bottom:0;
+    background: #ffad66;
+    display: block;
+  }
 }
