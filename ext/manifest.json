@@ -1,0 +1,42 @@
+{
+    "manifest_version": 2,
+    "name": "Melatonin",
+    "version": "0.3.2",
+
+    "options_page": "options.html",
+
+    "description": "Melatonin for Chrome - your melatonin levels follow the sun, so should you browser!",
+    "icons": {
+        "16": "./mid16.png",
+        "48": "./thin48.png",
+        "128": "./thin128.png",
+        "256": "./thin256.png",
+        "512": "./thin512.png"
+    },
+
+    "browser_action": {
+        "default_popup": "popup.html",
+        "default_icon": "./thin32.png"
+    },
+
+    "permissions": [
+        "<all_urls>",
+        "geolocation",
+        "alarms",
+        "tabs",
+        "storage",
+        "idle",
+        "notifications"
+    ],
+
+    "content_scripts": [{
+        "matches": ["<all_urls>"],
+        "js": ["content_script.js"],
+        "run_at": "document_start"
+    }],
+
+    "background": {
+        "persistent": false,
+        "scripts": ["main.js"]
+    }
+}
