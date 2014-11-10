@@ -4,6 +4,7 @@
 # helpers
 #
 $ = document.querySelector.bind document
+$$ = document.querySelectorAll.bind document
 val = (obj) -> obj.value
 last = (arr) -> arr[arr.length-1] if arr.length > 0
 
@@ -43,6 +44,11 @@ class KFTable
     clear_header: ->
         @head_tr.parentNode.removeChild @head_tr if @head_tr.parentNode?
         @
+
+    clear_kfs: ->
+      @kfs.length = 0
+      @clear_views()
+      @
 
     clear_views: ->
         if @views.length > 0
@@ -99,28 +105,28 @@ class KFTable
             @add()
             @table.appendChild last(@views).render().row
 
-        $ '#save'
-          .addEventListener 'click', (event) ->
-            event.preventDefault()
-            chrome.runtime.sendMessage {
-              type: 'set',
-              kfs: self.kfs,
-              keymode: self.keymode
-            }, =>
-              if not chrome.runtime.lastError?
-                state = 'button-success'
-                html = 'saved!'
-              else
-                state = 'button-failure'
-                html = 'failed!'
+        $ '#save' 
+            .addEventListener 'click', (event) ->
+                event.preventDefault()
+                chrome.runtime.sendMessage {
+                    type: 'set',
+                    kfs: self.kfs,
+                    keymode: self.keymode
+                }, =>
+                    if not chrome.runtime.lastError?
+                        state = 'button-success'
+                        html = 'saved!'
+                    else
+                        state = 'button-failure'
+                        html = 'failed!'
 
-                @classList.add state
-                @innerHTML = html
+                    @classList.add state
+                    @innerHTML = html
 
-                window.setTimeout (=>
-                  @classList.remove state
-                  @innerHTML = 'save'
-                ), 1000
+                    window.setTimeout (=>
+                        @classList.remove state
+                        @innerHTML = 'save'
+                    ), 1000
 
         @create_header()
         @
@@ -197,6 +203,48 @@ class Options
                     if chrome.runtime.lastError?
                         console.log 'ERROR when setting auto_opac!!'
                         console.log chrome.runtime.lastError
+        
+        $ '#export'
+          .addEventListener 'click', =>
+            # show EXPORT dialog
+            $ '#dialog'
+              .style.visibility = "visible"
+
+            $ '#dialog-json'
+              .value = JSON.stringify @table.kfs
+
+        $ '#import'
+          .addEventListener 'click', =>
+            $ '#dialog'
+              .style.visibility = "visible"
+
+            for el in $$ '.import-dialog'
+              do -> el.style.visibility = "visible"
+
+        $ '#dialog-load'
+          .addEventListener 'click', =>
+            console.log "attempting to load json!"
+            try
+              kfs = JSON.parse $('#dialog-json').value
+              console.log kfs
+              if kfs.length? and kfs.length > 0
+                @table.clear_kfs()
+                @table.add kf for kf in kfs
+                @table.render()
+            catch e
+              console.log 'failed parsing imported json'
+              console.log e
+
+        $ '#dialog-close'
+          .addEventListener 'click', (ev) =>
+            ev.stopPropagation()
+            @clear_dialog()
+
+        $ '#dialog'
+          .addEventListener 'click', => @clear_dialog()
+
+        $ '#dialog-json'
+          .addEventListener 'click', (ev) -> ev.stopPropagation()
 
     mode: 'auto',
     color: {},
@@ -206,6 +254,16 @@ class Options
             .classList.toggle 'active', @mode is 'auto'
         $ '#manual'
             .classList.toggle 'active', @mode is 'manual'
+
+    clear_dialog: ->
+      $ '#dialog'
+        .style.visibility = "hidden"
+
+      for el in $$ '.import-dialog'
+        do -> el.style.visibility = "hidden"
+
+      $ '#dialog-json'
+        .value = ""
 
 
 module.exports = Options

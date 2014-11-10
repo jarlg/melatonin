@@ -4,6 +4,16 @@
     <link href="./options.css" rel="stylesheet">
 </head>
 <body>
+
+  <!-- import/export dialog, to be hidden and displayed as a modal -->
+  <div id='dialog'>
+    <div>
+      <textarea id='dialog-json'></textarea>
+      <a id='dialog-load' class='import-dialog'>load</a>
+      <a id='dialog-close'>close</a>
+    </div>
+  </div>
+
     <div class='container'>
         <div id='switch' class='opt-container active'>
             <div class='desc'>
@@ -22,6 +32,9 @@
                     <!--- here KFTable is rendered --!>
                 </table>
                 <button id='save' class='button'> save & apply</button>
+                <div>
+                  <a id='export'>export</a> / <a id='import'>import</a>
+                </div>
             </form>
             </div>
 
