@@ -22,37 +22,37 @@ catering to the majority. Remains to see if this is true.
 In any case, I'll supply you with some "new defaults" - my
 settings with the new blending mode, here:
 ```json
-[
-  { 
-    "altitude" : "-15",
-    "direction" :-1,
-    "option" : "color",
-    "value" : { "b" : 14, "g" : 107, "r" : 204 }
-  },
-  { 
-  	"altitude" : "91",
-    "direction" :0,
-    "option" : "color",
-    "value" : { "b" : 235, "g" : 226, "r" : 210 }
-  },
-  { 
-    "altitude" : "91",
-    "direction" :0,
-    "option" : "opacity",
-    "value" : "0"
-  },
-  { 
-    "altitude" : "-91",
-    "direction" :0,
-    "option" : "opacity",
-    "value" : "45"
-  },
-  { 
-    "altitude" : 0,
-    "direction" :1,
-    "option" : "opacity",
-    "value" : "0"
-  }
-]
+    [
+      { 
+        "altitude" : "-15",
+        "direction" :-1,
+        "option" : "color",
+        "value" : { "b" : 14, "g" : 107, "r" : 204 }
+      },
+      { 
+        "altitude" : "91",
+        "direction" :0,
+        "option" : "color",
+        "value" : { "b" : 235, "g" : 226, "r" : 210 }
+      },
+      { 
+        "altitude" : "91",
+        "direction" :0,
+        "option" : "opacity",
+        "value" : "0"
+      },
+      { 
+        "altitude" : "-91",
+        "direction" :0,
+        "option" : "opacity",
+        "value" : "45"
+      },
+      { 
+        "altitude" : 0,
+        "direction" :1,
+        "option" : "opacity",
+        "value" : "0"
+      }
+    ]
 ```
 To import them, just use the import dialog that's been added to the options page.
