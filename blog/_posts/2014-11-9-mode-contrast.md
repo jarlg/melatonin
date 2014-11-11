@@ -7,8 +7,7 @@ published: true
 
 As of v0.3.2, you can improve the contrast of Melatonin's overlay
 by activating Chrome's
-[chrome://flags/#enable-experimental-web-platform-features](experimental
-web features). This enables the use of the CSS property
+[experimental web features](chrome://flags/#enable-experimental-web-platform-features). This enables the use of the CSS property
 ```mix-blend-mode: hard-light```, which affects how the overlay
 *blends* with the layers underneath.
 
@@ -22,7 +21,7 @@ catering to the majority. Remains to see if this is true.
 
 In any case, I'll supply you with some "new defaults" - my
 settings with the new blending mode, here:
-```
+```json
 [
   { 
     "altitude" : "-15",
