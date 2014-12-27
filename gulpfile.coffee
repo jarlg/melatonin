@@ -14,7 +14,6 @@ coffee_source_files = [
     'popup'
     'content_script'
     'options'
-    'test'
 ]
 
 errorHandler = (err) ->
