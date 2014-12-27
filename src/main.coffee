@@ -44,7 +44,7 @@ config =
     opac: 0.5,
     kfs: [
         new K.AKeyframe 0, 'temperature', 4500, 1   # morning
-        new K.AKeyframe 'n', 'temperature', 6300, 0 # noon
+        new K.AKeyframe 91, 'temperature', 6300, 0 # >90 -> noon (i.e. local max)
         new K.AKeyframe 0, 'temperature', 2700, -1  # evening
     ],
     blendmode_notified: false
