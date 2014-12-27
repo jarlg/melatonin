@@ -119,21 +119,26 @@ class App
     update_storage: (cb) ->
         @_get_position (lat, long) =>
             d = new Date()
-            @storage.set {
-                lat: lat,
-                long: long,
-                alt: A.get_altitude(d, lat, long),
-                dir: A.get_direction(d, lat, long),
-                min: A.get_midnight_altitude(d, lat, long),
-                max: A.get_noon_altitude(d, lat, long)
-            }, cb
+            if lat? and long?
+                @storage.set {
+                    lat: lat if lat,
+                    long: long if long,
+                    alt: A.get_altitude(d, lat, long),
+                    dir: A.get_direction(d, lat, long),
+                    min: A.get_midnight_altitude(d, lat, long),
+                    max: A.get_noon_altitude(d, lat, long)
+                }, cb
+            else
+                cb()
 
     _get_position: (cb) ->
         if navigator.geolocation?
             navigator.geolocation.getCurrentPosition (loc) ->
                 cb loc.coords.latitude, loc.coords.longitude
             , (err) => 
+                cb()
                 @errHandler err
+            , timeout: 3000
         else
             console.log 'Geolocation unavailable'
 
