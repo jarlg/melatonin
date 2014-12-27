@@ -1,14 +1,8 @@
 'use strict'
 
-# helpers
-#
-$ = document.querySelector.bind document
-$$ = document.querySelectorAll.bind document
-val = (obj) -> obj.value
-last = (arr) -> arr[arr.length-1] if arr.length > 0
-
 K = require './keyframes.coffee'
 C = require './color_helpers.coffee'
+H = require './helpers.coffee'
 
 class KFTable
     constructor: (@table, @keymode) ->
@@ -102,9 +96,9 @@ class KFTable
         @add_button.addEventListener 'click', (event) =>
             event.preventDefault()
             @add()
-            @table.appendChild last(@views).render().row
+            @table.appendChild H.last(@views).render().row
 
-        $ '#save' 
+        H.$ '#save' 
             .addEventListener 'click', (event) ->
                 event.preventDefault()
                 chrome.runtime.sendMessage {
@@ -143,19 +137,19 @@ class Options
         chrome.runtime.sendMessage type: 'init_options', (resp) =>
             @mode = resp.mode
             @color = resp.color
-            @table = new KFTable $('#keyframes'), resp.keymode
+            @table = new KFTable H.$('#keyframes'), resp.keymode
 
             @table.add kf for kf in resp.kfs
             @table.create()
                 .render()
 
-            $ '#color'
+            H.$ '#color'
                 .value = C.rgb_to_hex resp.color
 
-            $ '#mode'
+            H.$ '#mode'
                 .checked = @mode is 'auto'
 
-            $ '#auto_opac-toggle'
+            H.$ '#auto_opac-toggle'
                 .checked = resp.auto_opac
 
             @toggle_slides()
@@ -163,11 +157,11 @@ class Options
         @port = chrome.runtime.connect name: 'options'
         @port.onMessage.addListener (msg) ->
             if msg.type is 'set auto_opac'
-                $ '#auto_opac-toggle'
+                H.$ '#auto_opac-toggle'
                     .checked = msg.value
 
         self = this
-        $ '#color'
+        H.$ '#color'
             .addEventListener 'input', (event) ->
                 event.preventDefault()
                 self.color = C.hex_to_rgb @value
@@ -180,7 +174,7 @@ class Options
                         console.log chrome.runtime.lastError
 
 
-        $ '#mode'
+        H.$ '#mode'
             .addEventListener 'click', (event) ->
                 self.mode = if @checked then 'auto' else 'manual'
                 chrome.runtime.sendMessage {
@@ -193,7 +187,7 @@ class Options
                         console.log 'ERROR when setting mode!'
                         console.log chrome.runtime.lastError
 
-        $ '#auto_opac-toggle'
+        H.$ '#auto_opac-toggle'
             .addEventListener 'click', (event) ->
                 chrome.runtime.sendMessage {
                     type: 'set', 
@@ -203,28 +197,28 @@ class Options
                         console.log 'ERROR when setting auto_opac!!'
                         console.log chrome.runtime.lastError
         
-        $ '#export'
+        H.$ '#export'
           .addEventListener 'click', =>
             # show EXPORT dialog
-            $ '#dialog'
+            H.$ '#dialog'
               .style.visibility = "visible"
 
-            $ '#dialog-json'
+            H.$ '#dialog-json'
               .value = JSON.stringify @table.kfs
 
-        $ '#import'
+        H.$ '#import'
           .addEventListener 'click', =>
-            $ '#dialog'
+            H.$ '#dialog'
               .style.visibility = "visible"
 
-            for el in $$ '.import-dialog'
+            for el in H.$H.$ '.import-dialog'
               do -> el.style.visibility = "visible"
 
-        $ '#dialog-load'
+        H.$ '#dialog-load'
           .addEventListener 'click', =>
             console.log "attempting to load json!"
             try
-              kfs = JSON.parse $('#dialog-json').value
+              kfs = JSON.parse H.$('#dialog-json').value
               console.log kfs
               if kfs.length? and kfs.length > 0
                 @table.clear_kfs()
@@ -234,34 +228,34 @@ class Options
               console.log 'failed parsing imported json'
               console.log e
 
-        $ '#dialog-close'
+        H.$ '#dialog-close'
           .addEventListener 'click', (ev) =>
             ev.stopPropagation()
             @clear_dialog()
 
-        $ '#dialog'
+        H.$ '#dialog'
           .addEventListener 'click', => @clear_dialog()
 
-        $ '#dialog-json'
+        H.$ '#dialog-json'
           .addEventListener 'click', (ev) -> ev.stopPropagation()
 
     mode: 'auto',
     color: {},
 
     toggle_slides: ->
-        $ '#auto'
+        H.$ '#auto'
             .classList.toggle 'active', @mode is 'auto'
-        $ '#manual'
+        H.$ '#manual'
             .classList.toggle 'active', @mode is 'manual'
 
     clear_dialog: ->
-      $ '#dialog'
+      H.$ '#dialog'
         .style.visibility = "hidden"
 
-      for el in $$ '.import-dialog'
+      for el in H.$H.$ '.import-dialog'
         do -> el.style.visibility = "hidden"
 
-      $ '#dialog-json'
+      H.$ '#dialog-json'
         .value = ""
 
 
