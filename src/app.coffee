@@ -146,9 +146,9 @@ class App
                 cb loc.coords.latitude, loc.coords.longitude
                 console.log 'Got location (%s, %s)!', loc.coords.latitude, loc.coords.longitude
             , (err) => 
-                cb()
                 @errHandler err
                 console.log '... but refreshing all overlays with values in storage.'
+                cb()
             , timeout: 3000
         else
             console.log 'Geolocation unavailable'
