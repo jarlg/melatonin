@@ -2,6 +2,7 @@
 
 helpers = 
     $: (id) -> document.querySelector id if document?
+    $$: (className) -> document.querySelectorAll className if document?
 
     # suppose max - min is the size of interval (one cycle)
     between: (min, max, val) ->

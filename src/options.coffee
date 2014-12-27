@@ -211,7 +211,7 @@ class Options
             H.$ '#dialog'
               .style.visibility = "visible"
 
-            for el in H.$H.$ '.import-dialog'
+            for el in H.$$ '.import-dialog'
               do -> el.style.visibility = "visible"
 
         H.$ '#dialog-load'
@@ -252,7 +252,7 @@ class Options
       H.$ '#dialog'
         .style.visibility = "hidden"
 
-      for el in H.$H.$ '.import-dialog'
+      for el in H.$$ '.import-dialog'
         do -> el.style.visibility = "hidden"
 
       H.$ '#dialog-json'
