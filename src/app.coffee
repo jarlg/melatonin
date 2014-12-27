@@ -12,12 +12,18 @@ class App
         @storage = new Storage config
         @options_port = null
 
-        chrome.runtime.onStartup.addListener => @update()
+        chrome.runtime.onStartup.addListener =>
+            console.log 'Starting up; calling update!'
+            @update()
         chrome.idle.onStateChanged.addListener (newstate) =>
-            @update() if newstate is 'active'
+            if newstate is 'active'
+                console.log 'Changed state to \'active\'; calling update!'
+                @update()
 
         chrome.alarms.create 'update_altitude', periodInMinutes: 15
-        chrome.alarms.onAlarm.addListener => @update()
+        chrome.alarms.onAlarm.addListener =>
+            console.log 'Regular 15min alarm; calling update!'
+            @update()
 
         chrome.tabs.onUpdated.addListener (_, __, tab) => @refresh_overlay tab
 
@@ -110,6 +116,7 @@ class App
 
     # recalculates altitude and opacity, and stores them
     update: ->
+        console.log 'Initiating update...'
         @update_storage @update_opacity.bind @
 
     update_opacity: (cb) ->
@@ -133,11 +140,14 @@ class App
 
     _get_position: (cb) ->
         if navigator.geolocation?
+            console.log 'Requesting geolocation...'
             navigator.geolocation.getCurrentPosition (loc) ->
                 cb loc.coords.latitude, loc.coords.longitude
+                console.log 'Got location (%s, %s)!', loc.coords.latitude, loc.coords.longitude
             , (err) => 
                 cb()
                 @errHandler err
+                console.log '... but refreshing all overlays with values in storage.'
             , timeout: 3000
         else
             console.log 'Geolocation unavailable'
