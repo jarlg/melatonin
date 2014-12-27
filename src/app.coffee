@@ -98,6 +98,7 @@ class App
                 resp color: color, opac: it.opac
 
     refresh_all_overlays: ->
+        console.log 'Refreshing all overlays!'
         @storage.get @essentials, (it) =>
             color = K.choose_color it
             chrome.tabs.query {}, (tabs) ->
