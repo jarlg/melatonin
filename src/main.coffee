@@ -43,9 +43,18 @@ config =
     auto_opac: true,
     opac: 0.5,
     kfs: [
+        # this is an asymmetric configuration where sunrise differs from
+        # sundown as specified by linking the keyframes to "asc" = 1 or "desc" = -1
         new K.AKeyframe 0, 'temperature', 4500, 1   # morning
         new K.AKeyframe 91, 'temperature', 6300, 0 # >90 -> noon (i.e. local max)
         new K.AKeyframe 0, 'temperature', 2700, -1  # evening
+
+        # the below configuration is completely symmetric, as all keyframes
+        # are linked to "both" = 0 i.e. they trigger on ascending and
+        # descending sun
+        new K.AKeyframe 0, 'opacity', 30, 0  # sun at horizon
+        new K.AKeyframe 91, 'opacity', 10, 0  # solar noon
+        new K.AKeyframe -91, 'opacity', 50, 0  # solar midnight
     ],
     blendmode_notified: false
 

@@ -1026,7 +1026,7 @@ config = {
   color: null,
   auto_opac: true,
   opac: 0.5,
-  kfs: [new K.AKeyframe(0, 'temperature', 4500, 1), new K.AKeyframe(91, 'temperature', 6300, 0), new K.AKeyframe(0, 'temperature', 2700, -1)],
+  kfs: [new K.AKeyframe(0, 'temperature', 4500, 1), new K.AKeyframe(91, 'temperature', 6300, 0), new K.AKeyframe(0, 'temperature', 2700, -1), new K.AKeyframe(0, 'opacity', 30, 0), new K.AKeyframe(91, 'opacity', 10, 0), new K.AKeyframe(-91, 'opacity', 50, 0)],
   blendmode_notified: false
 };
 
