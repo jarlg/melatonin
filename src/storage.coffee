@@ -32,7 +32,7 @@ class Storage
             @bind_events()
 
     set: (obj, cb) ->
-        if H.contains 'altitude', (k for own k, _ of obj)
+        if H.contains 'alt', (k for own k, _ of obj)
             obj.last_update = Date.now()
         chrome.storage.local.set obj, cb
 
