@@ -15,6 +15,7 @@ class App
         chrome.runtime.onStartup.addListener =>
             console.log 'Starting up; calling update!'
             @update()
+
         chrome.idle.onStateChanged.addListener (newstate) =>
             if newstate is 'active'
                 console.log 'Changed state to \'active\'; calling update!'
