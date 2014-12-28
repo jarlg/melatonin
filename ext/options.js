@@ -75,9 +75,9 @@ helpers = {
       return document.querySelector(id);
     }
   },
-  $$: function(id) {
+  $$: function(className) {
     if (typeof document !== "undefined" && document !== null) {
-      return document.querySelectorAll(id);
+      return document.querySelectorAll(className);
     }
   },
   between: function(min, max, val) {
@@ -635,37 +635,13 @@ module.exports = obj;
 
 },{"./color_helpers.coffee":1,"./helpers.coffee":2}],4:[function(require,module,exports){
 'use strict';
-var Options;
-
-Options = require('./options_model.coffee');
-
-window.onload = function() {
-  var options;
-  return options = new Options();
-};
-
-
-},{"./options_model.coffee":5}],5:[function(require,module,exports){
-'use strict';
-var $, $$, C, K, KFTable, Options, last, val;
-
-$ = document.querySelector.bind(document);
-
-$$ = document.querySelectorAll.bind(document);
-
-val = function(obj) {
-  return obj.value;
-};
-
-last = function(arr) {
-  if (arr.length > 0) {
-    return arr[arr.length - 1];
-  }
-};
+var C, H, K, KFTable, Options;
 
 K = require('./keyframes.coffee');
 
 C = require('./color_helpers.coffee');
+
+H = require('./helpers.coffee');
 
 KFTable = (function() {
   function KFTable(table, keymode) {
@@ -796,10 +772,10 @@ KFTable = (function() {
       return function(event) {
         event.preventDefault();
         _this.add();
-        return _this.table.appendChild(last(_this.views).render().row);
+        return _this.table.appendChild(H.last(_this.views).render().row);
       };
     })(this));
-    $('#save').addEventListener('click', function(event) {
+    H.$('#save').addEventListener('click', function(event) {
       event.preventDefault();
       return chrome.runtime.sendMessage({
         type: 'set',
@@ -858,16 +834,16 @@ Options = (function() {
         var kf, _i, _len, _ref;
         _this.mode = resp.mode;
         _this.color = resp.color;
-        _this.table = new KFTable($('#keyframes'), resp.keymode);
+        _this.table = new KFTable(H.$('#keyframes'), resp.keymode);
         _ref = resp.kfs;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           kf = _ref[_i];
           _this.table.add(kf);
         }
         _this.table.create().render();
-        $('#color').value = C.rgb_to_hex(resp.color);
-        $('#mode').checked = _this.mode === 'auto';
-        $('#auto_opac-toggle').checked = resp.auto_opac;
+        H.$('#color').value = C.rgb_to_hex(resp.color);
+        H.$('#mode').checked = _this.mode === 'auto';
+        H.$('#auto_opac-toggle').checked = resp.auto_opac;
         return _this.toggle_slides();
       };
     })(this));
@@ -876,11 +852,11 @@ Options = (function() {
     });
     this.port.onMessage.addListener(function(msg) {
       if (msg.type === 'set auto_opac') {
-        return $('#auto_opac-toggle').checked = msg.value;
+        return H.$('#auto_opac-toggle').checked = msg.value;
       }
     });
     self = this;
-    $('#color').addEventListener('input', function(event) {
+    H.$('#color').addEventListener('input', function(event) {
       event.preventDefault();
       self.color = C.hex_to_rgb(this.value);
       return chrome.runtime.sendMessage({
@@ -893,7 +869,7 @@ Options = (function() {
         }
       });
     });
-    $('#mode').addEventListener('click', function(event) {
+    H.$('#mode').addEventListener('click', function(event) {
       self.mode = this.checked ? 'auto' : 'manual';
       return chrome.runtime.sendMessage({
         type: 'set',
@@ -907,7 +883,7 @@ Options = (function() {
         }
       });
     });
-    $('#auto_opac-toggle').addEventListener('click', function(event) {
+    H.$('#auto_opac-toggle').addEventListener('click', function(event) {
       return chrome.runtime.sendMessage({
         type: 'set',
         auto_opac: this.checked
@@ -918,17 +894,17 @@ Options = (function() {
         }
       });
     });
-    $('#export').addEventListener('click', (function(_this) {
+    H.$('#export').addEventListener('click', (function(_this) {
       return function() {
-        $('#dialog').style.visibility = "visible";
-        return $('#dialog-json').value = JSON.stringify(_this.table.kfs);
+        H.$('#dialog').style.visibility = "visible";
+        return H.$('#dialog-json').value = JSON.stringify(_this.table.kfs);
       };
     })(this));
-    $('#import').addEventListener('click', (function(_this) {
+    H.$('#import').addEventListener('click', (function(_this) {
       return function() {
         var el, _i, _len, _ref, _results;
-        $('#dialog').style.visibility = "visible";
-        _ref = $$('.import-dialog');
+        H.$('#dialog').style.visibility = "visible";
+        _ref = H.$$('.import-dialog');
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           el = _ref[_i];
@@ -939,12 +915,12 @@ Options = (function() {
         return _results;
       };
     })(this));
-    $('#dialog-load').addEventListener('click', (function(_this) {
+    H.$('#dialog-load').addEventListener('click', (function(_this) {
       return function() {
         var e, kf, kfs, _i, _len;
         console.log("attempting to load json!");
         try {
-          kfs = JSON.parse($('#dialog-json').value);
+          kfs = JSON.parse(H.$('#dialog-json').value);
           console.log(kfs);
           if ((kfs.length != null) && kfs.length > 0) {
             _this.table.clear_kfs();
@@ -961,18 +937,18 @@ Options = (function() {
         }
       };
     })(this));
-    $('#dialog-close').addEventListener('click', (function(_this) {
+    H.$('#dialog-close').addEventListener('click', (function(_this) {
       return function(ev) {
         ev.stopPropagation();
         return _this.clear_dialog();
       };
     })(this));
-    $('#dialog').addEventListener('click', (function(_this) {
+    H.$('#dialog').addEventListener('click', (function(_this) {
       return function() {
         return _this.clear_dialog();
       };
     })(this));
-    $('#dialog-json').addEventListener('click', function(ev) {
+    H.$('#dialog-json').addEventListener('click', function(ev) {
       return ev.stopPropagation();
     });
   }
@@ -982,14 +958,14 @@ Options = (function() {
   Options.prototype.color = {};
 
   Options.prototype.toggle_slides = function() {
-    $('#auto').classList.toggle('active', this.mode === 'auto');
-    return $('#manual').classList.toggle('active', this.mode === 'manual');
+    H.$('#auto').classList.toggle('active', this.mode === 'auto');
+    return H.$('#manual').classList.toggle('active', this.mode === 'manual');
   };
 
   Options.prototype.clear_dialog = function() {
     var el, _fn, _i, _len, _ref;
-    $('#dialog').style.visibility = "hidden";
-    _ref = $$('.import-dialog');
+    H.$('#dialog').style.visibility = "hidden";
+    _ref = H.$$('.import-dialog');
     _fn = function() {
       return el.style.visibility = "hidden";
     };
@@ -997,14 +973,17 @@ Options = (function() {
       el = _ref[_i];
       _fn();
     }
-    return $('#dialog-json').value = "";
+    return H.$('#dialog-json').value = "";
   };
 
   return Options;
 
 })();
 
-module.exports = Options;
+window.onload = function() {
+  var options;
+  return options = new Options();
+};
 
 
-},{"./color_helpers.coffee":1,"./keyframes.coffee":3}]},{},[4])
+},{"./color_helpers.coffee":1,"./helpers.coffee":2,"./keyframes.coffee":3}]},{},[4])

@@ -122,12 +122,14 @@ App = (function() {
     this.options_port = null;
     chrome.runtime.onStartup.addListener((function(_this) {
       return function() {
+        console.log('Starting up; calling update!');
         return _this.update();
       };
     })(this));
     chrome.idle.onStateChanged.addListener((function(_this) {
       return function(newstate) {
         if (newstate === 'active') {
+          console.log('Changed state to \'active\'; calling update!');
           return _this.update();
         }
       };
@@ -137,17 +139,25 @@ App = (function() {
     });
     chrome.alarms.onAlarm.addListener((function(_this) {
       return function() {
+        console.log('Regular 15min alarm; calling update!');
         return _this.update();
       };
     })(this));
     chrome.tabs.onUpdated.addListener((function(_this) {
-      return function(_, __, tab) {
-        return _this.refresh_overlay(tab);
+      return function(tabId, changeInfo, tab) {
+        return _this.storage.get('last_update', function(it) {
+          _this.refresh_overlay(tab);
+          if (Date.now() - it.last_update > 1000 * 60 * 15) {
+            console.log('Tab updated and long time since update; updating!');
+            return _this.update();
+          }
+        });
       };
     })(this));
     chrome.runtime.onConnect.addListener((function(_this) {
       return function(port) {
         console.assert(port.name === 'options');
+        console.log('Connected to options page!');
         _this.update();
         _this.options_port = port;
         return _this.options_port.onDisconnect.addListener(function() {
@@ -160,10 +170,18 @@ App = (function() {
         if (req.type === 'update_all' || req.type === 'update_opacity') {
           return _this.update_opacity(_this.refresh_all_overlays.bind(_this));
         } else if (req.type === 'init_popup') {
+          console.log('Opened popup; triggering update.');
+          _this.update();
           _this.storage.get(['opac', 'lat', 'long'], resp);
           return true;
         } else if (req.type === 'init_tab') {
-          _this.refresh_overlay(null, resp);
+          _this.storage.get('last_update', function(it) {
+            _this.refresh_overlay(null, resp);
+            if (Date.now() - it.last_update > 1000 * 60 * 15) {
+              console.log('Tab created and long time since update; updating!');
+              return _this.update();
+            }
+          });
           return true;
         } else if (req.type === 'init_options') {
           _this.storage.get(['mode', 'keymode', 'kfs', 'auto_opac', 'color'], resp);
@@ -229,6 +247,7 @@ App = (function() {
   };
 
   App.prototype.refresh_all_overlays = function() {
+    console.log('Refreshing all overlays!');
     return this.storage.get(this.essentials, (function(_this) {
       return function(it) {
         var color;
@@ -266,6 +285,7 @@ App = (function() {
   };
 
   App.prototype.update = function() {
+    console.log('Initiating update...');
     return this.update_storage(this.update_opacity.bind(this));
   };
 
@@ -284,27 +304,37 @@ App = (function() {
       return function(lat, long) {
         var d;
         d = new Date();
-        return _this.storage.set({
-          lat: lat,
-          long: long,
-          alt: A.get_altitude(d, lat, long),
-          dir: A.get_direction(d, lat, long),
-          min: A.get_midnight_altitude(d, lat, long),
-          max: A.get_noon_altitude(d, lat, long)
-        }, cb);
+        if ((lat != null) && (long != null)) {
+          return _this.storage.set({
+            lat: lat ? lat : void 0,
+            long: long ? long : void 0,
+            alt: A.get_altitude(d, lat, long),
+            dir: A.get_direction(d, lat, long),
+            min: A.get_midnight_altitude(d, lat, long),
+            max: A.get_noon_altitude(d, lat, long)
+          }, cb);
+        } else {
+          return cb();
+        }
       };
     })(this));
   };
 
   App.prototype._get_position = function(cb) {
     if (navigator.geolocation != null) {
+      console.log('Requesting geolocation...');
       return navigator.geolocation.getCurrentPosition(function(loc) {
-        return cb(loc.coords.latitude, loc.coords.longitude);
+        cb(loc.coords.latitude, loc.coords.longitude);
+        return console.log('Got location (%s, %s)!', loc.coords.latitude, loc.coords.longitude);
       }, (function(_this) {
         return function(err) {
-          return _this.errHandler(err);
+          _this.errHandler(err);
+          console.log('... but refreshing all overlays with values in storage.');
+          return cb();
         };
-      })(this));
+      })(this), {
+        timeout: 3000
+      });
     } else {
       return console.log('Geolocation unavailable');
     }
@@ -394,9 +424,9 @@ helpers = {
       return document.querySelector(id);
     }
   },
-  $$: function(id) {
+  $$: function(className) {
     if (typeof document !== "undefined" && document !== null) {
-      return document.querySelectorAll(id);
+      return document.querySelectorAll(className);
     }
   },
   between: function(min, max, val) {
@@ -996,7 +1026,7 @@ config = {
   color: null,
   auto_opac: true,
   opac: 0.5,
-  kfs: [new K.AKeyframe(0, 'temperature', 4500, 1), new K.AKeyframe('n', 'temperature', 6300, 0), new K.AKeyframe(0, 'temperature', 2700, -1)],
+  kfs: [new K.AKeyframe(0, 'temperature', 4500, 1), new K.AKeyframe(91, 'temperature', 6300, 0), new K.AKeyframe(0, 'temperature', 2700, -1)],
   blendmode_notified: false
 };
 
@@ -1075,7 +1105,7 @@ Storage = (function() {
 
   Storage.prototype.set = function(obj, cb) {
     var k, _;
-    if (H.contains('altitude', (function() {
+    if (H.contains('alt', (function() {
       var _results;
       _results = [];
       for (k in obj) {
@@ -1121,9 +1151,7 @@ Storage = (function() {
         refresh_requested = false;
         _fn = function(k, v) {
           if (H.contains(k, ['alt', 'kfs', 'mode', 'keymode', 'color'])) {
-            if (!refresh_requested) {
-              return refresh_requested = true;
-            }
+            return refresh_requested = true;
           } else if (k === 'auto_opac' && v.newValue) {
             return chrome.runtime.sendMessage({
               type: 'update_opacity'

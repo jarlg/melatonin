@@ -221,9 +221,9 @@ helpers = {
       return document.querySelector(id);
     }
   },
-  $$: function(id) {
+  $$: function(className) {
     if (typeof document !== "undefined" && document !== null) {
-      return document.querySelectorAll(id);
+      return document.querySelectorAll(className);
     }
   },
   between: function(min, max, val) {
