@@ -42,7 +42,10 @@ class App
                 @storage.get ['opac', 'lat', 'long'], resp
                 true
             else if req.type is 'init_tab'
-                @refresh_overlay null, resp
+                @storage.get 'last_update', (it) =>
+                    @refresh_overlay null, resp
+                    if Date.now() - it.last_update > 1000*60*15 # 15 minutes
+                        @refresh_all_overlays()
                 true
             else if req.type is 'init_options'
                 @storage.get ['mode', 'keymode', 'kfs', 'auto_opac', 'color'], resp
