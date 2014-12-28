@@ -26,10 +26,16 @@ class App
             console.log 'Regular 15min alarm; calling update!'
             @update()
 
-        chrome.tabs.onUpdated.addListener (_, __, tab) => @refresh_overlay tab
+        chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) => 
+            @storage.get 'last_update', (it) =>
+                @refresh_overlay tab
+                if Date.now() - it.last_update > 1000*60*15 # 15 minutes
+                    console.log 'Tab updated and long time since update; updating!'
+                    @update()
 
         chrome.runtime.onConnect.addListener (port) =>
             console.assert port.name is 'options'
+            console.log 'Connected to options page!'
             @update()
             @options_port = port
             @options_port.onDisconnect.addListener =>
@@ -40,13 +46,16 @@ class App
             if req.type is 'update_all' or req.type is 'update_opacity'
                 @update_opacity @refresh_all_overlays.bind @
             else if req.type is 'init_popup'
+                console.log 'Opened popup; triggering update.'
+                @update()
                 @storage.get ['opac', 'lat', 'long'], resp
                 true
             else if req.type is 'init_tab'
                 @storage.get 'last_update', (it) =>
                     @refresh_overlay null, resp
                     if Date.now() - it.last_update > 1000*60*15 # 15 minutes
-                        @refresh_all_overlays()
+                        console.log 'Tab created and long time since update; updating!'
+                        @update()
                 true
             else if req.type is 'init_options'
                 @storage.get ['mode', 'keymode', 'kfs', 'auto_opac', 'color'], resp
