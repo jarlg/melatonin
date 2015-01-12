@@ -486,13 +486,13 @@ helpers = {
         }
       } else {
         if (dir * kf1.direction >= 0) {
-          if (dir) {
+          if (dir === 1) {
             t = (alt - kf1.altitude) / (2 * max - kf1.altitude - kf2.altitude);
           } else {
             t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2 * min);
           }
         } else {
-          if (dir) {
+          if (dir === 1) {
             t = (kf1.altitude + alt - 2 * min) / (kf1.altitude + kf2.altitude - 2 * min);
           } else {
             t = (2 * max - kf1.altitude - alt) / (2 * max - kf1.altitude - kf2.altitude);
@@ -950,7 +950,7 @@ obj = {
       if (cands.length > 0) {
         return H.last(cands);
       }
-      return last(kfs);
+      return H.last(kfs);
     }
   },
   _get_next_kf: function(kfs, keymode, alt, dir) {
