@@ -232,7 +232,10 @@ obj =
             cands = kfs.filter (kf) -> kf.direction * dir >= 0 and (alt - kf.altitude)*dir >= 0
 
             if cands.length > 0
-                return if dir is 1 then H.last(cands) else cands[0]
+              if dir is 1
+                return H.last cands
+              else
+                return cands[0]
 
             # keyframes of opposite direction, thus before last direction change
             cands = kfs.filter (kf) -> kf.direction*dir <= 0
@@ -247,7 +250,7 @@ obj =
             if cands.length > 0
                 return H.last cands
 
-            return last kfs
+            return H.last kfs
 
     _get_next_kf: (kfs, keymode, alt, dir) ->
         if keymode is 'altitude'
