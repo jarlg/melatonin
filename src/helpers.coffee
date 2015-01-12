@@ -52,12 +52,12 @@ helpers =
                 # kfs of opposite directions
                 if dir * kf1.direction >= 0
                     # no direction change since last kf
-                    if dir
+                    if dir is 1
                         t = (alt - kf1.altitude) / (2*max - kf1.altitude - kf2.altitude)
                     else
                         t = (kf1.altitude - alt) / (kf1.altitude + kf2.altitude - 2*min)
                 else
-                    if dir
+                    if dir is 1
                         t = (kf1.altitude + alt - 2*min) / (kf1.altitude + kf2.altitude - 2*min)
                     else
                         t = (2*max - kf1.altitude - alt) / (2*max - kf1.altitude - kf2.altitude)
