@@ -1,0 +1,70 @@
+{
+  "appDesc": {
+    "message": "Melatonin - laisser le soleil reguler l'ambiance de ton écran."
+  },
+
+  "value": {
+    "message": "valeur"
+  },
+
+  "save": {
+    "message": "sauvgarder"
+  },
+
+  "automatic_color": { 
+    "message": "couleur automatique"
+  },
+
+  "save_button": {
+    "message": "effectuer"
+  },
+
+  "load": {
+    "message": "charger"
+  },
+
+  "close": {
+    "message": "fermer"
+  },
+
+  "import": {
+    "message": "importer"
+  },
+
+  "export": {
+    "message": "exporter"
+  },
+
+  "saved": {
+    "message": "sauvegardé!"
+  },
+
+  "failed": {
+    "message": "il y avait un erreur!"
+  },
+
+  "automatic_options_description": {
+    "message": "Les keyframes definissent le progression de couleurs et d'opacité. Dans la configuration, valeurs d'altitude >90 ou <-90 sera compris comme respectivement midi/minuit solaire locale."
+  },
+
+  "automatic_opacity_toggle": {
+    "message": "opacité régulé par les keyframes"
+  },
+
+  "automatic_opacity_warning": {
+    "message": "Si tu modifies l'opacité a la main, alors celui-ci sera dechequé automatiquement."
+  },
+
+  "manual_options_description": {
+    "message": "Chosir la couleur."
+  },
+
+  "options_notification": {
+    "message": "Activer <a href='chrome://flags/#enable-experimental-web-platform-features'>experimental web features</a> pour augmenter le contrast de Melatonin, ce qui ameilore la lecture et experience générale. <a href='http://giraj.github.io/melatonin/mode-contrast/'>plus d'info (englais)</a>"
+  },
+
+  "experimental_notification": {
+    "message": "Bonjour! Activer les options experimentales de web pour augmenter le contrast de Melatonin, ce qui l'ameilore pour la lecture, entres autres."
+  }
+
+}
