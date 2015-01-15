@@ -3,7 +3,7 @@ class MixBlendModeNotification
     chrome.notifications.create '',
       type: 'basic',
       title: 'Melatonin',
-      message: 'Hey! If you activate Chrome\'s experimental web features you\'ll get better contrast for reading or viewing images with Melatonin!',
+      message: chrome.i18n.getMessage "experimental_notification",
       iconUrl: './thin256.png'
       (id) -> chrome.notifications.onClicked.addListener (_id) ->
         if _id is id
