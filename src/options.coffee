@@ -59,7 +59,7 @@ class KFTable
             do =>
                 if title isnt 'direction' or @keymode isnt 'time'
                     @head_tr.appendChild document.createElement 'th'
-                        .set 'innerHTML', title
+                        .set 'innerHTML', chrome.i18n.getMessage title
 
         @head_tr.appendChild document.createElement 'th'
             .appendChild @add_button
@@ -72,7 +72,7 @@ class KFTable
         for opt in ['altitude', 'time']
             do =>
                 @keymode_input.appendChild document.createElement 'option'
-                    .set 'innerHTML', opt
+                    .set 'innerHTML', chrome.i18n.getMessage opt
                     .set 'selected', (true if opt is @keymode)
 
         self = this
@@ -108,17 +108,17 @@ class KFTable
                 }, =>
                     if not chrome.runtime.lastError?
                         state = 'button-success'
-                        html = 'saved!'
+                        html = chrome.i18n.getMessage 'saved'
                     else
                         state = 'button-failure'
-                        html = 'failed!'
+                        html = chrome.i18n.getMessage 'failed'
 
                     @classList.add state
                     @innerHTML = html
 
                     window.setTimeout (=>
                         @classList.remove state
-                        @innerHTML = 'save'
+                        @innerHTML = chrome.i18n.getMessage 'save'
                     ), 1000
 
         @create_header()
@@ -261,3 +261,37 @@ class Options
 
 window.onload = ->
     options = new Options()
+
+    # insert translated content
+    H.$ '#automatic-color-label'
+      .innerHTML = chrome.i18n.getMessage 'automatic_color'
+
+    H.$ '#save'
+      .innerHTML = chrome.i18n.getMessage 'save_button'
+
+    H.$ '#dialog-close'
+      .innerHTML = chrome.i18n.getMessage 'close'
+
+    H.$ '#dialog-load'
+      .innerHTML = chrome.i18n.getMessage 'load'
+
+    H.$ '#export'
+      .innerHTML = chrome.i18n.getMessage 'export'
+
+    H.$ '#import'
+      .innerHTML = chrome.i18n.getMessage 'import'
+
+    H.$ '#automatic-options-description'
+      .innerHTML = chrome.i18n.getMessage 'automatic_options_description'
+
+    H.$ '#automatic-opacity-toggle'
+      .innerHTML = chrome.i18n.getMessage 'automatic_opacity_toggle'
+
+    H.$ '#automatic-opacity-warning'
+      .innerHTML = chrome.i18n.getMessage 'automatic_opacity_warning'
+
+    H.$ '#manual-options-description'
+      .innerHTML = chrome.i18n.getMessage 'manual_options_description'
+
+    H.$ '#options-notification'
+      .innerHTML = chrome.i18n.getMessage 'options_notification'
