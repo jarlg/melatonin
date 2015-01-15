@@ -1,11 +1,14 @@
 {
     "manifest_version": 2,
-    "name": "Melatonin",
+
+    "default_locale": "en",
+
     "version": "0.3.3",
+    "name": "__MSG_appName__",
+    "description": "__MSG_appDesc__",
 
     "options_page": "options.html",
 
-    "description": "Melatonin for Chrome - your melatonin levels follow the sun, so should you browser!",
     "icons": {
         "16": "./mid16.png",
         "48": "./thin48.png",
