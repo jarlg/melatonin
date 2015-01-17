@@ -10,14 +10,14 @@
     <div>
       <textarea id='dialog-json'></textarea>
       <a id='dialog-load' class='import-dialog'>load</a>
-      <a id='dialog-close'>close</a>
+      <a id='dialog-close'></a>
     </div>
   </div>
 
     <div class='container'>
         <div id='switch' class='opt-container active'>
             <div class='desc'>
-                <label for='mode'>automatic color</label>
+                <label for='mode' id='automatic-color-label'></label>
             </div>
             <div class='options'>
                 <input type='checkbox' id='mode' name='mode' checked>
@@ -31,26 +31,26 @@
                 <table id="keyframes">
                     <!--- here KFTable is rendered --!>
                 </table>
-                <button id='save' class='button'> save & apply</button>
+                <button id='save' class='button'></button>
                 <div>
-                  <a id='export'>export</a> / <a id='import'>import</a>
+                  <a id='export'></a> / <a id='import'></a>
                 </div>
             </form>
             </div>
 
             <div class='desc'>
-            <p>Keyframes control how Melatonin changes throughout the day. Altitudes above/under 90/-90 are interpreted respectively as local solar noon/midnight.</p>
+            <p id='automatic-options-description'></p>
             <div id='auto-opac-wrapper'>
-                <label for="auto_opac-toggle">Keyframes control opacity: </label>
+                <label for="auto_opac-toggle" id='automatic-opacity-toggle'></label>
                 <input type='checkbox' id='auto_opac-toggle' name='auto_opac-toggle' checked>
             </div>
-            <p>If you manually change opacity, this will be unchecked automatically.</p>
+            <p id='automatic-opacity-warning'></p>
             </div>
         </div>
 
         <div id='manual' class='opt-container'>
         <div class='desc'>
-            <p>Choose your color.</p>
+            <p id='manual-options-description'></p>
         </div>
 
         <div class='options'>
@@ -58,9 +58,7 @@
         </div>
         </div>
         </div>
-        <div class='notification'>
-        Enabling <a href='chrome://flags/#enable-experimental-web-platform-features'>experimental web features</a> improves the contrast of Melatonin, making it better for reading and viewing images. See <a href='http://giraj.github.io/melatonin/mode-contrast/'>this blogpost</a> for further information.
-        </div>
+        <div class='notification' id='options-notification'></div>
     </div>
     <script type='text/javascript' src='options.js'></script>
     <script type='text/javascript' src='content_script.js'></script>

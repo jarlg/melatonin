@@ -719,7 +719,7 @@ KFTable = (function() {
     _fn = (function(_this) {
       return function() {
         if (title !== 'direction' || _this.keymode !== 'time') {
-          return _this.head_tr.appendChild(document.createElement('th')).set('innerHTML', title);
+          return _this.head_tr.appendChild(document.createElement('th')).set('innerHTML', chrome.i18n.getMessage(title));
         }
       };
     })(this);
@@ -737,7 +737,7 @@ KFTable = (function() {
     _ref = ['altitude', 'time'];
     _fn = (function(_this) {
       return function() {
-        return _this.keymode_input.appendChild(document.createElement('option')).set('innerHTML', opt).set('selected', (opt === _this.keymode ? true : void 0));
+        return _this.keymode_input.appendChild(document.createElement('option')).set('innerHTML', chrome.i18n.getMessage(opt)).set('selected', (opt === _this.keymode ? true : void 0));
       };
     })(this);
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -786,16 +786,16 @@ KFTable = (function() {
           var html, state;
           if (chrome.runtime.lastError == null) {
             state = 'button-success';
-            html = 'saved!';
+            html = chrome.i18n.getMessage('saved');
           } else {
             state = 'button-failure';
-            html = 'failed!';
+            html = chrome.i18n.getMessage('failed');
           }
           _this.classList.add(state);
           _this.innerHTML = html;
           return window.setTimeout((function() {
             _this.classList.remove(state);
-            return _this.innerHTML = 'save';
+            return _this.innerHTML = chrome.i18n.getMessage('save');
           }), 1000);
         };
       })(this));
@@ -982,7 +982,18 @@ Options = (function() {
 
 window.onload = function() {
   var options;
-  return options = new Options();
+  options = new Options();
+  H.$('#automatic-color-label').innerHTML = chrome.i18n.getMessage('automatic_color');
+  H.$('#save').innerHTML = chrome.i18n.getMessage('save_button');
+  H.$('#dialog-close').innerHTML = chrome.i18n.getMessage('close');
+  H.$('#dialog-load').innerHTML = chrome.i18n.getMessage('load');
+  H.$('#export').innerHTML = chrome.i18n.getMessage('export');
+  H.$('#import').innerHTML = chrome.i18n.getMessage('import');
+  H.$('#automatic-options-description').innerHTML = chrome.i18n.getMessage('automatic_options_description');
+  H.$('#automatic-opacity-toggle').innerHTML = chrome.i18n.getMessage('automatic_opacity_toggle');
+  H.$('#automatic-opacity-warning').innerHTML = chrome.i18n.getMessage('automatic_opacity_warning');
+  H.$('#manual-options-description').innerHTML = chrome.i18n.getMessage('manual_options_description');
+  return H.$('#options-notification').innerHTML = chrome.i18n.getMessage('options_notification');
 };
 
 

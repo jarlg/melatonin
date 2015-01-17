@@ -1041,8 +1041,9 @@ MixBlendModeNotification = (function() {
     chrome.notifications.create('', {
       type: 'basic',
       title: 'Melatonin',
-      message: 'Hey! If you activate Chrome\'s experimental web features you\'ll get better contrast for reading or viewing images with Melatonin!',
-      iconUrl: './thin256.png'
+      message: chrome.i18n.getMessage("experimental_notification", {
+        iconUrl: './thin256.png'
+      })
     }, function(id) {
       return chrome.notifications.onClicked.addListener(function(_id) {
         if (_id === id) {
