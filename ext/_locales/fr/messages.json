@@ -1,4 +1,8 @@
 {
+  "appName": {
+    "message": "Melatonin"
+  },
+
   "appDesc": {
     "message": "Laisse le soleil reguler l'ambiance de ton écran."
   },
