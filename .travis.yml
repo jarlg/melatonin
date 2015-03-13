@@ -2,9 +2,3 @@ language: node_js
 node_js:
   - stable
 script: npm run build
-after_success:
-  - git config --global user.name "Travis CI"
-  - git remote add github https://giraj:$GH_TOKEN@github.com/giraj/melatonin.git
-  - git add ext/
-  - git commit -am "built ext/"
-  - git push github master
