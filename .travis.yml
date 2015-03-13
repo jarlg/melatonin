@@ -1,4 +1,16 @@
 language: node_js
 node_js:
   - stable
+branches:
+  only:
+    - master
 script: npm run build
+after_success:
+  - git config --global user.name "Travis CI"
+  - git config --global user.email "travis@travisci.org"
+  - git add ext/
+  - git commit -m "travis built to ext/"
+  - git push https://${GH_TOKEN}@github.com/giraj/melatonin.git master
+env:
+  global:
+    secure: P4EMRjkZ+gqILz8zIjciLvDHVzVO9TWwYzgjLOzgkn1RwSTCu8J7z2CXiyWVY2C97PrBjb9K6oA/fROm6xTeS75K5hPVteRYhmEvqAPWGKmTso9TNyroECgqNzfl8jGs0KQoPHbfFfwxZgtRf37k2Klai6fyp7r+Ig5VofsEtDg=
