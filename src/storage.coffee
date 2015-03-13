@@ -7,11 +7,11 @@ C = require './color_helpers.coffee'
 class Storage
     constructor: (config) ->
         @get null, (it) =>
-            if not it.ver? or it.ver < config.ver
+            if not it.ver? or it.ver < config.ver or config.dev
               
                 # if the previous version is sufficiently recent,
                 # we keep some user specified values
-                if '0.3.0' <= it.ver
+                if '0.3.0' <= it.ver and not config.dev
                     keep = [
                       'kfs'
                       'keymode'

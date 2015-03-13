@@ -31,6 +31,7 @@ App = require './app.coffee'
 config = 
     ver: '0.3.2',
     last_update: 0,
+    last_blendmode_notification: 0,
     mode: 'auto', # or 'manual'
     keymode: 'altitude', # or 'time'
     alt: 0,
@@ -56,6 +57,6 @@ config =
         new K.AKeyframe 91, 'opacity', 10, 0  # solar noon
         new K.AKeyframe -91, 'opacity', 50, 0  # solar midnight
     ],
-    blendmode_notified: false
+    dev: false
 
 app = new App config

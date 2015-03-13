@@ -61,9 +61,9 @@ class App
                 @storage.get ['mode', 'keymode', 'kfs', 'auto_opac', 'color'], resp
                 true
             else if req.type is 'blendmode_notify'
-                @storage.get 'blendmode_notified', (it) =>
-                    if not it.blendmode_notified
-                        @storage.set blendmode_notified: true, -> notification = new Notification()
+                @storage.get 'last_blendmode_notification', (it) =>
+                    if Date.now() - it.last_blendmode_notification > 7 * 24 * 60 * 60 * 1000 # blendmode notification frequency: 1 week
+                        @storage.set last_blendmode_notification: Date.now(), -> Notification.activate_blendmode_notification()
             else if req.type is 'set'
                 if req.opac?
                     @set_overlay_opacity req.opac
