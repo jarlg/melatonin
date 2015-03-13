@@ -983,6 +983,9 @@ Options = (function() {
 window.onload = function() {
   var options;
   options = new Options();
+  chrome.runtime.sendMessage({
+    type: 'request_feedback'
+  }, function() {});
   H.$('#automatic-color-label').innerHTML = chrome.i18n.getMessage('automatic_color');
   H.$('#save').innerHTML = chrome.i18n.getMessage('save_button');
   H.$('#dialog-close').innerHTML = chrome.i18n.getMessage('close');

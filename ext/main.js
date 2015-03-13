@@ -102,7 +102,7 @@ module.exports = obj;
 
 },{"./helpers.coffee":4,"./julian_date.coffee":5}],2:[function(require,module,exports){
 'use strict';
-var A, App, C, H, K, Notification, Storage;
+var A, App, C, H, K, N, Storage;
 
 A = require('./altitude.coffee');
 
@@ -112,9 +112,9 @@ C = require('./color_helpers.coffee');
 
 K = require('./keyframes.coffee');
 
-Storage = require('./storage.coffee');
+N = require('./notification.coffee');
 
-Notification = require('./notification.coffee');
+Storage = require('./storage.coffee');
 
 App = (function() {
   function App(config) {
@@ -187,13 +187,22 @@ App = (function() {
           _this.storage.get(['mode', 'keymode', 'kfs', 'auto_opac', 'color'], resp);
           return true;
         } else if (req.type === 'blendmode_notify') {
-          return _this.storage.get('blendmode_notified', function(it) {
-            if (!it.blendmode_notified) {
+          return _this.storage.get('last_blendmode_notification', function(it) {
+            if (Date.now() - it.last_blendmode_notification > 7 * 24 * 60 * 60 * 1000) {
               return _this.storage.set({
-                blendmode_notified: true
+                last_blendmode_notification: Date.now()
               }, function() {
-                var notification;
-                return notification = new Notification();
+                return N.activate_blendmode_notification();
+              });
+            }
+          });
+        } else if (req.type === 'request_feedback') {
+          return _this.storage.get('feedback_requested', function(it) {
+            if (!it.feedback_requested) {
+              return _this.storage.set({
+                feedback_requested: true
+              }, function() {
+                return N.request_feedback();
               });
             }
           });
@@ -1013,8 +1022,11 @@ K = require('./keyframes.coffee');
 App = require('./app.coffee');
 
 config = {
-  ver: '0.3.2',
+  ver: '0.3.5',
+  dev: false,
   last_update: 0,
+  last_blendmode_notification: 0,
+  feedback_requested: false,
   mode: 'auto',
   keymode: 'altitude',
   alt: 0,
@@ -1026,24 +1038,22 @@ config = {
   color: null,
   auto_opac: true,
   opac: 0.5,
-  kfs: [new K.AKeyframe(0, 'temperature', 4500, 1), new K.AKeyframe(91, 'temperature', 6300, 0), new K.AKeyframe(0, 'temperature', 2700, -1), new K.AKeyframe(0, 'opacity', 30, 0), new K.AKeyframe(91, 'opacity', 10, 0), new K.AKeyframe(-91, 'opacity', 50, 0)],
-  blendmode_notified: false
+  kfs: [new K.AKeyframe(0, 'temperature', 4500, 1), new K.AKeyframe(91, 'temperature', 6300, 0), new K.AKeyframe(0, 'temperature', 2700, -1), new K.AKeyframe(0, 'opacity', 30, 0), new K.AKeyframe(91, 'opacity', 10, 0), new K.AKeyframe(-91, 'opacity', 50, 0)]
 };
 
 app = new App(config);
 
 
 },{"./app.coffee":2,"./keyframes.coffee":6}],8:[function(require,module,exports){
-var MixBlendModeNotification;
+var notifications;
 
-MixBlendModeNotification = (function() {
-  function MixBlendModeNotification() {
-    chrome.notifications.create('', {
+notifications = {
+  activate_blendmode_notification: function() {
+    return chrome.notifications.create('', {
       type: 'basic',
       title: 'Melatonin',
-      message: chrome.i18n.getMessage("experimental_notification", {
-        iconUrl: './thin256.png'
-      })
+      message: chrome.i18n.getMessage("experimental_notification"),
+      iconUrl: './thin256.png'
     }, function(id) {
       return chrome.notifications.onClicked.addListener(function(_id) {
         if (_id === id) {
@@ -1053,13 +1063,26 @@ MixBlendModeNotification = (function() {
         }
       });
     });
+  },
+  request_feedback: function() {
+    return chrome.notifications.create('', {
+      type: 'basic',
+      title: 'Melatonin',
+      message: chrome.i18n.getMessage("rate_request_notification"),
+      iconUrl: './thin256.png'
+    }, function(id) {
+      return chrome.notifications.onClicked.addListener(function(_id) {
+        if (_id === id) {
+          return chrome.tabs.create({
+            url: "https://chrome.google.com/webstore/detail/melatonin/ijificlhclhfomkcamagbdpaodfjeokl"
+          });
+        }
+      });
+    });
   }
+};
 
-  return MixBlendModeNotification;
-
-})();
-
-module.exports = MixBlendModeNotification;
+module.exports = notifications;
 
 
 },{}],9:[function(require,module,exports){
@@ -1078,8 +1101,8 @@ Storage = (function() {
     this.get(null, (function(_this) {
       return function(it) {
         var keep, key, _fn, _i, _len;
-        if ((it.ver == null) || it.ver < config.ver) {
-          if ('0.3.0' <= it.ver) {
+        if ((it.ver == null) || it.ver < config.ver || config.dev) {
+          if ('0.3.0' <= it.ver && !config.dev) {
             keep = ['kfs', 'keymode', 'mode', 'color', 'auto_opac'];
             _fn = function() {
               if (it[key] != null) {
