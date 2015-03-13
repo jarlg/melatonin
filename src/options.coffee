@@ -262,6 +262,8 @@ class Options
 window.onload = ->
     options = new Options()
 
+    chrome.runtime.sendMessage type: 'request_feedback', ->
+
     # insert translated content
     H.$ '#automatic-color-label'
       .innerHTML = chrome.i18n.getMessage 'automatic_color'

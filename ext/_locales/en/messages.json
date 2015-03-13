@@ -86,6 +86,10 @@
 
   "experimental_notification": {
     "message": "Hey! If you activate Chrome's experimental web features you'll get better contrast for reading or viewing images with Melatonin!"
+  },
+
+  "rate_request_notification": {
+    "message": "Hey! If you have a minute, I appreciate any and all feedback you might have for Melatonin. Have a good day :)"
   }
 
 }

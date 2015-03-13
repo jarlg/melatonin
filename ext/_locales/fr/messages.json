@@ -69,6 +69,10 @@
 
   "experimental_notification": {
     "message": "Bonjour! Activer les options experimentales de web pour augmenter le contrast de Melatonin, ce qui l'ameilore pour la lecture, entres autres."
+  },
+
+  "rate_request_notification": {
+    "message": "Bonjour! J'apprecie toute réponse sur Melatonin - n'hesitez pas de donner de feedback. Bonne journée :)"
   }
 
 }

@@ -4,8 +4,8 @@ A = require './altitude.coffee'
 H = require './helpers.coffee'
 C = require './color_helpers.coffee'
 K = require './keyframes.coffee'
+N = require './notification.coffee'
 Storage = require './storage.coffee'
-Notification = require './notification.coffee'
 
 class App
     constructor: (config) ->
@@ -63,7 +63,11 @@ class App
             else if req.type is 'blendmode_notify'
                 @storage.get 'last_blendmode_notification', (it) =>
                     if Date.now() - it.last_blendmode_notification > 7 * 24 * 60 * 60 * 1000 # blendmode notification frequency: 1 week
-                        @storage.set last_blendmode_notification: Date.now(), -> Notification.activate_blendmode_notification()
+                        @storage.set last_blendmode_notification: Date.now(), -> N.activate_blendmode_notification()
+            else if req.type is 'request_feedback'
+                @storage.get 'feedback_requested', (it) =>
+                    if not it.feedback_requested
+                        @storage.set feedback_requested: true, -> N.request_feedback()
             else if req.type is 'set'
                 if req.opac?
                     @set_overlay_opacity req.opac
