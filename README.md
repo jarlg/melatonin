@@ -1,4 +1,5 @@
 #Melatonin for Chrome
+[![Build Status](https://travis-ci.org/giraj/melatonin.svg?branch=master)](https://travis-ci.org/giraj/melatonin)
 
 Available in the [Chrome webstore](https://chrome.google.com/webstore/detail/melatonin/ijificlhclhfomkcamagbdpaodfjeokl) or for free download here on github.
 
