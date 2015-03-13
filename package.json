@@ -3,12 +3,10 @@
   "description": "Your melatonin levels follow the sun, so should you browser!",
   "author": "jarl.flaten@gmail.com",
   "version": "0.3.4",
-
   "repository": {
-      "type": "git",
-      "url": "git@github.com:giraj/melatonin.git"
+    "type": "git",
+    "url": "git@github.com:giraj/melatonin.git"
   },
-
   "scripts": {
     "postinstall": "gulp --require coffee-script/register",
     "watch": "gulp watch --require coffee-script/register",
@@ -25,6 +23,7 @@
     "coffee-script": "^1.7.1",
     "coffeeify": "^0.6.0",
     "gulp": "^3.6.2",
+    "gulp-util": "^3.0.4",
     "vinyl-source-stream": "^0.1.1"
   }
 }
