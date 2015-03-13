@@ -10,7 +10,8 @@
   "scripts": {
     "postinstall": "gulp --require coffee-script/register",
     "watch": "gulp watch --require coffee-script/register",
-    "build": "gulp --require coffee-script/register"
+    "build": "gulp --require coffee-script/register",
+    "test": ""
   },
   "browserify": {
     "transform": [
