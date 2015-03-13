@@ -29,7 +29,7 @@ App = require './app.coffee'
 # which improves overlay contrast)
 
 config = 
-    ver: '0.3.2',
+    ver: '0.3.5',
     dev: false,
     last_update: 0,
     last_blendmode_notification: 0,

@@ -2,7 +2,7 @@
   "name": "Melatonin-ext",
   "description": "Your melatonin levels follow the sun, so should you browser!",
   "author": "jarl.flaten@gmail.com",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "repository": {
     "type": "git",
     "url": "git@github.com:giraj/melatonin.git"
